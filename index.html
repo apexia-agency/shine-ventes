@@ -491,8 +491,9 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
   <nav class="rail" id="rail" aria-label="Onglets du board">
     <span class="rail-pill" id="rail-pill" aria-hidden="true"></span>
     <button class="rail-item" data-vue="general" data-label="Vue générale" aria-label="Vue générale"><svg viewBox="0 0 24 24"><path d="M4 11.2 12 4.8l8 6.4V19a1 1 0 0 1-1 1h-4.6v-5.2H9.6V20H5a1 1 0 0 1-1-1z"/></svg></button>
-    <button class="rail-item" data-vue="revendeurs" data-label="Revendeurs" aria-label="Revendeurs"><svg viewBox="0 0 24 24"><path d="M4 9.5 5.6 4.5h12.8L20 9.5M4 9.5h16M4 9.5c0 1.5 1.2 2.5 2.7 2.5s2.6-1 2.6-2.5c0 1.5 1.2 2.5 2.7 2.5s2.7-1 2.7-2.5c0 1.5 1.1 2.5 2.6 2.5S20 11 20 9.5M5.5 12v7.5h13V12M10 19.5v-4.5h4v4.5"/></svg></button>
+    <button class="rail-item" data-vue="particuliers" data-label="Particuliers" aria-label="Particuliers"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20c.8-3.8 3.6-6.2 7.2-6.2s6.4 2.4 7.2 6.2"/></svg></button>
     <button class="rail-item" data-vue="pros" data-label="Pros" aria-label="Pros"><svg viewBox="0 0 24 24"><path d="M3.5 8.5h17v10.5h-17zM9 8.5V6.2A1.2 1.2 0 0 1 10.2 5h3.6A1.2 1.2 0 0 1 15 6.2v2.3M3.5 13h17M11 13v1.8h2V13"/></svg></button>
+    <button class="rail-item" data-vue="revendeurs" data-label="Revendeurs" aria-label="Revendeurs"><svg viewBox="0 0 24 24"><path d="M4 9.5 5.6 4.5h12.8L20 9.5M4 9.5h16M4 9.5c0 1.5 1.2 2.5 2.7 2.5s2.6-1 2.6-2.5c0 1.5 1.2 2.5 2.7 2.5s2.7-1 2.7-2.5c0 1.5 1.1 2.5 2.6 2.5S20 11 20 9.5M5.5 12v7.5h13V12M10 19.5v-4.5h4v4.5"/></svg></button>
     <button class="rail-item" data-vue="myclear" data-label="MyClear" aria-label="MyClear"><svg viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12h-11zM9 10.5V7a3 3 0 0 1 6 0v3.5"/></svg></button>
     <span class="rail-sep" aria-hidden="true"></span>
     <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant ventes" aria-label="Assistant ventes" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
@@ -505,7 +506,6 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     </div>
     <div class="filters">
       <select id="f-ex" aria-label="Exercice"></select>
-      <select id="f-canal" aria-label="Canal"></select>
       <button class="btn" id="theme" title="Changer de thème" aria-label="Changer de thème">◐</button>
     </div>
   </header>
@@ -607,7 +607,7 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
       <span class="hint">une ligne par ligne de facture, au format du cahier des charges (CSV ; et virgule décimale)</span>
     </div>
     <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-      <button class="btn primary" id="btn-export">Exporter l'exercice et le canal sélectionnés</button>
+      <button class="btn primary" id="btn-export">Exporter l'exercice (onglet en cours)</button>
       <span class="progress" id="export-msg"></span>
     </div>
   </div>
@@ -695,12 +695,16 @@ const MOIS = ['oct.', 'nov.', 'déc.', 'janv.', 'févr.', 'mars', 'avr.', 'mai',
 const S = { acces: null, canaux: [], mensuel: [], commandes: [], meta: {}, ex: null, canal: 'SHINE', prod: [], kpi: null, groupes: [], clients: [], compta: [], qual: null, vue: 'general', top: [], nbClients: null };
 
 // Onglets du menu latéral : la vue générale montre tout, les autres filtrent sur une famille de clients ou un canal.
+// Plus de choix du canal : CA SHINE (hors MyClear) partout, MyClear a son onglet.
+// par : découpage du graphique mensuel (sous-famille, ou canal quand la famille n'a pas de sous-familles utiles)
 const VUES = {
   general: { titre: 'Vue générale' },
-  revendeurs: { titre: 'Revendeurs', seg: 'B2B_REVENDEUR' },
+  particuliers: { titre: 'Particuliers', seg: 'B2C', par: 'canal' },
   pros: { titre: 'Pros', seg: 'B2B_PRO' },
+  revendeurs: { titre: 'Revendeurs', seg: 'B2B_REVENDEUR' },
   myclear: { titre: 'MyClear', canal: 'myclear' }
 };
+const canalDeVue = v => VUES[v]?.canal || 'SHINE';
 const segVue = () => VUES[S.vue].seg || null;
 const segOk = r => !segVue() || r.segment === segVue();
 const canalOk = c => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(c) : c === S.canal);
@@ -760,10 +764,6 @@ async function loadBase() {
   if (!S.ex) S.ex = exs[0];
   $('f-ex').innerHTML = exs.map(e => `<option value="${e}">Exercice ${e.replace('-', '–')}</option>`).join('');
   $('f-ex').value = S.ex;
-  const presents = new Set(mensuel.map(r => r.canal));
-  $('f-canal').innerHTML = `<option value="SHINE">CA SHINE (hors MyClear)</option><option value="TOUS">Tous les canaux</option>` +
-    S.canaux.filter(c => presents.has(c.code)).map(c => `<option value="${c.code}">${esc(c.libelle)}</option>`).join('');
-  $('f-canal').value = S.canal;
 }
 
 async function loadExercice() {
@@ -854,17 +854,12 @@ function vueUI() {
   $('card-clients').classList.toggle('hidden', S.vue === 'myclear');
   $('card-top').classList.toggle('hidden', g);
   $('card-compta').classList.toggle('hidden', !g);
-  $('f-canal').nextElementSibling?.classList.toggle('hidden', S.vue === 'myclear');
   railSync();
 }
 async function setVue(v) {
   if (!VUES[v]) v = 'general';
   if (v === S.vue) { scrollTo({ top: 0, behavior: 'smooth' }); return; }
-  const avant = S.vue; S.vue = v;
-  // MyClear = un canal : on le force, et on remet le canal choisi avant en revenant sur un autre onglet
-  if (v === 'myclear') { S.canalAvant = S.canal; S.canal = 'myclear'; }
-  else if (avant === 'myclear') S.canal = S.canalAvant || 'SHINE';
-  $('f-canal').value = S.canal;
+  S.vue = v; S.canal = canalDeVue(v);
   try { history.replaceState(null, '', location.pathname + location.search + (v === 'general' ? '' : '#' + v)); } catch (e) {}
   prodLimit = 25; topLimit = 30; aiCtx(); vueUI();
   scrollTo({ top: 0 });
@@ -970,7 +965,8 @@ function renderMonthly(rows) {
   if (S.vue === 'general') {
     series = SEGMENTS; keyf = r => r.segment || 'NON_SEGMENTE';
   } else {
-    const lab = r => r.sous_segment || SF_VIDE[r.segment] || 'Sans sous-famille';
+    const libCanal = c => S.canaux.find(k => k.code === c)?.libelle || c;
+    const lab = VUES[S.vue].par === 'canal' ? r => libCanal(r.canal) : r => r.sous_segment || SF_VIDE[r.segment] || 'Sans sous-famille';
     const tot = new Map(); for (const r of cur) tot.set(lab(r), (tot.get(lab(r)) || 0) + +r.ca_ht);
     const tri = [...tot.entries()].filter(([, v]) => Math.abs(v) >= 1).sort((a, b) => b[1] - a[1]).map(([k]) => k);
     const garde = tri.slice(0, tri.length > 8 ? 7 : 8);
@@ -978,7 +974,8 @@ function renderMonthly(rows) {
     if (tri.length > garde.length) series.push({ k: '__autres', label: 'Autres', v: '--s-none' });
     keyf = r => garde.includes(lab(r)) ? lab(r) : '__autres';
   }
-  $('titre-mois').textContent = S.vue === 'general' ? 'CA HT produits par mois et par famille de clients' : 'CA HT produits par mois et par sous-famille';
+  $('titre-mois').textContent = S.vue === 'general' ? 'CA HT produits par mois et par famille de clients'
+    : `CA HT produits par mois et par ${VUES[S.vue].par === 'canal' ? 'canal' : 'sous-famille'}`;
   const segsPresent = series.filter(s => cur.some(r => keyf(r) === s.k && +r.ca_ht !== 0));
   const data = MOIS.map(() => ({}));
   for (const r of cur) { const i = monthIndex(r.mois); const k = keyf(r); data[i][k] = (data[i][k] || 0) + +r.ca_ht; }
@@ -1300,7 +1297,7 @@ function glassSelect(sel) {
 }
 addEventListener('scroll', () => lgClose(false), { passive: true });
 addEventListener('resize', () => lgClose(false));
-['f-ex', 'f-canal', 'f-sf'].forEach(id => glassSelect($(id)));
+['f-ex', 'f-sf'].forEach(id => glassSelect($(id)));
 
 // ---------- Menu latéral ----------
 // Un bouton par onglet ; la lentille de verre se place sous l'onglet actif.
@@ -1438,7 +1435,6 @@ aiEmpty();
 
 // ---------- Filtres ----------
 $('f-ex').onchange = async () => { S.ex = $('f-ex').value; aiCtx(); prodLimit = 25; await refreshEx(); };
-$('f-canal').onchange = async () => { S.canal = $('f-canal').value; aiCtx(); prodLimit = 25; await refreshEx(); };
 $('q-prod').oninput = () => renderProd();
 $('toggle-month-table').onclick = () => { const t = $('tbl-month'); t.classList.toggle('hidden'); $('toggle-month-table').textContent = t.classList.contains('hidden') ? 'Voir le tableau' : 'Masquer le tableau'; };
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => S.ex && render(), 150); });
@@ -1472,7 +1468,7 @@ async function start(session) {
   $('app').classList.remove('hidden');
   // Onglet ouvert directement par l'adresse (ex. …/#revendeurs)
   const h = location.hash.slice(1);
-  if (VUES[h]) { S.vue = h; if (h === 'myclear') { S.canalAvant = S.canal; S.canal = 'myclear'; } }
+  if (VUES[h]) { S.vue = h; S.canal = canalDeVue(h); }
   vueUI();
   try { await loadBase(); await loadExercice(); render(); }
   catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
