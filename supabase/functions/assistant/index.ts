@@ -14,7 +14,7 @@
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2";
 
-const MODELE = "claude-opus-5";
+const MODELE = "claude-opus-4-8"; // même modèle que l'app Friday
 const MAX_TOURS = 8; // allers-retours outils par question
 const LIGNES_LECTURE = 200;
 const LIGNES_TABLEAU = 5000;
@@ -211,17 +211,16 @@ Deno.serve(async (req) => {
   const tableaux: Tableau[] = [];
   try {
     for (let tour = 0; tour < MAX_TOURS; tour++) {
-      // Repli serveur automatique vers un autre modèle si le premier refuse (bêta « fallbacks »).
-      const rep = await client.beta.messages.create({
+      // Réflexion adaptative : sur Opus 4.8, elle est coupée si on ne la demande pas.
+      const rep = await client.messages.create({
         model: MODELE,
         max_tokens: 16000,
         system: [{ type: "text", text: SYSTEME, cache_control: { type: "ephemeral" } }],
         tools: OUTILS,
         messages,
+        thinking: { type: "adaptive" },
         output_config: { effort: "medium" },
-        betas: ["server-side-fallback-2026-07-01"],
-        fallbacks: "default",
-      } as unknown as Anthropic.Beta.MessageCreateParamsNonStreaming) as unknown as Anthropic.Message;
+      });
 
       if (rep.stop_reason === "refusal") {
         return json({ reponse: "Je ne peux pas répondre à cette demande. Reformule-la autrement.", tableaux });
