@@ -24,3 +24,13 @@ Panneau de questions ouvert depuis le menu latéral (icône bulle).
 - Une modification de ces fichiers ne s'applique pas toute seule : il faut redéployer la fonction dans Supabase.
 
 Le dossier `supabase/` et ce fichier ne sont pas publiés avec le board (voir `.vercelignore`).
+
+## Chiffres de contrôle (25/09/2026, après retrait des doublons de la bascule du site pro)
+
+| Exercice | CA HT total | dont CA produits | dont pros |
+|---|---|---|---|
+| 2024-2025 | 4 123 165 € | 4 049 907 € | 361 527 € |
+| 2025-2026 | 4 734 925 € | 4 702 320 € | 333 498 € |
+
+Ces totaux ne doivent pas bouger quand on éclate des packs ou qu'on détaille EBP.
+Doublons de la bascule du site pro : voir `supabase/migrations/20260925_doublons_bascule.sql`.
