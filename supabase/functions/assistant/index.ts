@@ -100,7 +100,22 @@ Codes utiles :
 # SQL
 - Une seule requête SELECT (ou WITH) par appel, sans point-virgule. PostgreSQL.
 - Arrondis les montants (round(x, 2)), nomme les colonnes en français lisible pour les tableaux (as "CA HT"), trie de façon utile.
-- Délai maximal 8 secondes : sur v_ventes, filtre par date et agrège.`;
+- Délai maximal 8 secondes : sur v_ventes, filtre par date et agrège.
+
+# Data Center (board marketing des particuliers)
+Quand le contexte indique « board Data Center », la question porte d'abord sur le site particuliers shine-group.fr et le marketing :
+publicité (Google Ads, Meta, TikTok Ads), trafic GA4, réseaux organiques, e-mail (Omnisend), SEO (Search Console), préconisations, fiabilité des données.
+- Ces données ne sont pas lisibles en SQL : utilise l'outil donnees_data_center(du, au), qui renvoie le JSON du board pour la période.
+  Clés : commerce (jour, ca_ht, port_ht, commandes : factures PrestaShop des particuliers, la vérité du CA), nouveaux_clients,
+  regie_jour (jour, plateforme, depense, clics, conv, valeur), ga4_jour (jour, sessions, sessions_engagees, transactions, ca_mesure),
+  campagnes (plateforme, campagne, depense, clics, sessions, transactions, ca_mesure, valeur_rev), reseaux, reseaux_jour, pubs (publicités Meta),
+  canaux, sources, pages (pages d'entrée), organique, posts, emails, seo_jour, seo_requetes, preconisations, fiabilite, controles_ko, fraicheur.
+- Trois niveaux à ne jamais mélanger ni additionner : revendiqué (ce que la régie s'attribue, valeur_rev), mesuré (GA4, ca_mesure), encaissé (PrestaShop, commerce.ca_ht).
+  MER = CA encaissé ÷ dépense totale. ROAS mesuré = ca_mesure ÷ depense.
+- Avant de conclure, regarde fiabilite et controles_ko : si la période est touchée, dis-le en une phrase.
+- Pour un tableau exportable à partir de ces données, construis-le toi-même avec l'outil tableau_donnees.
+- Pour une comparaison, appelle donnees_data_center une fois par période. Si le contexte donne une comparaison active, utilise-la par défaut.
+- Le CA du site particuliers est aussi dans les tables ventes (canal prestashop_b2c) : pour l'historique long, le SQL reste possible.`;
 
 const OUTILS: Anthropic.Tool[] = [
   {
@@ -131,7 +146,45 @@ const OUTILS: Anthropic.Tool[] = [
     },
     strict: true,
   },
+  {
+    name: "donnees_data_center",
+    description:
+      "Renvoie les données du board Data Center (site particuliers, publicité, trafic GA4, organique, e-mail, SEO, fiabilité) pour une période, en JSON. Le résultat n'est pas montré à la personne.",
+    input_schema: {
+      type: "object",
+      properties: {
+        du: { type: "string", description: "Premier jour inclus, AAAA-MM-JJ." },
+        au: { type: "string", description: "Dernier jour inclus, AAAA-MM-JJ." },
+      },
+      required: ["du", "au"],
+      additionalProperties: false,
+    },
+    strict: true,
+  },
+  {
+    name: "tableau_donnees",
+    description:
+      "Affiche dans le board un tableau que tu as construit toi-même (par exemple à partir de donnees_data_center), avec un bouton d'export CSV.",
+    input_schema: {
+      type: "object",
+      properties: {
+        titre: { type: "string", description: "Titre court affiché au-dessus du tableau." },
+        colonnes: { type: "array", items: { type: "string" }, description: "Noms des colonnes, en français." },
+        lignes: {
+          type: "array",
+          items: { type: "array", items: { type: ["string", "number", "null"] } },
+          description: "Une liste par ligne, dans l'ordre des colonnes. Nombres bruts (pas de symbole €).",
+        },
+        fichier: { type: "string", description: "Nom du fichier CSV sans extension." },
+      },
+      required: ["titre", "colonnes", "lignes", "fichier"],
+      additionalProperties: false,
+    },
+  },
 ];
+
+const JSON_MAX = 60000; // caractères renvoyés à Claude par appel à donnees_data_center
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 type Tableau = { titre: string; colonnes: string[]; lignes: unknown[][]; fichier: string };
 
@@ -146,8 +199,26 @@ async function executerOutil(
   bloc: Anthropic.ToolUseBlock,
   tableaux: Tableau[],
 ): Promise<Anthropic.ToolResultBlockParam> {
-  const entree = bloc.input as { sql?: string; titre?: string; fichier?: string };
+  const entree = bloc.input as {
+    sql?: string; titre?: string; fichier?: string; du?: string; au?: string; colonnes?: string[]; lignes?: unknown[][];
+  };
   try {
+    if (bloc.name === "donnees_data_center") {
+      if (!DATE.test(entree.du ?? "") || !DATE.test(entree.au ?? "")) throw new Error("Dates attendues au format AAAA-MM-JJ");
+      // Même fonction que le board, avec les droits de la personne connectée
+      const { data, error } = await sb.rpc("dc_donnees", { p_du: entree.du, p_au: entree.au });
+      if (error) throw new Error(error.message);
+      let texte = JSON.stringify(data);
+      if (texte.length > JSON_MAX) texte = texte.slice(0, JSON_MAX) + "\n(coupé : demande une période plus courte pour le détail)";
+      return { type: "tool_result", tool_use_id: bloc.id, content: texte };
+    }
+    if (bloc.name === "tableau_donnees") {
+      const colonnes = Array.isArray(entree.colonnes) ? entree.colonnes.map(String) : [];
+      const lignes = Array.isArray(entree.lignes) ? entree.lignes.filter(Array.isArray).slice(0, LIGNES_TABLEAU) : [];
+      if (!colonnes.length) throw new Error("Paramètre colonnes manquant");
+      tableaux.push({ titre: entree.titre || "Résultat", colonnes, lignes, fichier: entree.fichier || "export" });
+      return { type: "tool_result", tool_use_id: bloc.id, content: `Tableau affiché : ${lignes.length} ligne(s).` };
+    }
     if (typeof entree.sql !== "string" || !entree.sql.trim()) throw new Error("Paramètre sql manquant");
     if (bloc.name === "requete_sql") {
       const r = await executerSql(sb, entree.sql, LIGNES_LECTURE);
@@ -206,24 +277,39 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } }, auth: { persistSession: false } },
   );
   const { data: acces } = await sb.rpc("mon_acces");
-  if (!acces?.role) return json({ error: "Accès refusé : ce compte n'est pas dans la liste des accès du board." }, 403);
+  // Accès au board Ventes (role) ou au seul Data Center (boards.data_center)
+  if (!acces?.role && !acces?.boards?.data_center) {
+    return json({ error: "Accès refusé : ce compte n'est pas dans la liste des accès du board." }, 403);
+  }
 
-  let corps: { question?: string; historique?: unknown; contexte?: { exercice?: string; canal?: string; vue?: string | null } };
+  type Periode = { du?: string; au?: string } | null;
+  let corps: {
+    question?: string; historique?: unknown;
+    contexte?: { board?: string; exercice?: string; canal?: string; vue?: string | null; periode?: Periode; comparaison?: Periode };
+  };
   try { corps = await req.json(); } catch { return json({ error: "Requête illisible" }, 400); }
   const question = (corps.question ?? "").trim();
   if (!question) return json({ error: "Question vide" }, 400);
 
   const ctx = corps.contexte ?? {};
-  const canal = ctx.canal === "SHINE" ? "CA SHINE (hors MyClear)" : ctx.canal === "TOUS" ? "tous les canaux" : `canal ${ctx.canal}`;
-  // Onglet ou board ouvert : Particuliers, Pros, Revendeurs, MyClear (ventes), Achats, Charges (tresorerie_mensuel)
-  const onglet = ctx.vue ? `onglet ${ctx.vue}, ` : "";
   const aujourdhui = new Date().toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "full" });
+  let perimetre: string;
+  if (ctx.board === "data_center") {
+    const per = ctx.periode?.du ? `période du ${ctx.periode.du} au ${ctx.periode.au}` : "période non précisée";
+    const cmp = ctx.comparaison?.du ? `, comparaison active avec le ${ctx.comparaison.du} → ${ctx.comparaison.au}` : "";
+    perimetre = `board Data Center (particuliers), page ${ctx.vue ?? "?"}, ${per}${cmp}`;
+  } else {
+    const canal = ctx.canal === "SHINE" ? "CA SHINE (hors MyClear)" : ctx.canal === "TOUS" ? "tous les canaux" : `canal ${ctx.canal}`;
+    // Onglet ou board ouvert : Particuliers, Pros, Revendeurs, MyClear (ventes), Achats, Charges (tresorerie_mensuel)
+    const onglet = ctx.vue ? `onglet ${ctx.vue}, ` : "";
+    perimetre = `${onglet}exercice ${ctx.exercice ?? "?"}, ${canal}`;
+  }
   const messages: Anthropic.MessageParam[] = [
     ...historiqueValide(corps.historique),
     {
       role: "user",
       content:
-        `[Contexte du board : ${onglet}exercice ${ctx.exercice ?? "?"}, ${canal}. Nous sommes le ${aujourdhui}. ` +
+        `[Contexte : ${perimetre}. Nous sommes le ${aujourdhui}. ` +
         `Utilise ce périmètre sauf si la question en précise un autre.]\n\n${question}`,
     },
   ];

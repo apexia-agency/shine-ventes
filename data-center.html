@@ -482,6 +482,8 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
   box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c); font-variant-numeric: tabular-nums; }
 .periode .vs { color: var(--muted); font-size: 12.5px; font-weight: 600; }
 .periode .perso { display: inline-flex; gap: 6px; align-items: center; }
+.periode .cmp-zone:not(.hidden) { display: inline-flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+#cmp-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 88%, transparent); color: #fff; }
 .delta-up { color: var(--good); font-weight: 650; }
 .delta-down { color: var(--bad); font-weight: 650; }
 td .d { display: block; font-size: 11.5px; }
@@ -539,6 +541,7 @@ th.sort:hover { color: var(--ink); }
     <button class="rail-item" data-vue="fiabilite" data-label="Fiabilité des données" aria-label="Fiabilité des données"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></button>
     <span class="rail-sep" aria-hidden="true"></span>
     <button class="rail-item" id="rail-boards" data-label="Changer de board" aria-label="Changer de board" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></button>
+    <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant" aria-label="Assistant" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
   </nav>
 
   <header class="top">
@@ -549,15 +552,17 @@ th.sort:hover { color: var(--ink); }
     <div class="filters periode">
       <select id="f-per" aria-label="Période"></select>
       <span class="perso hidden" id="per-perso"><input type="date" id="per-du" aria-label="Du"><input type="date" id="per-au" aria-label="Au"></span>
-      <span class="vs">comparé à</span>
-      <select id="f-cmp" aria-label="Comparaison">
-        <option value="n1">N-1 (mêmes dates)</option>
-        <option value="n1s">N-1 (même jour de semaine)</option>
-        <option value="prec">Période précédente</option>
-        <option value="perso">Dates choisies…</option>
-        <option value="aucune">Aucune comparaison</option>
-      </select>
-      <span class="perso hidden" id="cmp-perso"><input type="date" id="cmp-du" aria-label="Comparer du"><input type="date" id="cmp-au" aria-label="Comparer au"></span>
+      <button class="btn" id="cmp-btn" aria-pressed="false" title="Comparer cette page à une autre période">Comparer</button>
+      <span class="cmp-zone hidden" id="cmp-zone">
+        <span class="vs">à</span>
+        <select id="f-cmp" aria-label="Comparaison">
+          <option value="n1">N-1 (mêmes dates)</option>
+          <option value="n1s">N-1 (même jour de semaine)</option>
+          <option value="prec">Période précédente</option>
+          <option value="perso">Dates choisies…</option>
+        </select>
+        <span class="perso hidden" id="cmp-perso"><input type="date" id="cmp-du" aria-label="Comparer du"><input type="date" id="cmp-au" aria-label="Comparer au"></span>
+      </span>
       <button class="btn" id="theme" title="Changer de thème" aria-label="Changer de thème">◐</button>
     </div>
   </header>
@@ -655,6 +660,25 @@ th.sort:hover { color: var(--ink); }
   <footer><span id="who"></span><button class="link" id="logout">Se déconnecter</button></footer>
 </div>
 
+<aside class="ai-panel" id="ai-panel" role="dialog" aria-modal="false" aria-labelledby="ai-title" aria-hidden="true">
+  <div class="ai-head">
+    <div class="grow">
+      <h2 id="ai-title">Assistant</h2>
+      <div class="sub">Questions sur le site, les campagnes et les ventes</div>
+    </div>
+    <button class="btn ai-icon-btn" id="ai-reset" title="Nouvelle conversation" aria-label="Nouvelle conversation"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v3.9h3.9"/></svg></button>
+    <button class="btn ai-icon-btn" id="ai-close" title="Fermer" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="ai-log" id="ai-log" aria-live="polite"></div>
+  <form class="ai-compose" id="ai-form">
+    <div class="ai-ctx" id="ai-ctx"></div>
+    <div class="ai-box">
+      <textarea id="ai-input" rows="1" placeholder="Pose une question ou demande un export…" aria-label="Message à l'assistant"></textarea>
+      <button class="ai-send" id="ai-send" type="submit" aria-label="Envoyer" disabled><svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
+    </div>
+  </form>
+</aside>
+
 <div class="tip" id="tip"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
 <script>
@@ -698,7 +722,10 @@ const fmtDL = s => { const d = parse(s); return d.toLocaleDateString('fr-FR', { 
 const HIER = iso(new Date(Date.now() - 864e5));
 const AUJ = iso(new Date());
 
-const S = { acces: null, role: null, vue: 'apercu', ops: [], per: null, cmp: null, d: null, c: null };
+// Comparaison : activée page par page (S.cmpOn), jamais par défaut. S.cData garde la période de comparaison chargée (clé S.cKey).
+const S = { acces: null, role: null, vue: 'apercu', ops: [], per: null, cmp: null, d: null, c: null, cmpOn: new Set(), cmpDef: null, cData: null, cKey: null };
+const cmpActif = () => S.cmpOn.has(S.vue);
+const cleCmp = c => c ? c.du + '|' + c.au : null;
 
 function presets() {
   const t = parse(AUJ);
@@ -726,7 +753,6 @@ function periode() {
 }
 function comparaison(p) {
   const v = $('f-cmp').value, n = nbJours(p.du, p.au);
-  if (v === 'aucune') return null;
   if (v === 'n1') return { du: shiftYear(p.du, -1), au: shiftYear(p.au, -1), t: 'N-1' };
   if (v === 'n1s') return { du: addDays(p.du, -364), au: addDays(p.au, -364), t: 'N-1 (jour de semaine)' };
   if (v === 'prec') return { du: addDays(p.du, -n), au: addDays(p.du, -1), t: 'période précédente' };
@@ -747,18 +773,36 @@ function hideTip() { tip.style.display = 'none'; }
 
 // ---------- Chargement ----------
 async function charger() {
-  const p = periode(), c = comparaison(p);
-  S.per = p; S.cmp = c;
+  const p = periode(), c = comparaison(p), avecCmp = cmpActif();
+  S.per = p; S.cmpDef = c;
   $('fresh').textContent = 'Chargement…';
   try {
     const [a, b] = await Promise.all([
       sb.rpc('dc_donnees', { p_du: p.du, p_au: p.au }),
-      c ? sb.rpc('dc_donnees', { p_du: c.du, p_au: c.au }) : Promise.resolve({ data: null })
+      avecCmp ? sb.rpc('dc_donnees', { p_du: c.du, p_au: c.au }) : Promise.resolve({ data: null })
     ]);
     if (a.error) throw a.error;
-    S.d = a.data; S.c = b.data || null;
+    if (b.error) throw b.error;
+    S.d = a.data; S.cData = avecCmp ? b.data : null; S.cKey = avecCmp ? cleCmp(c) : null;
     render();
   } catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
+}
+// Charge seulement la période de comparaison, si la page affichée la demande et qu'elle n'est pas déjà chargée
+async function assurerCmp() {
+  if (!cmpActif() || !S.cmpDef || S.cKey === cleCmp(S.cmpDef)) return render();
+  const c = S.cmpDef;
+  $('fresh').textContent = 'Chargement de la comparaison…';
+  try {
+    const { data, error } = await sb.rpc('dc_donnees', { p_du: c.du, p_au: c.au });
+    if (error) throw error;
+    S.cData = data; S.cKey = cleCmp(c);
+    render();
+  } catch (e) { $('fresh').textContent = 'Erreur de chargement de la comparaison : ' + (e.message || e); }
+}
+function cmpUI() {
+  const on = cmpActif();
+  $('cmp-btn').setAttribute('aria-pressed', String(on));
+  $('cmp-zone').classList.toggle('hidden', !on);
 }
 
 // ---------- Agrégats ----------
@@ -888,7 +932,12 @@ const withD = (v, prev, f, inverse) => `${f(v)}${S.cmp && prev != null ? `<span 
 // ---------- Rendu ----------
 const VUES = { apercu: "Vue d'ensemble", acquisition: 'Publicité payante', trafic: 'Canaux et trafic', organique: 'Réseaux organiques', email: 'E-mail', seo: 'Référencement naturel', reco: 'Préconisations', fiabilite: 'Fiabilité des données' };
 function render() {
+  cmpUI();
   if (!S.d) return;
+  // La comparaison ne s'affiche que sur la page où elle a été activée
+  S.cmp = cmpActif() && S.cData && S.cKey === cleCmp(S.cmpDef) ? S.cmpDef : null;
+  S.c = S.cmp ? S.cData : null;
+  aiCtx();
   const p = S.per, c = S.cmp;
   $('vue-titre').textContent = ' · ' + VUES[S.vue];
   const fr = S.d.fraicheur || {}; const derniere = Object.values(fr).sort().pop();
@@ -1138,7 +1187,7 @@ addEventListener('scroll', () => lgClose(false), { passive: true });
 const BOARDS = [{ k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' }, { k: 'achats', t: 'Achats', href: './#achats', small: 'matières premières, par fournisseur' }, { k: 'charges', t: 'Charges', href: './#charges', small: 'salaires, transport, frais généraux…' }, { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }];
 const railItems = [...document.querySelectorAll('.rail-item[data-vue]')];
 function railSync() { const a = railItems.find(b => b.dataset.vue === S.vue) || railItems[0]; railItems.forEach(b => b.setAttribute('aria-current', String(b === a))); $('rail-pill').style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`; }
-function setVue(v) { S.vue = v; history.replaceState(null, '', '#' + v); railSync(); render(); }
+function setVue(v) { S.vue = v; history.replaceState(null, '', '#' + v); railSync(); assurerCmp(); }
 railItems.forEach(b => b.addEventListener('click', () => setVue(b.dataset.vue)));
 addEventListener('resize', railSync);
 $('rail-boards').addEventListener('click', () => {
@@ -1146,6 +1195,122 @@ $('rail-boards').addEventListener('click', () => {
   ouvrirMenu($('rail-boards'), BOARDS.filter(b => ok(b.k)).map(b => ({ ...b, sel: b.k === 'data_center' })), b => { if (b.k !== 'data_center') location.href = b.href; }, 'board-menu');
 });
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 150); });
+
+// ---------- Assistant (même panneau et même fonction serveur « assistant » que le board Ventes) ----------
+// contexte envoyé : { board: 'data_center', vue, periode: { du, au }, comparaison: { du, au } | null, email }
+const AI_FN = 'assistant';
+const AI = { hist: [], busy: false };
+const AI_SUGG = [
+  'Quel est le MER des 30 derniers jours, et comment il évolue ?',
+  'Quelles campagnes ont un ROAS mesuré sous 1,5 ce mois-ci ?',
+  'D\'où viennent les sessions qui convertissent le mieux ?',
+  'Exporte les campagnes de la période en CSV'
+];
+const aiPanel = $('ai-panel'), aiLog = $('ai-log'), aiInput = $('ai-input'), aiSend = $('ai-send'), aiBtn = $('rail-ai');
+
+function aiMd(t) {
+  const inline = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  const out = []; let list = null;
+  for (const raw of String(t || '').split('\n')) {
+    const l = raw.trim(); const m = l.match(/^[-*•]\s+(.*)$/);
+    if (m) { (list = list || []).push(`<li>${inline(m[1])}</li>`); continue; }
+    if (list) { out.push(`<ul>${list.join('')}</ul>`); list = null; }
+    if (l) out.push(`<p>${inline(l)}</p>`);
+  }
+  if (list) out.push(`<ul>${list.join('')}</ul>`);
+  return out.join('');
+}
+function aiNorm(t) {
+  let cols = Array.isArray(t.colonnes) ? t.colonnes : null, rows = Array.isArray(t.lignes) ? t.lignes : [];
+  if (rows.length && !Array.isArray(rows[0])) { cols = cols || Object.keys(rows[0]); rows = rows.map(o => cols.map(c => o[c])); }
+  return { titre: t.titre || 'Résultat', cols: cols || [], rows, fichier: t.fichier || t.titre || 'export' };
+}
+const aiIsNum = v => typeof v === 'number' || (typeof v === 'string' && v.trim() !== '' && /^-?\d+(\.\d+)?$/.test(v.trim()));
+function aiCell(v) {
+  if (v == null) return '<span class="muted">–</span>';
+  if (aiIsNum(v)) { const n = +v; return fmtN(n, Number.isInteger(n) ? 0 : 2); }
+  return esc(v);
+}
+function aiCsv(t) {
+  const cell = v => { if (v == null) return ''; if (aiIsNum(v)) return String(v).replace('.', ','); const s = String(v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const lines = [t.cols.map(cell).join(';'), ...t.rows.map(r => r.map(cell).join(';'))];
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const slug = String(t.fichier).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'export';
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${slug}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function aiTable(t) {
+  const box = document.createElement('div'); box.className = 'ai-table';
+  const LIM = 12; let shown = Math.min(LIM, t.rows.length);
+  const numCol = t.cols.map((_, j) => t.rows.length > 0 && t.rows.every(r => r[j] == null || aiIsNum(r[j])));
+  const draw = () => {
+    box.innerHTML = `<div class="ai-table-head"><b>${esc(t.titre)} <span class="muted">· ${fmtN(t.rows.length)} ligne${t.rows.length > 1 ? 's' : ''}</span></b>` +
+      `<button class="btn small" data-csv>Exporter CSV</button></div>` +
+      `<div class="ai-table-scroll"><table><thead><tr>${t.cols.map((c, j) => `<th${numCol[j] ? ' class="n"' : ''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>` +
+      t.rows.slice(0, shown).map(r => `<tr>${t.cols.map((_, j) => `<td${numCol[j] ? ' class="n"' : ''}>${aiCell(r[j])}</td>`).join('')}</tr>`).join('') +
+      `</tbody></table></div>` +
+      (t.rows.length > shown ? `<div class="ai-table-foot"><button class="link" data-more>Afficher ${fmtN(Math.min(200, t.rows.length) - shown)} lignes de plus</button>${t.rows.length > 200 ? ' <span class="muted">(le CSV contient tout)</span>' : ''}</div>` : '');
+    box.querySelector('[data-csv]').onclick = () => aiCsv(t);
+    const more = box.querySelector('[data-more]'); if (more) more.onclick = () => { shown = Math.min(200, t.rows.length); draw(); };
+  };
+  draw(); return box;
+}
+function aiAdd(role, text, tables, err) {
+  aiLog.querySelector('.ai-empty')?.remove();
+  const m = document.createElement('div'); m.className = `ai-msg ${role}${err ? ' err' : ''}`;
+  if (role === 'user') m.textContent = text;
+  else {
+    if (text) { const d = document.createElement('div'); d.className = 'ai-text'; d.innerHTML = aiMd(text); m.appendChild(d); }
+    (tables || []).map(aiNorm).filter(t => t.cols.length).forEach(t => m.appendChild(aiTable(t)));
+  }
+  aiLog.appendChild(m); aiLog.scrollTop = aiLog.scrollHeight;
+}
+function aiEmpty() {
+  aiLog.innerHTML = `<div class="ai-empty"><div class="ai-orb"><svg viewBox="0 0 24 24"><path d="M12 4.5l1.6 4.2 4.2 1.6-4.2 1.6L12 16.1l-1.6-4.2-4.2-1.6 4.2-1.6z"/><path d="M18.3 15.6l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/></svg></div>` +
+    `<h3>Que veux-tu savoir ?</h3><p>Pose une question sur le site, les campagnes, le trafic ou les ventes, ou demande un export : le tableau se télécharge en CSV.</p>` +
+    `<div class="ai-sugg">${AI_SUGG.map(s => `<button class="btn" type="button">${esc(s)}</button>`).join('')}</div></div>`;
+  aiLog.querySelectorAll('.ai-sugg .btn').forEach(b => b.onclick = () => { aiInput.value = b.textContent; aiAsk(); });
+}
+function aiContexte() {
+  return { board: 'data_center', vue: VUES[S.vue], periode: S.per, comparaison: S.cmp ? { du: S.cmp.du, au: S.cmp.au } : null, email: S.acces?.email };
+}
+function aiCtx() {
+  if (!S.per) { $('ai-ctx').textContent = ''; return; }
+  $('ai-ctx').textContent = `Contexte : Data Center · ${VUES[S.vue]} · ${fmtDL(S.per.du)} → ${fmtDL(S.per.au)}${S.cmp ? ` · comparé à ${fmtDL(S.cmp.du)} → ${fmtDL(S.cmp.au)}` : ''}`;
+}
+function aiGrow() { aiInput.style.height = 'auto'; aiInput.style.height = Math.min(140, aiInput.scrollHeight) + 'px'; aiSend.disabled = AI.busy || !aiInput.value.trim(); }
+async function aiAsk() {
+  const q = aiInput.value.trim(); if (!q || AI.busy) return;
+  AI.busy = true; aiInput.value = ''; aiGrow(); aiAdd('user', q);
+  const typing = document.createElement('div'); typing.className = 'ai-typing'; typing.innerHTML = '<i></i><i></i><i></i>';
+  aiLog.appendChild(typing); aiLog.scrollTop = aiLog.scrollHeight;
+  try {
+    const { data, error } = await sb.functions.invoke(AI_FN, { body: { question: q, historique: AI.hist.slice(-12), contexte: aiContexte() } });
+    if (error) {
+      const st = error.context?.status;
+      let detail = ''; try { detail = (await error.context.json())?.error || ''; } catch (e) {}
+      throw new Error(st === 404 ? 'L\'assistant n\'est pas encore branché côté serveur (fonction « assistant » introuvable).' : st === 401 || st === 403 ? (detail || 'Accès refusé à l\'assistant pour ce compte.') : (detail || error.message || 'Erreur inconnue'));
+    }
+    const rep = typeof data === 'string' ? { reponse: data } : (data || {});
+    typing.remove(); aiAdd('bot', rep.reponse || '', rep.tableaux || []);
+    AI.hist.push({ role: 'user', content: q }, { role: 'assistant', content: rep.reponse || '' });
+  } catch (e) {
+    typing.remove(); aiAdd('bot', e.message || String(e), [], true);
+  }
+  AI.busy = false; aiGrow(); aiInput.focus();
+}
+function aiOpen(open) {
+  aiPanel.classList.toggle('open', open); aiPanel.setAttribute('aria-hidden', String(!open)); aiBtn.setAttribute('aria-expanded', String(open));
+  if (open) { aiCtx(); setTimeout(() => aiInput.focus({ preventScroll: true }), 250); } else aiBtn.focus({ preventScroll: true });
+}
+aiBtn.onclick = () => aiOpen(!aiPanel.classList.contains('open'));
+$('ai-close').onclick = () => aiOpen(false);
+$('ai-reset').onclick = () => { if (AI.busy) return; AI.hist = []; aiEmpty(); aiInput.focus(); };
+$('ai-form').onsubmit = (e) => { e.preventDefault(); aiAsk(); };
+aiInput.addEventListener('input', aiGrow);
+aiInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); aiAsk(); } });
+addEventListener('keydown', e => { if (e.key === 'Escape' && aiPanel.classList.contains('open') && !lgOpen) aiOpen(false); });
+aiEmpty();
 
 // ---------- Filtres ----------
 function remplirPeriodes() {
@@ -1158,12 +1323,18 @@ $('f-per').addEventListener('change', () => {
   if (perso && !$('per-du').value) { $('per-du').value = S.per?.du || addDays(HIER, -6); $('per-au').value = S.per?.au || HIER; }
   charger();
 });
+const majCmp = () => { S.cmpDef = comparaison(S.per); assurerCmp(); };
 $('f-cmp').addEventListener('change', () => {
   const perso = $('f-cmp').value === 'perso'; $('cmp-perso').classList.toggle('hidden', !perso);
   if (perso && !$('cmp-du').value) { $('cmp-du').value = shiftYear(S.per.du, -1); $('cmp-au').value = shiftYear(S.per.au, -1); }
-  charger();
+  majCmp();
 });
-['per-du', 'per-au', 'cmp-du', 'cmp-au'].forEach(id => { $(id).max = HIER; $(id).addEventListener('change', () => { if ($('per-du').value > $('per-au').value && id.startsWith('per')) $('per-au').value = $('per-du').value; charger(); }); });
+$('cmp-btn').addEventListener('click', () => {
+  if (cmpActif()) S.cmpOn.delete(S.vue); else S.cmpOn.add(S.vue);
+  if (S.per) majCmp(); else cmpUI();
+});
+['per-du', 'per-au'].forEach(id => { $(id).max = HIER; $(id).addEventListener('change', () => { if ($('per-du').value > $('per-au').value) $('per-au').value = $('per-du').value; charger(); }); });
+['cmp-du', 'cmp-au'].forEach(id => { $(id).max = HIER; $(id).addEventListener('change', () => { if ($('cmp-du').value > $('cmp-au').value) $('cmp-au').value = $('cmp-du').value; majCmp(); }); });
 
 // ---------- Connexion ----------
 const logout = async () => { await sb.auth.signOut(); location.href = './'; };
