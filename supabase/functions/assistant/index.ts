@@ -36,6 +36,7 @@ Ce n'est pas de la comptabilité : on regarde le chiffre d'affaires par famille 
 - requete_sql pour lire et raisonner ; tableau quand la personne veut voir une liste, un classement ou un export.
   Un export demandé = un appel à tableau (il s'affiche avec un bouton « Exporter CSV »), pas une liste recopiée dans le texte.
 - Réponse courte : le chiffre clé d'abord, puis 1 à 3 phrases de lecture. Montants en euros HT, format français (1 234 567 €).
+- Le board a des onglets : Revendeurs (segment B2B_REVENDEUR), Pros (segment B2B_PRO), MyClear (canal myclear). Si la personne est sur l'un d'eux, c'est le périmètre par défaut de sa question.
 - Dis toujours sur quel périmètre tu as compté (exercice ou mois, canaux) quand ce n'est pas évident.
 - Si la question est ambiguë, prends l'hypothèse la plus naturelle et dis-la en une phrase.
 - Tu lis seulement : tu ne peux rien modifier (segments, validations…). Si on te le demande, renvoie vers le board.
@@ -189,20 +190,22 @@ Deno.serve(async (req) => {
   const { data: acces } = await sb.rpc("mon_acces");
   if (!acces?.role) return json({ error: "Accès refusé : ce compte n'est pas dans la liste des accès du board." }, 403);
 
-  let corps: { question?: string; historique?: unknown; contexte?: { exercice?: string; canal?: string } };
+  let corps: { question?: string; historique?: unknown; contexte?: { exercice?: string; canal?: string; vue?: string | null } };
   try { corps = await req.json(); } catch { return json({ error: "Requête illisible" }, 400); }
   const question = (corps.question ?? "").trim();
   if (!question) return json({ error: "Question vide" }, 400);
 
   const ctx = corps.contexte ?? {};
   const canal = ctx.canal === "SHINE" ? "CA SHINE (hors MyClear)" : ctx.canal === "TOUS" ? "tous les canaux" : `canal ${ctx.canal}`;
+  // Onglet du board : Revendeurs = segment B2B_REVENDEUR, Pros = B2B_PRO, MyClear = canal myclear
+  const onglet = ctx.vue ? `onglet ${ctx.vue}, ` : "";
   const aujourdhui = new Date().toLocaleDateString("fr-FR", { timeZone: "Europe/Paris", dateStyle: "full" });
   const messages: Anthropic.MessageParam[] = [
     ...historiqueValide(corps.historique),
     {
       role: "user",
       content:
-        `[Contexte du board : exercice ${ctx.exercice ?? "?"}, ${canal}. Nous sommes le ${aujourdhui}. ` +
+        `[Contexte du board : ${onglet}exercice ${ctx.exercice ?? "?"}, ${canal}. Nous sommes le ${aujourdhui}. ` +
         `Utilise ce périmètre sauf si la question en précise un autre.]\n\n${question}`,
     },
   ];

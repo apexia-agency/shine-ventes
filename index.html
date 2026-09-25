@@ -488,22 +488,19 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
 </div>
 
 <div id="app" class="wrap hidden">
-  <nav class="rail" id="rail" aria-label="Sections du board">
+  <nav class="rail" id="rail" aria-label="Onglets du board">
     <span class="rail-pill" id="rail-pill" aria-hidden="true"></span>
-    <button class="rail-item" data-go="top" data-label="Synthèse" aria-label="Synthèse"><svg viewBox="0 0 24 24"><path d="M4 11.2 12 4.8l8 6.4V19a1 1 0 0 1-1 1h-4.6v-5.2H9.6V20H5a1 1 0 0 1-1-1z"/></svg></button>
-    <button class="rail-item" data-go="card-mois" data-label="Évolution mensuelle" aria-label="Évolution mensuelle"><svg viewBox="0 0 24 24"><path d="M5.5 18.5v-7M11.5 18.5V5.5M17.5 18.5v-5M3 20h18"/></svg></button>
-    <button class="rail-item" data-go="card-clients" data-label="Canaux et clients" aria-label="Canaux et clients"><svg viewBox="0 0 24 24"><circle cx="9" cy="8.3" r="3.1"/><path d="M3.3 19.2c.6-3.1 2.9-5 5.7-5s5.1 1.9 5.7 5M15.8 5.4a3.1 3.1 0 0 1 0 5.9M17.4 14.5c1.7.7 2.9 2.2 3.3 4.7"/></svg></button>
-    <button class="rail-item" data-go="card-produits" data-label="Produits et zones" aria-label="Produits et zones"><svg viewBox="0 0 24 24"><path d="M12 3.2 20 7.1v9.8l-8 3.9-8-3.9V7.1z"/><path d="M4 7.1l8 3.9 8-3.9M12 11v9.8"/></svg></button>
-    <button class="rail-item" data-go="card-transport" data-label="Transport" aria-label="Transport"><svg viewBox="0 0 24 24"><path d="M2.8 6.5h11v10h-11zM13.8 10h4.2l3.2 3.3v3.2h-7.4"/><circle cx="6.8" cy="17.6" r="1.9"/><circle cx="17.4" cy="17.6" r="1.9"/></svg></button>
-    <span class="rail-sep" aria-hidden="true"></span>
-    <button class="rail-item" data-go="sec-donnees" data-label="Données, validation et export" aria-label="Données, validation et export"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.7"/><path d="M5 6v6c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7V6M5 12v6c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7v-6"/></svg></button>
+    <button class="rail-item" data-vue="general" data-label="Vue générale" aria-label="Vue générale"><svg viewBox="0 0 24 24"><path d="M4 11.2 12 4.8l8 6.4V19a1 1 0 0 1-1 1h-4.6v-5.2H9.6V20H5a1 1 0 0 1-1-1z"/></svg></button>
+    <button class="rail-item" data-vue="revendeurs" data-label="Revendeurs" aria-label="Revendeurs"><svg viewBox="0 0 24 24"><path d="M4 9.5 5.6 4.5h12.8L20 9.5M4 9.5h16M4 9.5c0 1.5 1.2 2.5 2.7 2.5s2.6-1 2.6-2.5c0 1.5 1.2 2.5 2.7 2.5s2.7-1 2.7-2.5c0 1.5 1.1 2.5 2.6 2.5S20 11 20 9.5M5.5 12v7.5h13V12M10 19.5v-4.5h4v4.5"/></svg></button>
+    <button class="rail-item" data-vue="pros" data-label="Pros" aria-label="Pros"><svg viewBox="0 0 24 24"><path d="M3.5 8.5h17v10.5h-17zM9 8.5V6.2A1.2 1.2 0 0 1 10.2 5h3.6A1.2 1.2 0 0 1 15 6.2v2.3M3.5 13h17M11 13v1.8h2V13"/></svg></button>
+    <button class="rail-item" data-vue="myclear" data-label="MyClear" aria-label="MyClear"><svg viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12h-11zM9 10.5V7a3 3 0 0 1 6 0v3.5"/></svg></button>
     <span class="rail-sep" aria-hidden="true"></span>
     <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant ventes" aria-label="Assistant ventes" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
   </nav>
 
   <header class="top">
     <div>
-      <h1>Ventes SHINE</h1>
+      <h1>Ventes SHINE<span id="vue-titre"></span></h1>
       <div class="sub" id="fresh">Chargement…</div>
     </div>
     <div class="filters">
@@ -519,7 +516,7 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
 
   <div class="card" id="card-mois" data-sec>
     <div class="card-head">
-      <h2>CA HT produits par mois et par famille de clients</h2>
+      <h2 id="titre-mois">CA HT produits par mois et par famille de clients</h2>
       <button class="link" id="toggle-month-table">Voir le tableau</button>
     </div>
     <div class="legend" id="leg-month"></div>
@@ -532,13 +529,13 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
       <div class="card-head"><h2>Par canal</h2><span class="hint">CA HT produits de l'exercice</span></div>
       <div class="hbars" id="hb-canal"></div>
     </div>
-    <div class="card">
+    <div class="card" id="card-seg">
       <div class="card-head"><h2>Par famille de clients</h2><span class="hint">proposée ou validée</span></div>
       <div class="hbars" id="hb-seg"></div>
     </div>
-    <div class="card" style="grid-column:1/-1">
-      <div class="card-head"><h2>Sous-familles</h2>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="hint" id="sf-hint"></span><select id="f-sf" aria-label="Famille de clients"></select></div>
+    <div class="card" id="card-sf" style="grid-column:1/-1">
+      <div class="card-head"><h2 id="titre-sf">Sous-familles</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="hint" id="sf-hint"></span><span id="sf-choix"><select id="f-sf" aria-label="Famille de clients"></select></span></div>
       </div>
       <div class="hbars" id="hb-sf"></div>
     </div>
@@ -564,6 +561,11 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     <div class="tbl-wrap" id="tbl-prod"></div>
   </div>
 
+  <div class="card hidden" id="card-top" style="margin-top:14px">
+    <div class="card-head"><h2>Principaux clients</h2><span class="hint" id="top-hint"></span></div>
+    <div class="tbl-wrap" id="tbl-top"></div>
+  </div>
+
   <div class="card hidden" id="card-transport" data-sec style="margin-top:14px">
     <div class="card-head"><h2>Transport : ce qu'on facture et ce qu'on paie</h2><span class="hint" id="tr-hint"></span></div>
     <div class="tbl-wrap" id="tbl-transport"></div>
@@ -577,7 +579,7 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
       <div class="card-head"><h2>Fiabilité de l'exercice</h2><span class="hint">à 100 % avant envoi au comptable</span></div>
       <div class="kv" id="kv-qual"></div>
     </div>
-    <div class="card">
+    <div class="card" id="card-compta">
       <div class="card-head"><h2>Rapprochement comptable</h2><span class="hint">produits + port + loyers, hors MyClear et cessions, vs comptes 70 · écart toléré 1 %</span></div>
       <div id="compta"></div>
     </div>
@@ -690,7 +692,20 @@ const canauxAgreges = () => S.meta.canaux_agreges || [];
 const ZONES = { FRANCE: 'France métropolitaine', UE: 'Union européenne', 'DOM-TOM': 'DOM-TOM', HORS_UE: 'Hors UE', INCONNUE: 'Inconnue' };
 const MOIS = ['oct.', 'nov.', 'déc.', 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.'];
 
-const S = { acces: null, canaux: [], mensuel: [], commandes: [], meta: {}, ex: null, canal: 'SHINE', prod: [], kpi: null, groupes: [], clients: [], compta: [], qual: null };
+const S = { acces: null, canaux: [], mensuel: [], commandes: [], meta: {}, ex: null, canal: 'SHINE', prod: [], kpi: null, groupes: [], clients: [], compta: [], qual: null, vue: 'general', top: [], nbClients: null };
+
+// Onglets du menu latéral : la vue générale montre tout, les autres filtrent sur une famille de clients ou un canal.
+const VUES = {
+  general: { titre: 'Vue générale' },
+  revendeurs: { titre: 'Revendeurs', seg: 'B2B_REVENDEUR' },
+  pros: { titre: 'Pros', seg: 'B2B_PRO' },
+  myclear: { titre: 'MyClear', canal: 'myclear' }
+};
+const segVue = () => VUES[S.vue].seg || null;
+const segOk = r => !segVue() || r.segment === segVue();
+const canalOk = c => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(c) : c === S.canal);
+const perim = r => canalOk(r.canal) && segOk(r);
+const PALETTE = ['--s-b2c', '--s-pro', '--s-rev', '--s-mkt', '--s-intra', '--s-mdd', '--s-autre', '--s-hors'];
 
 // ---------- Tooltip ----------
 const tip = $('tip');
@@ -723,9 +738,9 @@ function exerciceBornes(ex) {
   return { du: `${y}-10-01`, au: `${y + 1}-09-30`, y };
 }
 function canalFilter(rows) {
-  if (S.canal === 'SHINE') return rows.filter(r => r.dans_ca_shine !== false && canalInShine(r.canal));
-  if (S.canal === 'TOUS') return rows;
-  return rows.filter(r => r.canal === S.canal);
+  const out = S.canal === 'SHINE' ? rows.filter(r => r.dans_ca_shine !== false && canalInShine(r.canal))
+    : S.canal === 'TOUS' ? rows : rows.filter(r => r.canal === S.canal);
+  return segVue() ? out.filter(segOk) : out;
 }
 function canalInShine(c) { const x = S.canaux.find(k => k.code === c); return !x || x.dans_ca_shine; }
 
@@ -757,20 +772,45 @@ async function loadExercice() {
   const au = der && der < b.au ? der : b.au;
   const n1du = `${b.y - 1}-10-01`;
   const n1au = shiftYear(au, -1);
-  const [prod, k0, k1, groupes, clients] = await Promise.all([
+  const [prod, k0, k1, groupes, clients, top] = await Promise.all([
     fetchAll('agg_produits', q => q.eq('exercice', S.ex)),
     sb.rpc('kpi_periode', { p_du: b.du, p_au: au }),
     sb.rpc('kpi_periode', { p_du: n1du, p_au: n1au }),
     fetchAll('v_groupes_resume', q => q.eq('exercice', S.ex)),
-    loadClients()
+    loadClients(),
+    S.vue === 'general' ? null : loadTop()
   ]);
   S.prod = prod; S.groupes = groupes; S.clients = clients;
+  S.top = top?.lignes || []; S.nbClients = top?.nb ?? null;
   S.kpi = { cur: k0.data || [], n1: k1.data || [], au, n1au };
 }
+// Filtre agg_clients sur le canal et la famille de clients de l'onglet
+function filtreClients(q) {
+  if (S.canal === 'SHINE') q = q.in('canal', S.canaux.filter(c => c.dans_ca_shine).map(c => c.code));
+  else if (S.canal !== 'TOUS') q = q.eq('canal', S.canal);
+  return segVue() ? q.eq('segment', segVue()) : q;
+}
 async function loadClients() {
-  let q = sb.from('agg_clients').select('*').eq('exercice', S.ex).eq('segment_valide', false).order('ca_ht', { ascending: false }).limit(60);
-  if (S.canal !== 'SHINE' && S.canal !== 'TOUS') q = q.eq('canal', S.canal);
+  const q = filtreClients(sb.from('agg_clients').select('*').eq('exercice', S.ex).eq('segment_valide', false)).order('ca_ht', { ascending: false }).limit(60);
   const { data, error } = await q; if (error) throw error; return data;
+}
+// Principaux clients de l'onglet (un client présent sur plusieurs canaux est regroupé) + nombre de clients facturés
+async function loadTop() {
+  const [{ data, error }, { count }] = await Promise.all([
+    filtreClients(sb.from('agg_clients').select('client_id,client_nom,canal,groupe_client,pays,nb_factures,ca_ht,derniere_facture').eq('exercice', S.ex)).order('ca_ht', { ascending: false }).limit(500),
+    filtreClients(sb.from('agg_clients').select('client_id', { count: 'exact', head: true }).eq('exercice', S.ex).gt('ca_ht', 0))
+  ]);
+  if (error) throw error;
+  const m = new Map();
+  for (const r of data) {
+    const o = m.get(r.client_id) || { nom: r.client_nom, groupe: r.groupe_client, pays: r.pays, canaux: new Set(), nb: 0, ca: 0, der: null };
+    o.canaux.add(r.canal); o.nb += r.nb_factures; o.ca += +r.ca_ht;
+    if (r.derniere_facture && (!o.der || r.derniere_facture > o.der)) o.der = r.derniere_facture;
+    m.set(r.client_id, o);
+  }
+  // tous les clients chargés : on compte les clients distincts ; sinon le comptage de la base (un client sur 2 canaux compte 2 fois)
+  const nb = data.length < 500 ? [...m.values()].filter(o => o.ca > 0).length : count;
+  return { lignes: [...m.values()].sort((a, b) => b.ca - a.ca), nb };
 }
 function lastInvoiceDate() {
   const d = S.meta.derniere_facture || {};
@@ -797,11 +837,38 @@ function render() {
   renderFam(cur);
   renderZone(cur);
   renderProd();
+  renderTop();
   renderQual(cur);
   renderCompta();
   renderGroupes();
   renderClients();
+  vueUI();
+}
+
+// Titre, blocs visibles et onglet actif selon la vue
+function vueUI() {
+  const g = S.vue === 'general';
+  $('vue-titre').textContent = g ? '' : ' · ' + VUES[S.vue].titre;
+  document.title = g ? 'Ventes SHINE' : `${VUES[S.vue].titre} · Ventes SHINE`;
+  $('card-seg').classList.toggle('hidden', !g);
+  $('card-clients').classList.toggle('hidden', S.vue === 'myclear');
+  $('card-top').classList.toggle('hidden', g);
+  $('card-compta').classList.toggle('hidden', !g);
+  $('f-canal').nextElementSibling?.classList.toggle('hidden', S.vue === 'myclear');
   railSync();
+}
+async function setVue(v) {
+  if (!VUES[v]) v = 'general';
+  if (v === S.vue) { scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  const avant = S.vue; S.vue = v;
+  // MyClear = un canal : on le force, et on remet le canal choisi avant en revenant sur un autre onglet
+  if (v === 'myclear') { S.canalAvant = S.canal; S.canal = 'myclear'; }
+  else if (avant === 'myclear') S.canal = S.canalAvant || 'SHINE';
+  $('f-canal').value = S.canal;
+  try { history.replaceState(null, '', location.pathname + location.search + (v === 'general' ? '' : '#' + v)); } catch (e) {}
+  prodLimit = 25; topLimit = 30; aiCtx(); vueUI();
+  scrollTo({ top: 0 });
+  await refreshEx();
 }
 
 function renderFresh() {
@@ -830,7 +897,7 @@ function renderNotes(cur) {
 }
 
 function sumK(list, keyf) { const m = new Map(); for (const r of list) { const k = keyf(r); m.set(k, (m.get(k) || 0) + r.v); } return m; }
-function kpiFiltered(list) { return list.filter(r => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal)); }
+function kpiFiltered(list) { return list.filter(perim); }
 
 function renderTiles(cur) {
   const k0 = kpiFiltered(S.kpi?.cur || []), k1 = kpiFiltered(S.kpi?.n1 || []);
@@ -851,7 +918,8 @@ function renderTiles(cur) {
   const au1 = k1.reduce((a, r) => a + +(r.ca_autres || 0), 0);
   $('tiles').innerHTML = [
     ['CA HT produits', fmtK(ca0), delta(ca0, ca1, lbl)],
-    ['Hors produits (loyers, cessions…)', fmtK(au0), delta(au0, au1, lbl)],
+    S.vue === 'general' ? ['Hors produits (loyers, cessions…)', fmtK(au0), delta(au0, au1, lbl)]
+      : ['Clients facturés', S.nbClients == null ? '–' : fmtN(S.nbClients), `<div class="delta">sur l'exercice${ca0 && S.nbClients ? ' · ' + fmtEur(ca0 / S.nbClients) + ' HT en moyenne' : ''}</div>`],
     ['Port facturé HT', fmtK(p0), delta(p0, p1, lbl) + `<div class="delta">${nbF ? fmtN(pct(nbOff, nbF), 0) + ' % des commandes en port offert' : ''}</div>`]
   ].map(([l, v, d]) => `<div class="card tile"><div class="label">${l}</div><div class="value">${v}</div>${d}</div>`).join('');
 }
@@ -859,7 +927,7 @@ function renderTiles(cur) {
 const TVA_TRANSPORT = 1.2;
 function renderTransport() {
   const card = $('card-transport');
-  const ok = (S.canal === 'SHINE' || S.canal === 'TOUS') && (S.transport || []).length;
+  const ok = S.vue === 'general' && (S.canal === 'SHINE' || S.canal === 'TOUS') && (S.transport || []).length;
   card.classList.toggle('hidden', !ok);
   if (!ok) return;
   const y = exerciceBornes(S.ex).y, exN1 = `${y - 1}-${y}`;
@@ -897,9 +965,23 @@ function renderMonthly(rows) {
   const exN1 = `${y - 1}-${y}`;
   const cur = rows.filter(r => r.exercice === S.ex);
   const n1 = rows.filter(r => r.exercice === exN1);
-  const segsPresent = SEGMENTS.filter(s => cur.some(r => (r.segment || 'NON_SEGMENTE') === s.k && +r.ca_ht !== 0));
+  // Vue générale : empilé par famille de clients ; autres onglets : par sous-famille (8 au plus, le reste en « Autres »)
+  let series, keyf;
+  if (S.vue === 'general') {
+    series = SEGMENTS; keyf = r => r.segment || 'NON_SEGMENTE';
+  } else {
+    const lab = r => r.sous_segment || SF_VIDE[r.segment] || 'Sans sous-famille';
+    const tot = new Map(); for (const r of cur) tot.set(lab(r), (tot.get(lab(r)) || 0) + +r.ca_ht);
+    const tri = [...tot.entries()].filter(([, v]) => Math.abs(v) >= 1).sort((a, b) => b[1] - a[1]).map(([k]) => k);
+    const garde = tri.slice(0, tri.length > 8 ? 7 : 8);
+    series = garde.map((k, i) => ({ k, label: k, v: PALETTE[i] }));
+    if (tri.length > garde.length) series.push({ k: '__autres', label: 'Autres', v: '--s-none' });
+    keyf = r => garde.includes(lab(r)) ? lab(r) : '__autres';
+  }
+  $('titre-mois').textContent = S.vue === 'general' ? 'CA HT produits par mois et par famille de clients' : 'CA HT produits par mois et par sous-famille';
+  const segsPresent = series.filter(s => cur.some(r => keyf(r) === s.k && +r.ca_ht !== 0));
   const data = MOIS.map(() => ({}));
-  for (const r of cur) { const i = monthIndex(r.mois); const k = r.segment || 'NON_SEGMENTE'; data[i][k] = (data[i][k] || 0) + +r.ca_ht; }
+  for (const r of cur) { const i = monthIndex(r.mois); const k = keyf(r); data[i][k] = (data[i][k] || 0) + +r.ca_ht; }
   const n1t = MOIS.map(() => 0); let hasN1 = false;
   for (const r of n1) { n1t[monthIndex(r.mois)] += +r.ca_ht; hasN1 = true; }
 
@@ -978,7 +1060,7 @@ function hbars(el, rows, opts = {}) {
 }
 
 function renderCanal() {
-  const rows = S.mensuel.filter(r => r.exercice === S.ex && estProduit(r) && (S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal)));
+  const rows = S.mensuel.filter(r => r.exercice === S.ex && estProduit(r) && perim(r));
   const m = new Map(); for (const r of rows) m.set(r.canal, (m.get(r.canal) || 0) + +r.ca_ht);
   const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
   hbars($('hb-canal'), [...m.entries()].sort((a, b) => b[1] - a[1]).map(([c, v]) => ({ label: lib(c), v })));
@@ -1002,10 +1084,13 @@ function renderSousFam(rows) {
   const y = exerciceBornes(S.ex).y, exN1 = `${y - 1}-${y}`;
   const cur = rows.filter(r => r.exercice === S.ex);
   const avecSF = SEGMENTS.filter(sg => cur.some(r => r.segment === sg.k && r.sous_segment));
-  if (!avecSF.some(sg => sg.k === sfSeg)) sfSeg = avecSF[0]?.k || 'B2B_REVENDEUR';
+  if (segVue()) sfSeg = segVue(); // onglet Revendeurs ou Pros : sa propre famille, sans choix
+  else if (!avecSF.some(sg => sg.k === sfSeg)) sfSeg = avecSF[0]?.k || 'B2B_REVENDEUR';
   const sel = $('f-sf');
   sel.innerHTML = avecSF.map(sg => `<option value="${sg.k}">${sg.label}</option>`).join('');
   sel.value = sfSeg; sel.onchange = () => { sfSeg = sel.value; renderSousFam(rows); };
+  $('sf-choix').classList.toggle('hidden', S.vue !== 'general');
+  $('titre-sf').textContent = S.vue === 'general' ? 'Sous-familles' : `Sous-familles · ${VUES[S.vue].titre}`;
   const moisMax = Math.max(-1, ...cur.map(r => monthIndex(r.mois)));
   const n1 = rows.filter(r => r.exercice === exN1 && monthIndex(r.mois) <= moisMax);
   const lab = r => r.sous_segment || SF_VIDE[sfSeg] || 'Sans sous-famille';
@@ -1038,7 +1123,7 @@ function renderZone(cur) {
 let prodLimit = 25;
 function renderProd() {
   const q = ($('q-prod').value || '').toLowerCase().trim();
-  const rows = S.prod.filter(r => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal));
+  const rows = S.prod.filter(perim);
   const m = new Map();
   for (const r of rows) { const o = m.get(r.sku) || { sku: r.sku, libelle: r.libelle, famille: r.famille, q: 0, ca: 0, seg: {} }; o.q += +r.quantite; o.ca += +r.ca_ht; o.seg[r.segment] = (o.seg[r.segment] || 0) + +r.ca_ht; m.set(r.sku, o); }
   const nd = m.get('EBP_PRODUITS'); m.delete('EBP_PRODUITS');
@@ -1050,6 +1135,19 @@ function renderProd() {
     shown.map(o => `<tr><td>${o.sku.startsWith('?') ? `<span class="pill">${esc(o.sku.slice(1))} · à rattacher</span>` : esc(o.sku)}</td><td>${esc(o.libelle)}</td><td>${esc(FAMILLES[o.famille] || o.famille)}</td><td class="n">${fmtN(o.q)}</td><td class="n">${fmtEur(o.ca)}</td><td class="n">${fmtN(pct(o.ca, tot), 1)} %</td><td>${segBar(o.seg, o.ca)}</td></tr>`).join('') +
     `</tbody></table>` + (nd && Math.abs(nd.ca) >= 1 ? `<div class="sub" style="margin-top:8px">+ ${fmtEur(nd.ca)} de ventes EBP non détaillées : écarts facture/détail ou mois sans détail (non incluses dans ce tableau ni dans les parts).</div>` : '') + (list.length > prodLimit ? `<p><button class="link" id="more-prod">Afficher ${Math.min(50, list.length - prodLimit)} de plus (${fmtN(list.length)} références)</button></p>` : '');
   const mp = $('more-prod'); if (mp) mp.onclick = () => { prodLimit += 50; renderProd(); };
+}
+let topLimit = 30;
+function renderTop() {
+  if (S.vue === 'general') return;
+  const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
+  const tot = S.top.reduce((a, o) => a + o.ca, 0);
+  $('top-hint').textContent = `CA HT produits de l'exercice ${S.ex.replace('-', '–')}, par client`;
+  const shown = S.top.slice(0, topLimit);
+  $('tbl-top').innerHTML = shown.length ? `<table><thead><tr><th class="n">#</th><th>Client</th><th>Groupe</th><th>Canal</th><th>Pays</th><th class="n">Factures</th><th class="n">CA HT</th><th class="n">Part</th><th class="n">Dernière facture</th></tr></thead><tbody>` +
+    shown.map((o, i) => `<tr><td class="n muted">${i + 1}</td><td>${esc(o.nom)}</td><td>${esc(o.groupe || '')}</td><td>${esc([...o.canaux].map(lib).join(', '))}</td><td>${esc(o.pays || '')}</td><td class="n">${fmtN(o.nb)}</td><td class="n">${fmtEur(o.ca)}</td><td class="n">${fmtN(pct(o.ca, tot), 1)} %</td><td class="n">${o.der ? new Date(o.der).toLocaleDateString('fr-FR') : ''}</td></tr>`).join('') +
+    `</tbody></table>` + (S.top.length > topLimit ? `<p><button class="link" id="more-top">Afficher ${Math.min(50, S.top.length - topLimit)} de plus</button></p>` : '')
+    : '<div class="muted">Aucun client sur cette sélection.</div>';
+  const mt = $('more-top'); if (mt) mt.onclick = () => { topLimit += 50; renderTop(); };
 }
 function segBar(seg, tot) {
   if (!tot) return '';
@@ -1089,7 +1187,7 @@ function segSelect(val, attrs) {
   return `<select ${attrs}>${SEGMENTS.filter(s => s.k !== 'NON_SEGMENTE').map(s => `<option value="${s.k}" ${s.k === val ? 'selected' : ''}>${s.label}</option>`).join('')}<option value="" ${!val || val === 'NON_SEGMENTE' ? 'selected' : ''}>À trancher</option></select>`;
 }
 function renderGroupes() {
-  const rows = S.groupes.filter(r => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal)).sort((a, b) => b.ca_ht - a.ca_ht);
+  const rows = S.groupes.filter(r => canalOk(r.canal) && (!segVue() || r.segment_propose === segVue())).sort((a, b) => b.ca_ht - a.ca_ht);
   const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
   $('tbl-groupes').innerHTML = `<table><thead><tr><th>Canal</th><th>Groupe client</th><th class="n">Clients</th><th class="n">Validés</th><th class="n">CA HT</th><th>Segment proposé</th></tr></thead><tbody>` +
     rows.map((r, i) => `<tr><td>${esc(lib(r.canal))}</td><td>${esc(r.groupe_client)}</td><td class="n">${fmtN(r.nb_clients)}</td><td class="n">${fmtN(r.nb_valides)}</td><td class="n">${fmtEur(r.ca_ht)}</td>
@@ -1104,7 +1202,7 @@ function renderGroupes() {
 }
 function alertMsg(b, m) { const t = b.textContent; b.textContent = m; setTimeout(() => b.textContent = t, 1600); }
 function renderClients() {
-  const rows = S.clients.filter(r => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal));
+  const rows = S.clients.filter(perim);
   const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
   $('tbl-clients').innerHTML = rows.length ? `<table><thead><tr><th>Client</th><th>Canal</th><th>Groupe</th><th>Pays</th><th class="n">Factures</th><th class="n">CA HT</th><th class="n">${canEdit() ? 'Segment' : 'Segment proposé'}</th></tr></thead><tbody>` +
     rows.map((r, i) => `<tr><td>${esc(r.client_nom)}</td><td>${esc(lib(r.canal))}</td><td>${esc(r.groupe_client || '')}</td><td>${esc(r.pays || '')}</td><td class="n">${fmtN(r.nb_factures)}</td><td class="n">${fmtEur(r.ca_ht)}</td>
@@ -1131,6 +1229,7 @@ $('btn-export').onclick = async () => {
     for (;;) {
       let q = sb.from('v_export_cdc').select(cols.join(',') + ',ligne_id').eq('exercice', S.ex).gt('ligne_id', last).order('ligne_id').limit(1000);
       if (S.canal === 'SHINE') q = q.neq('canal', 'myclear'); else if (S.canal !== 'TOUS') q = q.eq('canal', S.canal);
+      if (segVue()) q = q.eq('segment', segVue());
       const { data, error } = await q; if (error) throw error;
       for (const r of data) lines.push(cols.map(c => cell(c, r[c])).join(';'));
       n += data.length; msg.textContent = `${fmtN(n)} lignes récupérées…`;
@@ -1204,38 +1303,15 @@ addEventListener('resize', () => lgClose(false));
 ['f-ex', 'f-canal', 'f-sf'].forEach(id => glassSelect($(id)));
 
 // ---------- Menu latéral ----------
-const railItems = [...document.querySelectorAll('.rail-item[data-go]')];
-let railLock = null, railLockT = 0; // section choisie au clic, tenue pendant le défilement
-function railActif() {
-  if (railLock && !railLock.hidden) return railLock;
-  let actif = railItems[0];
-  for (const b of railItems) {
-    if (b.hidden || b.dataset.go === 'top') continue;
-    const el = $(b.dataset.go);
-    if (el && el.getBoundingClientRect().top <= 170) actif = b;
-  }
-  if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) actif = [...railItems].reverse().find(b => !b.hidden) || actif;
-  return actif;
-}
+// Un bouton par onglet ; la lentille de verre se place sous l'onglet actif.
+const railItems = [...document.querySelectorAll('.rail-item[data-vue]')];
 function railSync() {
-  for (const b of railItems) { const el = b.dataset.go === 'top' ? null : $(b.dataset.go); b.hidden = !!(el && el.classList.contains('hidden')); }
-  const a = railActif();
+  const a = railItems.find(b => b.dataset.vue === S.vue) || railItems[0];
   railItems.forEach(b => b.setAttribute('aria-current', String(b === a)));
   $('rail-pill').style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`;
 }
-railItems.forEach(b => b.addEventListener('click', () => {
-  railLock = b; clearTimeout(railLockT); railLockT = setTimeout(() => { railLock = null; }, 1500); railSync();
-  if (b.dataset.go === 'top') { scrollTo({ top: 0, behavior: 'smooth' }); return; }
-  const el = $(b.dataset.go); if (!el) return;
-  if (el.tagName === 'DETAILS') el.open = true;
-  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}));
-let railRaf = 0;
-addEventListener('wheel', () => { railLock = null; }, { passive: true });
-addEventListener('touchstart', () => { railLock = null; }, { passive: true });
-addEventListener('scroll', () => { if (railLock) { clearTimeout(railLockT); railLockT = setTimeout(() => { railLock = null; }, 800); } if (!railRaf) railRaf = requestAnimationFrame(() => { railRaf = 0; railSync(); }); }, { passive: true });
+railItems.forEach(b => b.addEventListener('click', () => setVue(b.dataset.vue)));
 addEventListener('resize', railSync);
-$('sec-donnees').addEventListener('toggle', railSync);
 railSync();
 
 // ---------- Assistant ventes (interface) ----------
@@ -1324,7 +1400,7 @@ function aiEmpty() {
 }
 function aiCtx() {
   const canal = S.canal === 'SHINE' ? 'SHINE (hors MyClear)' : S.canal === 'TOUS' ? 'tous canaux' : S.canal;
-  $('ai-ctx').textContent = S.ex ? `Contexte : exercice ${S.ex.replace('-', '–')} · ${canal}` : '';
+  $('ai-ctx').textContent = S.ex ? `Contexte : ${S.vue === 'general' ? '' : VUES[S.vue].titre + ' · '}exercice ${S.ex.replace('-', '–')} · ${canal}` : '';
 }
 function aiGrow() { aiInput.style.height = 'auto'; aiInput.style.height = Math.min(140, aiInput.scrollHeight) + 'px'; aiSend.disabled = AI.busy || !aiInput.value.trim(); }
 async function aiAsk() {
@@ -1333,7 +1409,7 @@ async function aiAsk() {
   const typing = document.createElement('div'); typing.className = 'ai-typing'; typing.innerHTML = '<i></i><i></i><i></i>';
   aiLog.appendChild(typing); aiLog.scrollTop = aiLog.scrollHeight;
   try {
-    const { data, error } = await sb.functions.invoke(AI_FN, { body: { question: q, historique: AI.hist.slice(-12), contexte: { exercice: S.ex, canal: S.canal, email: S.acces?.email } } });
+    const { data, error } = await sb.functions.invoke(AI_FN, { body: { question: q, historique: AI.hist.slice(-12), contexte: { exercice: S.ex, canal: S.canal, vue: S.vue === 'general' ? null : VUES[S.vue].titre, email: S.acces?.email } } });
     if (error) {
       const st = error.context?.status;
       let detail = ''; try { detail = (await error.context.json())?.error || ''; } catch (e) {}
@@ -1394,6 +1470,10 @@ async function start(session) {
   S.acces = acces;
   $('who').textContent = `Connecté : ${acces.email}${acces.role !== 'lecture' ? ' · ' + (acces.role === 'admin' ? 'administrateur' : 'validation des segments') : ''}`;
   $('app').classList.remove('hidden');
+  // Onglet ouvert directement par l'adresse (ex. …/#revendeurs)
+  const h = location.hash.slice(1);
+  if (VUES[h]) { S.vue = h; if (h === 'myclear') { S.canalAvant = S.canal; S.canal = 'myclear'; } }
+  vueUI();
   try { await loadBase(); await loadExercice(); render(); }
   catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
 }
