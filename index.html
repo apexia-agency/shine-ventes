@@ -1,0 +1,1197 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ventes SHINE</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Crect x='7' y='16' width='4' height='9' rx='1' fill='white'/%3E%3Crect x='14' y='10' width='4' height='15' rx='1' fill='white'/%3E%3Crect x='21' y='6' width='4' height='19' rx='1' fill='white'/%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: light;
+  --page: #eef1f6;
+  --surface: #fbfcfe;
+  --surface-2: rgba(255,255,255,0.55);
+  --glass: rgba(255,255,255,0.52);
+  --glass-strong: rgba(255,255,255,0.72);
+  --glass-edge: rgba(255,255,255,0.85);
+  --glass-edge-2: rgba(255,255,255,0.25);
+  --glass-shadow: 0 8px 32px rgba(31,41,74,0.10), 0 1px 2px rgba(31,41,74,0.06);
+  --ink: #0b0b0b;
+  --ink-2: #45454a;
+  --muted: #66666d;
+  --grid: rgba(60,60,67,0.12);
+  --axis: rgba(60,60,67,0.30);
+  --ring: rgba(60,60,67,0.14);
+  --accent: #2a78d6;
+  --good: #006300;
+  --bad: #b42828;
+  --warn-bg: rgba(255,214,120,0.30);
+  --warn-ink: #5c4000;
+  --s-b2c: #2a78d6; --s-pro: #eb6834; --s-rev: #1baf7a; --s-mkt: #eda100; --s-intra: #4a3aa7; --s-none: #b9b8b0; --s-mdd: #e87ba4; --s-autre: #008300; --s-hors: #8a8983;
+  --n1: #7d7c78; --bar: #2a78d6; --bar-track: rgba(60,60,67,0.08);
+  --blob-1: #b8d4ff; --blob-2: #ffd3bd; --blob-3: #c6f0de; --blob-4: #e3d9ff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0b0c10; --surface: #1c1d22; --surface-2: rgba(255,255,255,0.06);
+    --glass: rgba(34,35,42,0.50); --glass-strong: rgba(40,41,48,0.72);
+    --glass-edge: rgba(255,255,255,0.22); --glass-edge-2: rgba(255,255,255,0.04);
+    --glass-shadow: 0 10px 40px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+    --ink: #ffffff; --ink-2: #d0d0d6; --muted: #9c9ca5;
+    --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
+    --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
+    --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
+    --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974;
+    --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
+    --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0b0c10; --surface: #1c1d22; --surface-2: rgba(255,255,255,0.06);
+  --glass: rgba(34,35,42,0.50); --glass-strong: rgba(40,41,48,0.72);
+  --glass-edge: rgba(255,255,255,0.22); --glass-edge-2: rgba(255,255,255,0.04);
+  --glass-shadow: 0 10px 40px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+  --ink: #ffffff; --ink-2: #d0d0d6; --muted: #9c9ca5;
+  --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
+  --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
+  --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
+  --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974;
+  --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
+  --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page); color: var(--ink); min-height: 100vh;
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* Fond : taches de couleur floues, fixes, sous le verre */
+body::before {
+  content: ""; position: fixed; inset: -10vmax; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38vmax 32vmax at 12% 8%, var(--blob-1), transparent 70%),
+    radial-gradient(34vmax 30vmax at 92% 14%, var(--blob-2), transparent 70%),
+    radial-gradient(40vmax 34vmax at 78% 88%, var(--blob-3), transparent 70%),
+    radial-gradient(36vmax 30vmax at 8% 82%, var(--blob-4), transparent 70%),
+    var(--page);
+  filter: saturate(115%);
+}
+button, select, input { font: inherit; color: inherit; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 64px; }
+
+/* Verre : surface translucide, flou d'arrière-plan, liseré lumineux, ombre douce */
+.glass, .card, header.top, .tip, .note, select, input[type=email], input[type=search], .btn {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-edge-2);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 var(--glass-edge-2);
+}
+.card { border-radius: 22px; padding: 18px 20px; position: relative; overflow: hidden; }
+.card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 38%);
+  opacity: .55; mix-blend-mode: soft-light;
+}
+.card > * { position: relative; z-index: 1; }
+
+header.top {
+  position: sticky; top: 10px; z-index: 10;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px;
+  margin-bottom: 18px; padding: 12px 14px 12px 20px; border-radius: 26px;
+  background: var(--glass-strong);
+}
+h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+.sub { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+select, input[type=email], input[type=search] {
+  border-radius: 999px; padding: 8px 14px; min-height: 38px; outline: none; background: var(--glass-strong);
+}
+select:focus, input:focus { box-shadow: var(--glass-shadow), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.btn { border-radius: 999px; padding: 8px 16px; min-height: 38px; cursor: pointer; transition: transform .15s, background .15s; }
+.btn:hover { background: var(--glass-strong); }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: color-mix(in srgb, var(--accent) 88%, transparent); border-color: rgba(255,255,255,0.35); color: #fff; }
+.btn.primary:hover { background: var(--accent); }
+.btn.small { min-height: 30px; padding: 4px 12px; font-size: 13px; }
+.btn[disabled] { opacity: .55; cursor: default; }
+#theme { width: 38px; padding: 0; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-weight: 550; }
+.grid { display: grid; gap: 14px; }
+.tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 14px; }
+details.tech > summary { cursor: pointer; list-style: none; }
+details.tech > summary::-webkit-details-marker { display: none; }
+details.tech > summary::before { content: '▸ '; }
+details.tech[open] > summary::before { content: '▾ '; }
+.two { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+@media (max-width: 900px) { .tiles { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } header.top { position: static; } }
+.tile .label { color: var(--ink-2); font-size: 13px; font-weight: 500; }
+.tile .value { font-size: 30px; font-weight: 700; margin-top: 4px; letter-spacing: -0.02em; white-space: nowrap; }
+@media (max-width: 520px) { .tile .value { font-size: 24px; } .card { padding: 16px; border-radius: 20px; } }
+.tile .delta { font-size: 13px; margin-top: 2px; color: var(--ink-2); }
+.delta .up { color: var(--good); font-weight: 650; }
+.delta .down { color: var(--bad); font-weight: 650; }
+h2 { font-size: 15px; font-weight: 680; margin: 0; letter-spacing: -0.01em; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.card-head .hint { color: var(--muted); font-size: 12.5px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ink-2); margin: 2px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.sw.line { height: 2px; width: 14px; border-radius: 1px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.axis text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tip {
+  position: fixed; pointer-events: none; z-index: 30; color: var(--ink); background: var(--glass-strong);
+  border-radius: 14px; padding: 10px 12px; font-size: 12.5px; min-width: 180px; display: none;
+}
+.tip .t { font-weight: 680; margin-bottom: 4px; }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; }
+.tip .r span:first-child { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.tip .r b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip hr { border: 0; border-top: 1px solid var(--grid); margin: 5px 0; }
+.hbars { display: grid; gap: 8px; }
+.hb { display: grid; grid-template-columns: minmax(120px, 34%) 1fr auto; align-items: center; gap: 10px; font-size: 13px; }
+.hb .l { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb .track { height: 16px; position: relative; background: var(--bar-track); border-radius: 999px; }
+.hb .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar); border-radius: 999px; min-width: 4px; }
+.hb .v { font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
+.hb .v small { color: var(--muted); margin-left: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 8px; border-bottom: 1px solid var(--grid); text-align: left; vertical-align: middle; }
+th { color: var(--muted); font-weight: 550; font-size: 12px; white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr:hover td { background: var(--surface-2); }
+tbody tr:last-child td { border-bottom: 0; }
+.tbl-wrap { overflow-x: auto; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; border: 1px solid var(--ring); }
+.pill.ok { color: var(--good); }
+.note { color: var(--warn-ink); border-radius: 16px; padding: 11px 16px; font-size: 13px; margin-bottom: 12px; background: var(--warn-bg); }
+.section-title { font-size: 12.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin: 30px 4px 10px; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 7px 16px; font-size: 13px; }
+.kv div:nth-child(odd) { color: var(--ink-2); }
+.kv div:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+#login { max-width: 440px; margin: 14vh auto 0; }
+#login h1 { margin-bottom: 6px; }
+#login form { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+#login input { flex: 1; min-width: 200px; }
+.muted { color: var(--muted); }
+.hidden { display: none !important; }
+.row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+.row-actions select { min-height: 30px; padding: 3px 10px; font-size: 12.5px; }
+.progress { font-size: 12.5px; color: var(--ink-2); }
+footer { margin-top: 36px; color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 0 4px; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .card, header.top, .tip, .note, select, input, .btn { background: var(--surface); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .card, header.top, .tip, select, input, .btn { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* ===== Liquid Glass (boutons, sélecteurs, champs) =====
+   Verre clair peu dépoli, liseré spéculaire (haut-gauche vif, bas-droit plus doux),
+   reflet bombé, ombre portée légère, enfoncement élastique au clic. */
+:root {
+  --lg-fill: rgba(255,255,255,0.30);
+  --lg-fill-hover: rgba(255,255,255,0.46);
+  --lg-rim-a: rgba(255,255,255,0.98);
+  --lg-rim-b: rgba(255,255,255,0.10);
+  --lg-rim-c: rgba(255,255,255,0.70);
+  --lg-sheen: rgba(255,255,255,0.65);
+  --lg-drop: 0 6px 18px rgba(20,30,60,0.12), 0 1px 3px rgba(20,30,60,0.10);
+  --lg-inner: inset 0 -1px 1px rgba(20,30,60,0.06), inset 0 1px 0 rgba(255,255,255,0.55);
+  --lg-menu: rgba(250,251,255,0.62);
+  --lg-hl: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --lg-fill: rgba(255,255,255,0.07);
+    --lg-fill-hover: rgba(255,255,255,0.13);
+    --lg-rim-a: rgba(255,255,255,0.55);
+    --lg-rim-b: rgba(255,255,255,0.04);
+    --lg-rim-c: rgba(255,255,255,0.28);
+    --lg-sheen: rgba(255,255,255,0.16);
+    --lg-drop: 0 8px 22px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.35);
+    --lg-inner: inset 0 -1px 1px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.14);
+    --lg-menu: rgba(38,40,48,0.62);
+    --lg-hl: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+}
+:root[data-theme="dark"] {
+  --lg-fill: rgba(255,255,255,0.07);
+  --lg-fill-hover: rgba(255,255,255,0.13);
+  --lg-rim-a: rgba(255,255,255,0.55);
+  --lg-rim-b: rgba(255,255,255,0.04);
+  --lg-rim-c: rgba(255,255,255,0.28);
+  --lg-sheen: rgba(255,255,255,0.16);
+  --lg-drop: 0 8px 22px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.35);
+  --lg-inner: inset 0 -1px 1px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.14);
+  --lg-menu: rgba(38,40,48,0.62);
+  --lg-hl: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.btn {
+  position: relative; isolation: isolate; border: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 9px 18px; min-height: 40px; font-weight: 560; letter-spacing: -0.01em;
+  background: var(--lg-fill);
+  -webkit-backdrop-filter: blur(8px) saturate(190%) brightness(1.04);
+  backdrop-filter: blur(8px) saturate(190%) brightness(1.04);
+  box-shadow: var(--lg-drop), var(--lg-inner);
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s, box-shadow .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+/* liseré spéculaire : dégradé détouré en anneau de 1 px */
+.btn::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1; pointer-events: none;
+  background: linear-gradient(140deg, var(--lg-rim-a) 0%, var(--lg-rim-b) 38%, var(--lg-rim-b) 62%, var(--lg-rim-c) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* reflet bombé en haut du verre */
+.btn::after {
+  content: ""; position: absolute; inset: 1px; border-radius: inherit; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 28% -10%, var(--lg-sheen), transparent 55%),
+    radial-gradient(80% 60% at 85% 120%, color-mix(in srgb, var(--lg-sheen) 45%, transparent), transparent 60%);
+  opacity: .85; transition: opacity .2s;
+}
+.btn:hover { background: var(--lg-fill-hover); }
+.btn:hover::after { opacity: 1; }
+.btn:active { transform: scale(0.955); transition-duration: .12s; }
+.btn:active::after { opacity: 1; filter: brightness(1.25); }
+.btn:focus-visible { outline: none; box-shadow: var(--lg-drop), var(--lg-inner), 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+.btn.primary {
+  color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.18);
+  background: color-mix(in srgb, var(--accent) 78%, transparent);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 35%, transparent), var(--lg-inner);
+}
+.btn.primary:hover { background: color-mix(in srgb, var(--accent) 90%, transparent); }
+.btn.primary::after { background: radial-gradient(120% 90% at 28% -10%, rgba(255,255,255,0.55), transparent 55%); }
+.btn.small { min-height: 30px; padding: 4px 13px; font-size: 13px; }
+.btn[disabled] { opacity: .5; cursor: default; transform: none; }
+#theme { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; font-size: 16px; }
+
+/* Sélecteur Liquid Glass (remplace l'affichage des <select> du haut) */
+.lg-native { position: absolute !important; opacity: 0; pointer-events: none; width: 1px; height: 1px; overflow: hidden; }
+.lg-select { justify-content: space-between; padding-right: 12px; max-width: 100%; }
+.filters { min-width: 0; max-width: 100%; }
+.filters .lg-select { flex: 0 1 auto; min-width: 0; }
+.lg-select .lg-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-select .lg-chev { width: 12px; height: 12px; flex: none; opacity: .7; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+.lg-select[aria-expanded="true"] .lg-chev { transform: rotate(180deg); }
+.lg-menu {
+  position: fixed; z-index: 50; min-width: 200px; max-width: calc(100vw - 32px); max-height: 60vh; overflow: auto;
+  padding: 6px; border-radius: 20px;
+  background: var(--lg-menu);
+  -webkit-backdrop-filter: blur(30px) saturate(200%); backdrop-filter: blur(30px) saturate(200%);
+  box-shadow: 0 18px 50px rgba(15,20,40,0.22), 0 2px 6px rgba(15,20,40,0.12), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c);
+  transform-origin: top center; animation: lg-pop .32s cubic-bezier(.34,1.56,.64,1);
+}
+.lg-menu.up { transform-origin: bottom center; }
+@keyframes lg-pop { from { opacity: 0; transform: scale(.92) translateY(-4px); } to { opacity: 1; transform: none; } }
+.lg-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 9px 12px 9px 10px; border: 0; border-radius: 13px; background: transparent; cursor: pointer;
+  font-size: 14px; color: var(--ink);
+}
+.lg-opt .ck { width: 16px; flex: none; color: var(--accent); visibility: hidden; font-weight: 700; }
+.lg-opt[aria-selected="true"] .ck { visibility: visible; }
+.lg-opt[aria-selected="true"] { font-weight: 600; }
+.lg-opt:hover, .lg-opt:focus-visible { outline: none; background: var(--lg-hl); }
+
+/* <select> natifs restants (tableaux) et champs texte : même verre, sans pseudo-éléments */
+select, input[type=email], input[type=search] {
+  border: 0; background-color: var(--lg-fill);
+  -webkit-backdrop-filter: blur(8px) saturate(190%); backdrop-filter: blur(8px) saturate(190%);
+  box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), inset 0 -1px 1px rgba(20,30,60,0.06);
+  transition: background-color .2s, box-shadow .2s;
+}
+select {
+  -webkit-appearance: none; appearance: none; padding-right: 32px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%238a8a93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;
+}
+select:hover, input[type=email]:hover, input[type=search]:hover { background-color: var(--lg-fill-hover); }
+select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.row-actions select { padding-right: 28px; background-position: right 10px center; }
+
+/* ===== Menu latéral Liquid Glass (capsule de verre clair, lentille active qui glisse) ===== */
+:root {
+  --rail-ink: #55555c;
+  --rail-on: var(--accent);
+  --rail-lens: rgba(255,255,255,0.72);
+  --rail-lens-shadow: 0 6px 16px rgba(20,30,60,0.16), 0 1px 3px rgba(20,30,60,0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --rail-ink: #a9a9b2; --rail-lens: rgba(255,255,255,0.16); --rail-lens-shadow: 0 6px 16px rgba(0,0,0,0.45); }
+}
+:root[data-theme="dark"] { --rail-ink: #a9a9b2; --rail-lens: rgba(255,255,255,0.16); --rail-lens-shadow: 0 6px 16px rgba(0,0,0,0.45); }
+.rail {
+  position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 20;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px; border-radius: 999px;
+  background: var(--lg-fill); isolation: isolate;
+  -webkit-backdrop-filter: blur(14px) saturate(190%) brightness(1.05); backdrop-filter: blur(14px) saturate(190%) brightness(1.05);
+  box-shadow: var(--lg-drop), var(--lg-inner);
+}
+/* liseré spéculaire */
+.rail::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1; pointer-events: none;
+  background: linear-gradient(160deg, var(--lg-rim-a) 0%, var(--lg-rim-b) 35%, var(--lg-rim-b) 65%, var(--lg-rim-c) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* reflet bombé */
+.rail::after {
+  content: ""; position: absolute; inset: 1px; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: radial-gradient(140% 40% at 30% 0%, var(--lg-sheen), transparent 70%), radial-gradient(120% 30% at 70% 100%, color-mix(in srgb, var(--lg-sheen) 40%, transparent), transparent 70%);
+  opacity: .8;
+}
+.rail-sep { width: 22px; height: 1px; background: var(--grid); margin: 4px 0; flex: none; }
+.rail-item {
+  position: relative; z-index: 1; width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; padding: 0;
+  display: grid; place-items: center; background: transparent; color: var(--rail-ink); cursor: pointer;
+  transition: color .25s, transform .35s cubic-bezier(.34,1.56,.64,1); -webkit-tap-highlight-color: transparent;
+}
+.rail-item[hidden] { display: none; }
+.rail-item svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.rail-item:hover { color: var(--ink); }
+.rail-item[aria-current="true"] { color: var(--rail-on); }
+.rail-item[aria-current="true"] svg { stroke-width: 2; }
+.rail-item:active { transform: scale(0.9); }
+.rail-item:focus-visible { outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
+/* lentille de verre sous l'icône active */
+.rail-pill {
+  position: absolute; left: 0; top: 0; width: 44px; height: 44px; border-radius: 50%; z-index: 0; pointer-events: none;
+  background: radial-gradient(120% 90% at 30% -10%, var(--lg-sheen), transparent 60%), var(--rail-lens);
+  -webkit-backdrop-filter: blur(4px) saturate(160%); backdrop-filter: blur(4px) saturate(160%);
+  box-shadow: var(--rail-lens-shadow), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), inset 0 -1px 1px rgba(20,30,60,0.08);
+  transition: transform .5s cubic-bezier(.34,1.45,.64,1), opacity .2s;
+}
+/* étiquette au survol, en verre, à droite de la capsule */
+.rail-item::after {
+  content: attr(data-label); position: absolute; left: calc(100% + 18px); top: 50%; white-space: nowrap;
+  padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 560; color: var(--ink);
+  background: var(--lg-menu); -webkit-backdrop-filter: blur(24px) saturate(190%); backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(15,20,40,0.18), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c);
+  opacity: 0; transform: translate(-6px, -50%) scale(.96); transition: opacity .18s, transform .3s cubic-bezier(.34,1.56,.64,1); pointer-events: none;
+}
+.rail-item:hover::after, .rail-item:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+[data-sec] { scroll-margin-top: 104px; }
+@media (min-width: 901px) { #app { padding-left: 96px; } }
+@media (min-width: 901px) and (max-height: 520px) { .rail { top: 16px; transform: none; } }
+@media (max-width: 900px) {
+  .rail { left: 50%; top: auto; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); flex-direction: row; padding: 6px; }
+  .rail-sep { width: 1px; height: 22px; margin: 0 2px; }
+  .rail-item::after { display: none; }
+  #app { padding-bottom: 110px; }
+  [data-sec] { scroll-margin-top: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .btn, .lg-menu, .lg-select .lg-chev, .rail-pill, .rail-item, .rail-item::after { transition: none; animation: none; } }
+@media (prefers-reduced-transparency: reduce) {
+  .btn, select, input, .lg-menu { background-color: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .btn.primary { background: var(--accent); }
+}
+</style>
+</head>
+<body>
+
+<div id="login" class="wrap hidden">
+  <div class="card">
+    <h1>Ventes SHINE</h1>
+    <div class="sub">Accès réservé aux associés. Entre ton adresse : tu reçois un lien de connexion par email.</div>
+    <form id="login-form">
+      <input type="email" id="login-email" required placeholder="prenom@shine-group.fr" autocomplete="email">
+      <button class="btn primary" type="submit">Recevoir le lien</button>
+    </form>
+    <div id="login-msg" class="sub" style="margin-top:10px"></div>
+  </div>
+</div>
+
+<div id="denied" class="wrap hidden">
+  <div class="card">
+    <h1>Accès non autorisé</h1>
+    <div class="sub" id="denied-msg"></div>
+    <p><button class="btn" id="logout-2">Se déconnecter</button></p>
+  </div>
+</div>
+
+<div id="app" class="wrap hidden">
+  <nav class="rail" id="rail" aria-label="Sections du board">
+    <span class="rail-pill" id="rail-pill" aria-hidden="true"></span>
+    <button class="rail-item" data-go="top" data-label="Synthèse" aria-label="Synthèse"><svg viewBox="0 0 24 24"><path d="M4 11.2 12 4.8l8 6.4V19a1 1 0 0 1-1 1h-4.6v-5.2H9.6V20H5a1 1 0 0 1-1-1z"/></svg></button>
+    <button class="rail-item" data-go="card-mois" data-label="Évolution mensuelle" aria-label="Évolution mensuelle"><svg viewBox="0 0 24 24"><path d="M5.5 18.5v-7M11.5 18.5V5.5M17.5 18.5v-5M3 20h18"/></svg></button>
+    <button class="rail-item" data-go="card-clients" data-label="Canaux et clients" aria-label="Canaux et clients"><svg viewBox="0 0 24 24"><circle cx="9" cy="8.3" r="3.1"/><path d="M3.3 19.2c.6-3.1 2.9-5 5.7-5s5.1 1.9 5.7 5M15.8 5.4a3.1 3.1 0 0 1 0 5.9M17.4 14.5c1.7.7 2.9 2.2 3.3 4.7"/></svg></button>
+    <button class="rail-item" data-go="card-produits" data-label="Produits et zones" aria-label="Produits et zones"><svg viewBox="0 0 24 24"><path d="M12 3.2 20 7.1v9.8l-8 3.9-8-3.9V7.1z"/><path d="M4 7.1l8 3.9 8-3.9M12 11v9.8"/></svg></button>
+    <button class="rail-item" data-go="card-transport" data-label="Transport" aria-label="Transport"><svg viewBox="0 0 24 24"><path d="M2.8 6.5h11v10h-11zM13.8 10h4.2l3.2 3.3v3.2h-7.4"/><circle cx="6.8" cy="17.6" r="1.9"/><circle cx="17.4" cy="17.6" r="1.9"/></svg></button>
+    <span class="rail-sep" aria-hidden="true"></span>
+    <button class="rail-item" data-go="sec-donnees" data-label="Données, validation et export" aria-label="Données, validation et export"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.7"/><path d="M5 6v6c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7V6M5 12v6c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7v-6"/></svg></button>
+  </nav>
+
+  <header class="top">
+    <div>
+      <h1>Ventes SHINE</h1>
+      <div class="sub" id="fresh">Chargement…</div>
+    </div>
+    <div class="filters">
+      <select id="f-ex" aria-label="Exercice"></select>
+      <select id="f-canal" aria-label="Canal"></select>
+      <button class="btn" id="theme" title="Changer de thème" aria-label="Changer de thème">◐</button>
+    </div>
+  </header>
+
+  <div id="notes"></div>
+
+  <div class="grid tiles" id="tiles"></div>
+
+  <div class="card" id="card-mois" data-sec>
+    <div class="card-head">
+      <h2>CA HT produits par mois et par famille de clients</h2>
+      <button class="link" id="toggle-month-table">Voir le tableau</button>
+    </div>
+    <div class="legend" id="leg-month"></div>
+    <div class="chart" id="ch-month"></div>
+    <div class="tbl-wrap hidden" id="tbl-month"></div>
+  </div>
+
+  <div class="grid two">
+    <div class="card" id="card-clients" data-sec>
+      <div class="card-head"><h2>Par canal</h2><span class="hint">CA HT produits de l'exercice</span></div>
+      <div class="hbars" id="hb-canal"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Par famille de clients</h2><span class="hint">proposée ou validée</span></div>
+      <div class="hbars" id="hb-seg"></div>
+    </div>
+    <div class="card" style="grid-column:1/-1">
+      <div class="card-head"><h2>Sous-familles</h2>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="hint" id="sf-hint"></span><select id="f-sf" aria-label="Famille de clients"></select></div>
+      </div>
+      <div class="hbars" id="hb-sf"></div>
+    </div>
+    <div class="card" id="card-produits" data-sec>
+      <div class="card-head"><h2>Par famille de produits</h2><span class="hint">CA HT · quantités</span></div>
+      <div class="hbars" id="hb-fam"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Par zone de livraison</h2><span class="hint">TVA : France, UE, DOM-TOM, hors UE</span></div>
+      <div class="tbl-wrap" id="tbl-zone"></div>
+    </div>
+    <div class="card hidden" id="card-autres" style="grid-column:1/-1">
+      <div class="card-head"><h2>Hors ventes de produits</h2><span class="hint">facturé mais pas du CA produit, encaissement à part</span></div>
+      <div class="hbars" id="hb-autres"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <h2>Produits</h2>
+      <input type="search" id="q-prod" placeholder="Filtrer (réf. ou libellé)" style="min-width:220px">
+    </div>
+    <div class="tbl-wrap" id="tbl-prod"></div>
+  </div>
+
+  <div class="card hidden" id="card-transport" data-sec style="margin-top:14px">
+    <div class="card-head"><h2>Transport : ce qu'on facture et ce qu'on paie</h2><span class="hint" id="tr-hint"></span></div>
+    <div class="tbl-wrap" id="tbl-transport"></div>
+  </div>
+
+  <details class="tech" id="sec-donnees" data-sec>
+  <summary class="section-title">Données, validation et export</summary>
+
+  <div class="grid two" style="margin-top:0">
+    <div class="card">
+      <div class="card-head"><h2>Fiabilité de l'exercice</h2><span class="hint">à 100 % avant envoi au comptable</span></div>
+      <div class="kv" id="kv-qual"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Rapprochement comptable</h2><span class="hint">produits + port + loyers, hors MyClear et cessions, vs comptes 70 · écart toléré 1 %</span></div>
+      <div id="compta"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <h2>Groupes clients → segment</h2>
+      <span class="hint">un changement ici s'applique à tous les clients non validés du groupe</span>
+    </div>
+    <div class="tbl-wrap" id="tbl-groupes"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <h2>Clients à valider</h2>
+      <span class="hint">les 60 plus gros CA de l'exercice dont le segment n'est pas encore validé</span>
+    </div>
+    <div class="tbl-wrap" id="tbl-clients"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <h2>Export pour le bilan</h2>
+      <span class="hint">une ligne par ligne de facture, au format du cahier des charges (CSV ; et virgule décimale)</span>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn primary" id="btn-export">Exporter l'exercice et le canal sélectionnés</button>
+      <span class="progress" id="export-msg"></span>
+    </div>
+  </div>
+
+  </details>
+
+  <footer>
+    <span id="who"></span>
+    <button class="link" id="logout">Se déconnecter</button>
+  </footer>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script>
+(() => {
+const SUPABASE_URL = 'https://dfolpanugctzebwpfhze.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_k4fwRYCWpfxHvljJgQDiiw_wLCnxu3n';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtEur = (v, dec = 0) => (v == null || isNaN(v)) ? '–' : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: dec, minimumFractionDigits: dec }).format(v);
+const fmtN = (v, dec = 0) => (v == null || isNaN(v)) ? '–' : new Intl.NumberFormat('fr-FR', { maximumFractionDigits: dec, minimumFractionDigits: dec }).format(v);
+const fmtK = (v) => { const a = Math.abs(v); if (a >= 1e6) return fmtN(v / 1e6, 2) + ' M€'; if (a >= 1e3) return fmtN(v / 1e3, 0) + ' k€'; return fmtN(v, 0) + ' €'; };
+const pct = (a, b) => b ? (100 * a / b) : null;
+const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// Thème : suit le système, bascule manuelle mémorisée si possible
+(function initTheme() {
+  let t = null; try { t = localStorage.getItem('shine-theme'); } catch (e) {}
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  $('theme').onclick = () => {
+    const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const nxt = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nxt);
+    try { localStorage.setItem('shine-theme', nxt); } catch (e) {}
+    render();
+  };
+})();
+
+const SEGMENTS = [
+  { k: 'B2C', label: 'Particuliers', v: '--s-b2c' },
+  { k: 'B2B_PRO', label: 'Pros', v: '--s-pro' },
+  { k: 'B2B_REVENDEUR', label: 'Revendeurs', v: '--s-rev' },
+  { k: 'MDD', label: 'MDD', v: '--s-mdd' },
+  { k: 'MARKETPLACE', label: 'Marketplaces', v: '--s-mkt' },
+  { k: 'AUTRE', label: 'Autres', v: '--s-autre' },
+  { k: 'INTRAGROUPE', label: 'Intragroupe', v: '--s-intra' },
+  { k: 'HORS_PRODUIT', label: 'Hors produits (loyers, cessions…)', v: '--s-hors' },
+  { k: 'NON_SEGMENTE', label: 'Non segmenté', v: '--s-none' }
+];
+const SEG = Object.fromEntries(SEGMENTS.map(s => [s.k, s]));
+const FAMILLES = {
+  CHIMIE_CONDITIONNEE: 'Chimie conditionnée', CHIMIE_PF: 'Chimie produit fini', ACCESSOIRE_PF: 'Accessoires', ACCESSOIRE_MP: 'Accessoires (matière première)',
+  CONTENANT: 'Contenants', FERMANT: 'Fermants', EMBALLAGE: 'Emballages', PACK: 'Packs', AUTRE: 'Divers (emballage cadeau, ajustements…)', NON_RATTACHE: 'Référence non rattachée',
+  NON_DETAILLE: 'Produits EBP (non détaillés)', LOYER: 'Loyers', CESSION: 'Cessions (camion, racks…)', INDEMNITE: 'Indemnités transporteur', PLV: 'PLV et implantation'
+};
+const HORS_PRODUIT_FAM = ['LOYER', 'CESSION', 'INDEMNITE', 'AUTRE'];
+const estProduit = r => r.produit !== false && !HORS_PRODUIT_FAM.includes(r.famille);
+const canauxAgreges = () => S.meta.canaux_agreges || [];
+const ZONES = { FRANCE: 'France métropolitaine', UE: 'Union européenne', 'DOM-TOM': 'DOM-TOM', HORS_UE: 'Hors UE', INCONNUE: 'Inconnue' };
+const MOIS = ['oct.', 'nov.', 'déc.', 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.'];
+
+const S = { acces: null, canaux: [], mensuel: [], commandes: [], meta: {}, ex: null, canal: 'SHINE', prod: [], kpi: null, groupes: [], clients: [], compta: [], qual: null };
+
+// ---------- Tooltip ----------
+const tip = $('tip');
+function showTip(html, ev) {
+  tip.innerHTML = html; tip.style.display = 'block';
+  const r = tip.getBoundingClientRect();
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - 14;
+  tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+}
+function hideTip() { tip.style.display = 'none'; }
+
+// ---------- Données ----------
+async function fetchAll(table, build) {
+  const out = []; const step = 1000;
+  for (let from = 0; ; from += step) {
+    let q = sb.from(table).select('*').range(from, from + step - 1);
+    if (build) q = build(q);
+    const { data, error } = await q;
+    if (error) throw error;
+    out.push(...data);
+    if (data.length < step) break;
+  }
+  return out;
+}
+
+function exerciceBornes(ex) {
+  const y = parseInt(ex.slice(0, 4), 10);
+  return { du: `${y}-10-01`, au: `${y + 1}-09-30`, y };
+}
+function canalFilter(rows) {
+  if (S.canal === 'SHINE') return rows.filter(r => r.dans_ca_shine !== false && canalInShine(r.canal));
+  if (S.canal === 'TOUS') return rows;
+  return rows.filter(r => r.canal === S.canal);
+}
+function canalInShine(c) { const x = S.canaux.find(k => k.code === c); return !x || x.dans_ca_shine; }
+
+async function loadBase() {
+  const [{ data: canaux }, mensuel, commandes, { data: meta }, { data: compta }, { data: transport }] = await Promise.all([
+    sb.from('canaux').select('*'),
+    fetchAll('agg_ventes_mensuel'),
+    fetchAll('agg_commandes_mensuel'),
+    sb.from('agg_meta').select('*'),
+    sb.from('compta_ca_mensuel').select('*'),
+    sb.from('couts_transport').select('*')
+  ]);
+  S.transport = transport || [];
+  S.canaux = canaux || []; S.mensuel = mensuel; S.commandes = commandes; S.compta = compta || [];
+  S.meta = Object.fromEntries((meta || []).map(m => [m.cle, m.valeur]));
+  const exs = [...new Set(mensuel.map(r => r.exercice))].filter(Boolean).sort().reverse();
+  if (!S.ex) S.ex = exs[0];
+  $('f-ex').innerHTML = exs.map(e => `<option value="${e}">Exercice ${e.replace('-', '–')}</option>`).join('');
+  $('f-ex').value = S.ex;
+  const presents = new Set(mensuel.map(r => r.canal));
+  $('f-canal').innerHTML = `<option value="SHINE">CA SHINE (hors MyClear)</option><option value="TOUS">Tous les canaux</option>` +
+    S.canaux.filter(c => presents.has(c.code)).map(c => `<option value="${c.code}">${esc(c.libelle)}</option>`).join('');
+  $('f-canal').value = S.canal;
+}
+
+async function loadExercice() {
+  const b = exerciceBornes(S.ex);
+  const der = lastInvoiceDate();
+  const au = der && der < b.au ? der : b.au;
+  const n1du = `${b.y - 1}-10-01`;
+  const n1au = shiftYear(au, -1);
+  const [prod, k0, k1, groupes, clients] = await Promise.all([
+    fetchAll('agg_produits', q => q.eq('exercice', S.ex)),
+    sb.rpc('kpi_periode', { p_du: b.du, p_au: au }),
+    sb.rpc('kpi_periode', { p_du: n1du, p_au: n1au }),
+    fetchAll('v_groupes_resume', q => q.eq('exercice', S.ex)),
+    loadClients()
+  ]);
+  S.prod = prod; S.groupes = groupes; S.clients = clients;
+  S.kpi = { cur: k0.data || [], n1: k1.data || [], au, n1au };
+}
+async function loadClients() {
+  let q = sb.from('agg_clients').select('*').eq('exercice', S.ex).eq('segment_valide', false).order('ca_ht', { ascending: false }).limit(60);
+  if (S.canal !== 'SHINE' && S.canal !== 'TOUS') q = q.eq('canal', S.canal);
+  const { data, error } = await q; if (error) throw error; return data;
+}
+function lastInvoiceDate() {
+  const d = S.meta.derniere_facture || {};
+  const vals = Object.entries(d).filter(([c]) => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(c) : c === S.canal)).map(([, v]) => v).filter(Boolean).sort();
+  return vals[vals.length - 1] || null;
+}
+function shiftYear(iso, n) { const [y, m, d] = iso.split('-').map(Number); const dd = (m === 2 && d === 29) ? 28 : d; return `${y + n}-${String(m).padStart(2, '0')}-${String(dd).padStart(2, '0')}`; }
+
+// ---------- Rendu ----------
+function render() {
+  if (!S.ex) return;
+  const all = canalFilter(S.mensuel);
+  const rows = all.filter(estProduit);
+  const cur = rows.filter(r => r.exercice === S.ex);
+  renderFresh();
+  renderNotes(cur);
+  renderTiles(cur);
+  renderTransport();
+  renderMonthly(rows);
+  renderCanal();
+  renderAutres(all.filter(r => r.exercice === S.ex && !estProduit(r)));
+  renderSeg(cur);
+  renderSousFam(rows);
+  renderFam(cur);
+  renderZone(cur);
+  renderProd();
+  renderQual(cur);
+  renderCompta();
+  renderGroupes();
+  renderClients();
+  railSync();
+}
+
+function renderFresh() {
+  const m = S.meta.derniere_maj ? new Date(S.meta.derniere_maj) : null;
+  const d = lastInvoiceDate();
+  $('fresh').textContent = (m ? 'Mis à jour le ' + m.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' }) : '') +
+    (d ? ' · dernière facture le ' + new Date(d).toLocaleDateString('fr-FR') : '');
+}
+
+function renderNotes(cur) {
+  const presents = new Set(S.mensuel.map(r => r.canal));
+  const manquants = S.canaux.filter(c => !presents.has(c.code)).map(c => c.libelle);
+  const tot = cur.reduce((a, r) => a + +r.ca_ht, 0);
+  const nonSeg = cur.filter(r => r.segment === 'NON_SEGMENTE').reduce((a, r) => a + +r.ca_ht, 0);
+  const notes = [];
+  if (manquants.length) notes.push(`Canaux pas encore branchés : ${esc(manquants.join(', '))}. Les totaux ne couvrent que les canaux présents.`);
+  const valides = cur.filter(r => r.segment_valide).reduce((a, r) => a + +r.ca_ht, 0);
+  if (tot && valides / tot < 0.999) notes.push(`Segments : ${fmtN(pct(valides, tot), 1)} % du CA a un segment validé. Le reste est une proposition tirée du groupe client, à valider plus bas.`);
+  const agr = canauxAgreges().filter(c => cur.some(r => r.canal === c));
+  if (agr.length) {
+    const caAgr = cur.filter(r => agr.includes(r.canal)).reduce((a, r) => a + +r.ca_ht, 0);
+    notes.push(`EBP (${fmtK(caAgr)}) est importé par client et par mois, détaillé par produit depuis octobre 2024 (export EBP « Historique par articles », chargé via le formulaire d'import). Les petits écarts entre facture et détail restent en « non détaillé ».`);
+  }
+  if (nonSeg > 0) notes.push(`${fmtEur(nonSeg)} de CA sans segment proposé (groupes « à trancher »).`);
+  $('notes').innerHTML = notes.map(n => `<div class="note">${n}</div>`).join('');
+}
+
+function sumK(list, keyf) { const m = new Map(); for (const r of list) { const k = keyf(r); m.set(k, (m.get(k) || 0) + r.v); } return m; }
+function kpiFiltered(list) { return list.filter(r => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal)); }
+
+function renderTiles(cur) {
+  const k0 = kpiFiltered(S.kpi?.cur || []), k1 = kpiFiltered(S.kpi?.n1 || []);
+  const ca0 = k0.reduce((a, r) => a + +r.ca_ht, 0), ca1 = k1.reduce((a, r) => a + +r.ca_ht, 0);
+  const p0 = k0.reduce((a, r) => a + +r.port_ht, 0), p1 = k1.reduce((a, r) => a + +r.port_ht, 0);
+  const au0 = k0.reduce((a, r) => a + +(r.ca_autres || 0), 0);
+  const cmd = canalFilter(S.commandes).filter(r => r.exercice === S.ex);
+  const nbF = cmd.reduce((a, r) => a + r.nb_factures, 0), nbOff = cmd.reduce((a, r) => a + r.nb_port_offert, 0);
+  const au = S.kpi?.au ? new Date(S.kpi.au).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
+  const delta = (a, b, lbl) => {
+    if (!b) return `<div class="delta">pas de comparaison N-1</div>`;
+    const d = 100 * (a - b) / Math.abs(b);
+    if (Math.abs(d) < 0.05) return `<div class="delta">= stable vs N-1 ${lbl}</div>`;
+    const up = d > 0;
+    return `<div class="delta"><span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${fmtN(Math.abs(d), 1)} %</span> vs N-1 ${lbl}</div>`;
+  };
+  const lbl = au ? `au ${au}` : '';
+  const au1 = k1.reduce((a, r) => a + +(r.ca_autres || 0), 0);
+  $('tiles').innerHTML = [
+    ['CA HT produits', fmtK(ca0), delta(ca0, ca1, lbl)],
+    ['Hors produits (loyers, cessions…)', fmtK(au0), delta(au0, au1, lbl)],
+    ['Port facturé HT', fmtK(p0), delta(p0, p1, lbl) + `<div class="delta">${nbF ? fmtN(pct(nbOff, nbF), 0) + ' % des commandes en port offert' : ''}</div>`]
+  ].map(([l, v, d]) => `<div class="card tile"><div class="label">${l}</div><div class="value">${v}</div>${d}</div>`).join('');
+}
+
+const TVA_TRANSPORT = 1.2;
+function renderTransport() {
+  const card = $('card-transport');
+  const ok = (S.canal === 'SHINE' || S.canal === 'TOUS') && (S.transport || []).length;
+  card.classList.toggle('hidden', !ok);
+  if (!ok) return;
+  const y = exerciceBornes(S.ex).y, exN1 = `${y - 1}-${y}`;
+  const exOf = iso => { const [a, m] = iso.split('-').map(Number); return m >= 10 ? `${a}-${a + 1}` : `${a - 1}-${a}`; };
+  const par = new Map();
+  for (const r of S.transport) {
+    const e = exOf(r.mois); if (e !== S.ex && e !== exN1) continue;
+    const o = par.get(r.transporteur) || { t: r.transporteur, type: r.type_envoi, c: 0, n1: 0 };
+    if (e === S.ex) o.c += +r.montant_ttc; else o.n1 += +r.montant_ttc;
+    par.set(r.transporteur, o);
+  }
+  const ordre = { colis: 0, messagerie: 1, import: 2 };
+  const list = [...par.values()].filter(o => o.c || o.n1).sort((a, b) => ordre[a.type] - ordre[b.type] || b.c - a.c);
+  const ventes = list.filter(o => o.type !== 'import');
+  const tot = k => ventes.reduce((a, o) => a + o[k], 0);
+  const port = k => canalFilter(S.commandes).filter(r => r.exercice === k).reduce((a, r) => a + +r.port_ht, 0);
+  const TYPES = { colis: 'Colis', messagerie: 'Messagerie / palettes', import: 'Import (achats)' };
+  const cT = tot('c'), nT = tot('n1'), p0 = port(S.ex), p1 = port(exN1);
+  const hasN1 = nT > 0;
+  const var1 = (a, b) => b ? ` <small class="muted">${a >= b ? '+' : ''}${fmtN(100 * (a - b) / b, 0)} %</small>` : '';
+  let h = `<table><thead><tr><th>Transporteur</th><th>Type</th><th class="n">Payé TTC</th><th class="n">≈ HT</th>${hasN1 ? '<th class="n">N-1 ≈ HT</th>' : ''}</tr></thead><tbody>`;
+  for (const o of list) h += `<tr${o.type === 'import' ? ' class="muted"' : ''}><td>${esc(o.t)}</td><td>${TYPES[o.type] || o.type}</td><td class="n">${fmtEur(o.c)}</td><td class="n">${fmtEur(o.c / TVA_TRANSPORT)}${var1(o.c, o.n1)}</td>${hasN1 ? `<td class="n">${fmtEur(o.n1 / TVA_TRANSPORT)}</td>` : ''}</tr>`;
+  h += `<tr><td><b>Coût transport des ventes</b></td><td>colis + messagerie</td><td class="n"><b>${fmtEur(cT)}</b></td><td class="n"><b>${fmtEur(cT / TVA_TRANSPORT)}</b>${var1(cT, nT)}</td>${hasN1 ? `<td class="n">${fmtEur(nT / TVA_TRANSPORT)}</td>` : ''}</tr>`;
+  h += `<tr><td>Port facturé aux clients</td><td>sites internet</td><td class="n"></td><td class="n">${fmtEur(p0)}${var1(p0, p1)}</td>${hasN1 ? `<td class="n">${fmtEur(p1)}</td>` : ''}</tr>`;
+  h += `<tr><td><b>Reste à charge SHINE</b></td><td>coût − port facturé</td><td class="n"></td><td class="n"><b>${fmtEur(cT / TVA_TRANSPORT - p0)}</b></td>${hasN1 ? `<td class="n">${fmtEur(nT / TVA_TRANSPORT - p1)}</td>` : ''}</tr>`;
+  h += `</tbody></table><div class="sub" style="margin-top:8px">Montants payés en banque (plan de trésorerie), au mois du règlement et non de l'envoi. HT estimé = TTC ÷ 1,2. Pour EBP (revendeurs), le port facturé vient des lignes « transport » des factures, quand il y en a. L'import est un transport d'achats, affiché pour info et exclu du calcul.</div>`;
+  $('tbl-transport').innerHTML = h;
+  $('tr-hint').textContent = `exercice ${S.ex.replace('-', '–')}${hasN1 ? ' · comparé à ' + exN1.replace('-', '–') : ''}`;
+}
+
+function monthIndex(iso) { const m = parseInt(iso.slice(5, 7), 10); return (m + 2) % 12; } // oct=0
+
+function renderMonthly(rows) {
+  const y = exerciceBornes(S.ex).y;
+  const exN1 = `${y - 1}-${y}`;
+  const cur = rows.filter(r => r.exercice === S.ex);
+  const n1 = rows.filter(r => r.exercice === exN1);
+  const segsPresent = SEGMENTS.filter(s => cur.some(r => (r.segment || 'NON_SEGMENTE') === s.k && +r.ca_ht !== 0));
+  const data = MOIS.map(() => ({}));
+  for (const r of cur) { const i = monthIndex(r.mois); const k = r.segment || 'NON_SEGMENTE'; data[i][k] = (data[i][k] || 0) + +r.ca_ht; }
+  const n1t = MOIS.map(() => 0); let hasN1 = false;
+  for (const r of n1) { n1t[monthIndex(r.mois)] += +r.ca_ht; hasN1 = true; }
+
+  $('leg-month').innerHTML = segsPresent.map(s => `<span><i class="sw" style="background:var(${s.v})"></i>${s.label}</span>`).join('') +
+    (hasN1 ? `<span><i class="sw line" style="background:var(--n1)"></i>Total N-1</span>` : '');
+
+  const el = $('ch-month');
+  const W = Math.max(300, el.clientWidth), H = 300, ml = el.clientWidth < 500 ? 46 : 58, mr = 10, mt = 10, mb = 26;
+  const iw = W - ml - mr, ih = H - mt - mb;
+  const tots = data.map(d => Object.values(d).reduce((a, v) => a + Math.max(0, v), 0));
+  const maxV = Math.max(1, ...tots, ...(hasN1 ? n1t : [0]));
+  const ticks = niceTicks(maxV, 5); const top = ticks[ticks.length - 1];
+  const yS = v => mt + ih - (v / top) * ih;
+  const band = iw / 12, bw = Math.min(24, band * 0.56);
+  let s = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="CA HT par mois et par segment">`;
+  s += `<g class="axis">`;
+  for (const t of ticks) s += `<line x1="${ml}" x2="${W - mr}" y1="${yS(t)}" y2="${yS(t)}" stroke="var(${t === 0 ? '--axis' : '--grid'})" stroke-width="1"/><text x="${ml - 8}" y="${yS(t) + 4}" text-anchor="end">${fmtK(t)}</text>`;
+  const pas = band < 30 ? 3 : band < 44 ? 2 : 1;
+  MOIS.forEach((m, i) => { if (i % pas === 0) s += `<text x="${ml + band * i + band / 2}" y="${H - 6}" text-anchor="middle">${m}</text>`; });
+  s += `</g>`;
+  data.forEach((d, i) => {
+    const x = ml + band * i + (band - bw) / 2;
+    let acc = 0; const segs = segsPresent.filter(sg => (d[sg.k] || 0) > 0);
+    segs.forEach((sg, j) => {
+      const v = d[sg.k]; const y0 = yS(acc), y1 = yS(acc + v); acc += v;
+      const gapTop = j < segs.length - 1 ? 1 : 0, gapBot = j > 0 ? 1 : 0;
+      const yt = y1 + gapTop, yb = y0 - gapBot, h = Math.max(0, yb - yt);
+      if (h <= 0) return;
+      if (j === segs.length - 1) {
+        const r = Math.min(4, h, bw / 2);
+        s += `<path d="M${x},${yb} V${yt + r} Q${x},${yt} ${x + r},${yt} H${x + bw - r} Q${x + bw},${yt} ${x + bw},${yt + r} V${yb} Z" fill="var(${sg.v})"/>`;
+      } else s += `<rect x="${x}" y="${yt}" width="${bw}" height="${h}" fill="var(${sg.v})"/>`;
+    });
+  });
+  if (hasN1) {
+    const pts = n1t.map((v, i) => [ml + band * i + band / 2, yS(v)]);
+    s += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="var(--n1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    pts.forEach(p => { s += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="var(--n1)" stroke="var(--surface)" stroke-width="2"/>`; });
+  }
+  MOIS.forEach((m, i) => { s += `<rect class="hit" data-i="${i}" x="${ml + band * i}" y="${mt}" width="${band}" height="${ih}" fill="transparent"/>`; });
+  s += `</svg>`;
+  el.innerHTML = s;
+  el.querySelectorAll('.hit').forEach(h => {
+    h.addEventListener('mousemove', ev => {
+      const i = +h.dataset.i; const d = data[i];
+      let html = `<div class="t">${MOIS[i]} ${i < 3 ? y : y + 1}</div>`;
+      for (const sg of segsPresent) if (d[sg.k]) html += `<div class="r"><span><i class="sw" style="background:var(${sg.v})"></i>${sg.label}</span><b>${fmtEur(d[sg.k])}</b></div>`;
+      html += `<hr><div class="r"><span>Total</span><b>${fmtEur(tots[i])}</b></div>`;
+      if (hasN1) { const dv = n1t[i] ? ` (${tots[i] >= n1t[i] ? '+' : ''}${fmtN(100 * (tots[i] - n1t[i]) / n1t[i], 1)} %)` : ''; html += `<div class="r"><span>N-1</span><b>${fmtEur(n1t[i])}${dv}</b></div>`; }
+      showTip(html, ev);
+    });
+    h.addEventListener('mouseleave', hideTip);
+  });
+  // Tableau
+  let t = `<table><thead><tr><th>Mois</th>${segsPresent.map(sg => `<th class="n">${sg.label}</th>`).join('')}<th class="n">Total</th>${hasN1 ? '<th class="n">N-1</th>' : ''}</tr></thead><tbody>`;
+  MOIS.forEach((m, i) => { t += `<tr><td>${m} ${i < 3 ? y : y + 1}</td>${segsPresent.map(sg => `<td class="n">${fmtEur(data[i][sg.k] || 0)}</td>`).join('')}<td class="n"><b>${fmtEur(tots[i])}</b></td>${hasN1 ? `<td class="n">${fmtEur(n1t[i])}</td>` : ''}</tr>`; });
+  t += `</tbody></table>`;
+  $('tbl-month').innerHTML = t;
+}
+function niceTicks(max, n) {
+  const raw = max / n; const p = Math.pow(10, Math.floor(Math.log10(raw))); const f = raw / p;
+  const step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+  const out = []; for (let v = 0; v <= max + step * 0.999; v += step) out.push(Math.round(v)); return out;
+}
+
+function hbars(el, rows, opts = {}) {
+  const max = Math.max(1, ...rows.map(r => Math.abs(r.v)));
+  const tot = rows.reduce((a, r) => a + r.v, 0);
+  el.innerHTML = rows.length ? rows.map((r, i) => `<div class="hb" data-i="${i}"><div class="l" title="${esc(r.label)}">${r.sw ? `<i class="sw" style="background:var(${r.sw});margin-right:6px"></i>` : ''}${esc(r.label)}</div>
+    <div class="track"><div class="fill" style="width:${Math.max(0, 100 * r.v / max)}%;${r.sw ? `background:var(${r.sw})` : ''}"></div></div>
+    <div class="v">${fmtK(r.v)}<small>${tot ? fmtN(pct(r.v, tot), 0) + ' %' : ''}</small></div></div>`).join('') : '<div class="muted">Aucune donnée</div>';
+  el.querySelectorAll('.hb').forEach(b => {
+    b.addEventListener('mousemove', ev => { const r = rows[+b.dataset.i]; showTip(`<div class="t">${esc(r.label)}</div><div class="r"><span>CA HT</span><b>${fmtEur(r.v)}</b></div>${r.extra || ''}`, ev); });
+    b.addEventListener('mouseleave', hideTip);
+  });
+}
+
+function renderCanal() {
+  const rows = S.mensuel.filter(r => r.exercice === S.ex && estProduit(r) && (S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal)));
+  const m = new Map(); for (const r of rows) m.set(r.canal, (m.get(r.canal) || 0) + +r.ca_ht);
+  const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
+  hbars($('hb-canal'), [...m.entries()].sort((a, b) => b[1] - a[1]).map(([c, v]) => ({ label: lib(c), v })));
+}
+function renderAutres(list) {
+  const m = new Map(); for (const r of list) m.set(r.famille, (m.get(r.famille) || 0) + +r.ca_ht);
+  const card = $('card-autres');
+  const rows = [...m.entries()].filter(([, v]) => Math.abs(v) >= 0.5).sort((a, b) => b[1] - a[1]);
+  card.classList.toggle('hidden', !rows.length);
+  if (rows.length) hbars($('hb-autres'), rows.map(([f, v]) => ({ label: FAMILLES[f] || f, v })));
+}
+function renderSeg(cur) {
+  const m = new Map(); const q = new Map();
+  for (const r of cur) { const k = r.segment || 'NON_SEGMENTE'; m.set(k, (m.get(k) || 0) + +r.ca_ht); if (r.sous_segment) { const o = q.get(k) || new Map(); o.set(r.sous_segment, (o.get(r.sous_segment) || 0) + +r.ca_ht); q.set(k, o); } }
+  const sous = k => q.has(k) ? [...q.get(k).entries()].sort((a, b) => b[1] - a[1]).map(([n, v]) => `<div class="r"><span>${esc(n)}</span><b>${fmtEur(v)}</b></div>`).join('') : '';
+  hbars($('hb-seg'), SEGMENTS.filter(s => m.has(s.k)).map(s => ({ label: s.label, v: m.get(s.k), sw: s.v, extra: sous(s.k) })));
+}
+let sfSeg = 'B2B_REVENDEUR';
+const SF_VIDE = { B2B_PRO: 'Autres pros', B2C: 'Particuliers', MDD: 'Sans sous-famille', B2B_REVENDEUR: 'Sans sous-famille' };
+function renderSousFam(rows) {
+  const y = exerciceBornes(S.ex).y, exN1 = `${y - 1}-${y}`;
+  const cur = rows.filter(r => r.exercice === S.ex);
+  const avecSF = SEGMENTS.filter(sg => cur.some(r => r.segment === sg.k && r.sous_segment));
+  if (!avecSF.some(sg => sg.k === sfSeg)) sfSeg = avecSF[0]?.k || 'B2B_REVENDEUR';
+  const sel = $('f-sf');
+  sel.innerHTML = avecSF.map(sg => `<option value="${sg.k}">${sg.label}</option>`).join('');
+  sel.value = sfSeg; sel.onchange = () => { sfSeg = sel.value; renderSousFam(rows); };
+  const moisMax = Math.max(-1, ...cur.map(r => monthIndex(r.mois)));
+  const n1 = rows.filter(r => r.exercice === exN1 && monthIndex(r.mois) <= moisMax);
+  const lab = r => r.sous_segment || SF_VIDE[sfSeg] || 'Sans sous-famille';
+  const m = new Map(), m1 = new Map();
+  for (const r of cur) if (r.segment === sfSeg) m.set(lab(r), (m.get(lab(r)) || 0) + +r.ca_ht);
+  for (const r of n1) if (r.segment === sfSeg) m1.set(lab(r), (m1.get(lab(r)) || 0) + +r.ca_ht);
+  const sg = SEG[sfSeg];
+  $('sf-hint').textContent = n1.length ? `N-1 sur les mêmes mois au survol` : '';
+  hbars($('hb-sf'), [...m.entries()].filter(([, v]) => Math.abs(v) >= 1).sort((a, b) => b[1] - a[1]).map(([k, v]) => {
+    const p = m1.get(k); const d = p ? ` (${v >= p ? '+' : ''}${fmtN(100 * (v - p) / Math.abs(p), 1)} %)` : '';
+    return { label: k, v, sw: sg?.v, extra: n1.length ? `<div class="r"><span>N-1 mêmes mois</span><b>${p ? fmtEur(p) + d : '–'}</b></div>` : '' };
+  }));
+}
+function renderFam(cur) {
+  const m = new Map(), q = new Map();
+  for (const r of cur) { m.set(r.famille, (m.get(r.famille) || 0) + +r.ca_ht); q.set(r.famille, (q.get(r.famille) || 0) + +r.quantite); }
+  hbars($('hb-fam'), [...m.entries()].sort((a, b) => b[1] - a[1]).map(([f, v]) => ({ label: FAMILLES[f] || f, v, extra: `<div class="r"><span>Quantités</span><b>${fmtN(q.get(f))}</b></div>` })));
+}
+function renderZone(cur) {
+  const m = new Map();
+  for (const r of cur) { const z = r.zone || 'INCONNUE'; const o = m.get(z) || { ca: 0, seg: new Map() }; o.ca += +r.ca_ht; o.seg.set(r.segment, (o.seg.get(r.segment) || 0) + +r.ca_ht); m.set(z, o); }
+  const cmd = canalFilter(S.commandes).filter(r => r.exercice === S.ex);
+  const nb = new Map(); for (const r of cmd) nb.set(r.zone || 'INCONNUE', (nb.get(r.zone || 'INCONNUE') || 0) + r.nb_factures);
+  const tot = [...m.values()].reduce((a, o) => a + o.ca, 0);
+  const order = ['FRANCE', 'UE', 'DOM-TOM', 'HORS_UE', 'INCONNUE'];
+  $('tbl-zone').innerHTML = `<table><thead><tr><th>Zone</th><th class="n">CA HT</th><th class="n">Part</th></tr></thead><tbody>` +
+    order.filter(z => m.has(z)).map(z => `<tr><td>${ZONES[z]}</td><td class="n">${fmtEur(m.get(z).ca)}</td><td class="n">${fmtN(pct(m.get(z).ca, tot), 1)} %</td></tr>`).join('') +
+    `</tbody></table><div class="sub" style="margin-top:8px">Les DOM-TOM sont hors du territoire de TVA : ni ventes France, ni livraisons intracommunautaires.</div>`;
+}
+let prodLimit = 25;
+function renderProd() {
+  const q = ($('q-prod').value || '').toLowerCase().trim();
+  const rows = S.prod.filter(r => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal));
+  const m = new Map();
+  for (const r of rows) { const o = m.get(r.sku) || { sku: r.sku, libelle: r.libelle, famille: r.famille, q: 0, ca: 0, seg: {} }; o.q += +r.quantite; o.ca += +r.ca_ht; o.seg[r.segment] = (o.seg[r.segment] || 0) + +r.ca_ht; m.set(r.sku, o); }
+  const nd = m.get('EBP_PRODUITS'); m.delete('EBP_PRODUITS');
+  let list = [...m.values()].sort((a, b) => b.ca - a.ca);
+  if (q) list = list.filter(o => (o.sku + ' ' + (o.libelle || '')).toLowerCase().includes(q));
+  const tot = [...m.values()].reduce((a, o) => a + o.ca, 0);
+  const shown = list.slice(0, prodLimit);
+  $('tbl-prod').innerHTML = `<table><thead><tr><th>Réf.</th><th>Libellé</th><th>Famille</th><th class="n">Quantité</th><th class="n">CA HT</th><th class="n">Part</th><th>Répartition</th></tr></thead><tbody>` +
+    shown.map(o => `<tr><td>${o.sku.startsWith('?') ? `<span class="pill">${esc(o.sku.slice(1))} · à rattacher</span>` : esc(o.sku)}</td><td>${esc(o.libelle)}</td><td>${esc(FAMILLES[o.famille] || o.famille)}</td><td class="n">${fmtN(o.q)}</td><td class="n">${fmtEur(o.ca)}</td><td class="n">${fmtN(pct(o.ca, tot), 1)} %</td><td>${segBar(o.seg, o.ca)}</td></tr>`).join('') +
+    `</tbody></table>` + (nd && Math.abs(nd.ca) >= 1 ? `<div class="sub" style="margin-top:8px">+ ${fmtEur(nd.ca)} de ventes EBP non détaillées : écarts facture/détail ou mois sans détail (non incluses dans ce tableau ni dans les parts).</div>` : '') + (list.length > prodLimit ? `<p><button class="link" id="more-prod">Afficher ${Math.min(50, list.length - prodLimit)} de plus (${fmtN(list.length)} références)</button></p>` : '');
+  const mp = $('more-prod'); if (mp) mp.onclick = () => { prodLimit += 50; renderProd(); };
+}
+function segBar(seg, tot) {
+  if (!tot) return '';
+  const parts = SEGMENTS.filter(s => (seg[s.k] || 0) > 0);
+  return `<div style="display:flex;gap:2px;width:120px;height:8px" title="${parts.map(s => s.label + ' ' + fmtN(pct(seg[s.k], tot), 0) + ' %').join(' · ')}">` +
+    parts.map(s => `<div style="flex:${seg[s.k]};background:var(${s.v});border-radius:2px"></div>`).join('') + `</div>`;
+}
+function renderQual(cur) {
+  const tot = cur.reduce((a, r) => a + +r.ca_ht, 0);
+  const valid = cur.filter(r => r.segment_valide).reduce((a, r) => a + +r.ca_ht, 0);
+  const seg = cur.filter(r => r.segment !== 'NON_SEGMENTE').reduce((a, r) => a + +r.ca_ht, 0);
+  const rat = cur.filter(r => r.famille !== 'NON_RATTACHE').reduce((a, r) => a + +r.ca_ht, 0);
+  const an = S.meta.anomalies || {};
+  const rows = [
+    ['CA avec un segment validé', fmtN(pct(valid, tot), 1) + ' %'],
+    ['CA avec un segment (proposé ou validé)', fmtN(pct(seg, tot), 1) + ' %'],
+    ['CA rattaché à un produit du référentiel', fmtN(pct(rat, tot), 1) + ' %'],
+    ...Object.entries(an).map(([k, v]) => [k, fmtN(v)])
+  ];
+  $('kv-qual').innerHTML = rows.map(([a, b]) => `<div>${esc(a)}</div><div>${b}</div>`).join('');
+}
+function renderCompta() {
+  const b = exerciceBornes(S.ex);
+  const lignes = S.compta.filter(r => r.mois >= b.du && r.mois <= b.au);
+  if (!lignes.length) { $('compta').innerHTML = `<div class="muted">En attente du CA des comptes 70 mois par mois (à fournir par Jérémy ou le comptable). Le contrôle s'affichera ici automatiquement.</div>`; return; }
+  const exp = new Map();
+  for (const r of S.mensuel.filter(r => r.exercice === S.ex && canalInShine(r.canal) && (estProduit(r) || r.famille === 'LOYER'))) exp.set(r.mois, (exp.get(r.mois) || 0) + +r.ca_ht);
+  for (const r of S.commandes.filter(r => r.exercice === S.ex && canalInShine(r.canal))) exp.set(r.mois, (exp.get(r.mois) || 0) + +r.port_ht);
+  const cpt = new Map(); for (const r of lignes) cpt.set(r.mois, (cpt.get(r.mois) || 0) + +r.montant_ht);
+  const mois = [...new Set([...cpt.keys()])].sort();
+  $('compta').innerHTML = `<table><thead><tr><th>Mois</th><th class="n">Export</th><th class="n">Comptes 70</th><th class="n">Écart</th><th></th></tr></thead><tbody>` +
+    mois.map(m => { const e = exp.get(m) || 0, c = cpt.get(m) || 0, d = c ? 100 * (e - c) / c : null; const ok = d != null && Math.abs(d) <= 1;
+      return `<tr><td>${new Date(m).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</td><td class="n">${fmtEur(e)}</td><td class="n">${fmtEur(c)}</td><td class="n">${d == null ? '–' : fmtN(d, 2) + ' %'}</td><td>${ok ? '<span class="pill ok">✓ OK</span>' : '<span class="pill">✕ à expliquer</span>'}</td></tr>`; }).join('') + `</tbody></table>`;
+}
+const canEdit = () => ['valideur', 'admin'].includes(S.acces?.role);
+function segSelect(val, attrs) {
+  return `<select ${attrs}>${SEGMENTS.filter(s => s.k !== 'NON_SEGMENTE').map(s => `<option value="${s.k}" ${s.k === val ? 'selected' : ''}>${s.label}</option>`).join('')}<option value="" ${!val || val === 'NON_SEGMENTE' ? 'selected' : ''}>À trancher</option></select>`;
+}
+function renderGroupes() {
+  const rows = S.groupes.filter(r => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal)).sort((a, b) => b.ca_ht - a.ca_ht);
+  const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
+  $('tbl-groupes').innerHTML = `<table><thead><tr><th>Canal</th><th>Groupe client</th><th class="n">Clients</th><th class="n">Validés</th><th class="n">CA HT</th><th>Segment proposé</th></tr></thead><tbody>` +
+    rows.map((r, i) => `<tr><td>${esc(lib(r.canal))}</td><td>${esc(r.groupe_client)}</td><td class="n">${fmtN(r.nb_clients)}</td><td class="n">${fmtN(r.nb_valides)}</td><td class="n">${fmtEur(r.ca_ht)}</td>
+      <td>${canEdit() && r.groupe_client !== '(aucun)' ? `<div class="row-actions" style="justify-content:flex-start">${segSelect(r.segment_propose, `data-g="${i}"`)}<button class="btn small" data-gb="${i}">Appliquer</button></div>` : (SEG[r.segment_propose]?.label || '<span class="muted">À trancher</span>')}</td></tr>`).join('') + `</tbody></table>`;
+  $('tbl-groupes').querySelectorAll('[data-gb]').forEach(b => b.onclick = async () => {
+    const i = +b.dataset.gb; const r = rows[i]; const v = $('tbl-groupes').querySelector(`select[data-g="${i}"]`).value;
+    if (!v) return alertMsg(b, 'Choisis un segment');
+    b.disabled = true; b.textContent = '…';
+    const { data, error } = await sb.rpc('definir_segment_groupe', { p_source: r.source || r.canal, p_groupe: r.groupe_client, p_segment: v });
+    b.textContent = error ? 'Erreur' : `✓ ${fmtN(data)} clients`; if (!error) r.segment_propose = v;
+  });
+}
+function alertMsg(b, m) { const t = b.textContent; b.textContent = m; setTimeout(() => b.textContent = t, 1600); }
+function renderClients() {
+  const rows = S.clients.filter(r => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(r.canal) : r.canal === S.canal));
+  const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
+  $('tbl-clients').innerHTML = rows.length ? `<table><thead><tr><th>Client</th><th>Canal</th><th>Groupe</th><th>Pays</th><th class="n">Factures</th><th class="n">CA HT</th><th class="n">${canEdit() ? 'Segment' : 'Segment proposé'}</th></tr></thead><tbody>` +
+    rows.map((r, i) => `<tr><td>${esc(r.client_nom)}</td><td>${esc(lib(r.canal))}</td><td>${esc(r.groupe_client || '')}</td><td>${esc(r.pays || '')}</td><td class="n">${fmtN(r.nb_factures)}</td><td class="n">${fmtEur(r.ca_ht)}</td>
+      <td class="n">${canEdit() ? `<div class="row-actions">${segSelect(r.segment, `data-c="${i}"`)}<button class="btn small" data-cb="${i}">Valider</button></div>` : (SEG[r.segment]?.label || 'À trancher')}</td></tr>`).join('') + `</tbody></table>`
+    : `<div class="muted">Tous les clients de cette sélection ont un segment validé.</div>`;
+  $('tbl-clients').querySelectorAll('[data-cb]').forEach(b => b.onclick = async () => {
+    const i = +b.dataset.cb; const r = rows[i]; const v = $('tbl-clients').querySelector(`select[data-c="${i}"]`).value;
+    if (!v) return alertMsg(b, 'Choisis');
+    b.disabled = true; b.textContent = '…';
+    const { error } = await sb.rpc('valider_segment', { p_client_id: r.client_id, p_segment: v });
+    b.textContent = error ? 'Erreur' : '✓ Validé';
+  });
+}
+
+// ---------- Export CSV ----------
+$('btn-export').onclick = async () => {
+  const btn = $('btn-export'), msg = $('export-msg');
+  btn.disabled = true;
+  const cols = ['canal', 'date_facture', 'num_facture', 'num_commande', 'client_id', 'client_nom', 'groupe_client', 'segment', 'client_pays', 'client_tva_intra', 'sku', 'ref_source', 'ean', 'libelle_produit', 'famille', 'quantite', 'contenance_unitaire', 'pu_ht', 'remise_ht', 'total_ligne_ht', 'avoir', 'frais_port_facture_ht', 'port_offert', 'zone', 'source_retenue', 'transporteur', 'num_suivi', 'nb_colis', 'poids_kg'];
+  const numCols = new Set(['quantite', 'contenance_unitaire', 'pu_ht', 'remise_ht', 'total_ligne_ht', 'frais_port_facture_ht', 'poids_kg']);
+  const cell = (c, v) => { if (v == null) return ''; if (numCols.has(c)) return String(v).replace('.', ','); const s = String(v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const lines = [cols.join(';')]; let last = 0, n = 0;
+  try {
+    for (;;) {
+      let q = sb.from('v_export_cdc').select(cols.join(',') + ',ligne_id').eq('exercice', S.ex).gt('ligne_id', last).order('ligne_id').limit(1000);
+      if (S.canal === 'SHINE') q = q.neq('canal', 'myclear'); else if (S.canal !== 'TOUS') q = q.eq('canal', S.canal);
+      const { data, error } = await q; if (error) throw error;
+      for (const r of data) lines.push(cols.map(c => cell(c, r[c])).join(';'));
+      n += data.length; msg.textContent = `${fmtN(n)} lignes récupérées…`;
+      if (data.length < 1000) break; last = data[data.length - 1].ligne_id;
+    }
+    const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = `ventes_${S.canal === 'SHINE' ? 'shine' : S.canal.toLowerCase()}_${S.ex}.csv`; a.click();
+    msg.textContent = `${fmtN(n)} lignes exportées.`;
+  } catch (e) { msg.textContent = 'Erreur : ' + (e.message || e); }
+  btn.disabled = false;
+};
+
+// ---------- Sélecteurs Liquid Glass ----------
+// Le <select> d'origine reste dans la page (valeur, onchange) ; on affiche un bouton de verre et un menu.
+const VALUE = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+let lgOpen = null;
+function lgClose(focusBtn) {
+  if (!lgOpen) return;
+  const { menu, btn } = lgOpen; lgOpen = null;
+  menu.remove(); btn.setAttribute('aria-expanded', 'false');
+  document.removeEventListener('pointerdown', lgOutside, true);
+  if (focusBtn) btn.focus();
+}
+function lgOutside(e) { if (lgOpen && !lgOpen.menu.contains(e.target) && !lgOpen.btn.contains(e.target)) lgClose(false); }
+function glassSelect(sel) {
+  sel.classList.add('lg-native'); sel.tabIndex = -1; sel.setAttribute('aria-hidden', 'true');
+  const btn = document.createElement('button');
+  btn.type = 'button'; btn.className = 'btn lg-select';
+  btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
+  btn.setAttribute('aria-label', sel.getAttribute('aria-label') || '');
+  btn.innerHTML = '<span class="lg-val"></span><svg class="lg-chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  sel.after(btn);
+  const upd = () => { const o = sel.options[sel.selectedIndex]; btn.querySelector('.lg-val').textContent = o ? o.text : ''; btn.classList.toggle('hidden', !sel.options.length); };
+  Object.defineProperty(sel, 'value', { configurable: true, get() { return VALUE.get.call(sel); }, set(v) { VALUE.set.call(sel, v); upd(); } });
+  new MutationObserver(upd).observe(sel, { childList: true, subtree: true, attributes: true, characterData: true });
+  sel.addEventListener('change', upd);
+  const choisir = (v) => { lgClose(true); if (v === VALUE.get.call(sel)) return; sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); };
+  btn.addEventListener('click', () => {
+    if (lgOpen && lgOpen.btn === btn) return lgClose(false);
+    lgClose(false);
+    const menu = document.createElement('div');
+    menu.className = 'lg-menu'; menu.setAttribute('role', 'listbox');
+    menu.innerHTML = [...sel.options].map((o, i) => `<button type="button" class="lg-opt" role="option" data-i="${i}" aria-selected="${o.selected}"><span class="ck">✓</span><span>${esc(o.text)}</span></button>`).join('');
+    document.body.appendChild(menu);
+    const r = btn.getBoundingClientRect();
+    menu.style.minWidth = Math.max(200, r.width) + 'px';
+    const m = { width: menu.offsetWidth, height: menu.offsetHeight }; // offset* : sans l'échelle de l'animation
+    const left = Math.max(16, Math.min(r.left, innerWidth - 16 - m.width));
+    const bas = r.bottom + 8 + m.height <= innerHeight - 8 || r.top < m.height + 16;
+    menu.style.left = left + 'px';
+    if (bas) menu.style.top = (r.bottom + 8) + 'px'; else { menu.style.top = (r.top - 8 - m.height) + 'px'; menu.classList.add('up'); }
+    btn.setAttribute('aria-expanded', 'true');
+    lgOpen = { menu, btn };
+    const opts = [...menu.querySelectorAll('.lg-opt')];
+    opts.forEach(b => b.addEventListener('click', () => choisir(sel.options[+b.dataset.i].value)));
+    menu.addEventListener('keydown', e => {
+      const k = opts.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); opts[Math.min(opts.length - 1, k + 1)].focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); opts[Math.max(0, k - 1)].focus(); }
+      else if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); lgClose(true); }
+    });
+    (opts.find(b => b.getAttribute('aria-selected') === 'true') || opts[0])?.focus({ preventScroll: true });
+    setTimeout(() => document.addEventListener('pointerdown', lgOutside, true));
+  });
+  btn.addEventListener('keydown', e => { if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); btn.click(); } });
+  upd();
+}
+addEventListener('scroll', () => lgClose(false), { passive: true });
+addEventListener('resize', () => lgClose(false));
+['f-ex', 'f-canal', 'f-sf'].forEach(id => glassSelect($(id)));
+
+// ---------- Menu latéral ----------
+const railItems = [...document.querySelectorAll('.rail-item')];
+let railLock = null, railLockT = 0; // section choisie au clic, tenue pendant le défilement
+function railActif() {
+  if (railLock && !railLock.hidden) return railLock;
+  let actif = railItems[0];
+  for (const b of railItems) {
+    if (b.hidden || b.dataset.go === 'top') continue;
+    const el = $(b.dataset.go);
+    if (el && el.getBoundingClientRect().top <= 170) actif = b;
+  }
+  if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) actif = [...railItems].reverse().find(b => !b.hidden) || actif;
+  return actif;
+}
+function railSync() {
+  for (const b of railItems) { const el = b.dataset.go === 'top' ? null : $(b.dataset.go); b.hidden = !!(el && el.classList.contains('hidden')); }
+  const a = railActif();
+  railItems.forEach(b => b.setAttribute('aria-current', String(b === a)));
+  $('rail-pill').style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`;
+}
+railItems.forEach(b => b.addEventListener('click', () => {
+  railLock = b; clearTimeout(railLockT); railLockT = setTimeout(() => { railLock = null; }, 1500); railSync();
+  if (b.dataset.go === 'top') { scrollTo({ top: 0, behavior: 'smooth' }); return; }
+  const el = $(b.dataset.go); if (!el) return;
+  if (el.tagName === 'DETAILS') el.open = true;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}));
+let railRaf = 0;
+addEventListener('wheel', () => { railLock = null; }, { passive: true });
+addEventListener('touchstart', () => { railLock = null; }, { passive: true });
+addEventListener('scroll', () => { if (railLock) { clearTimeout(railLockT); railLockT = setTimeout(() => { railLock = null; }, 800); } if (!railRaf) railRaf = requestAnimationFrame(() => { railRaf = 0; railSync(); }); }, { passive: true });
+addEventListener('resize', railSync);
+$('sec-donnees').addEventListener('toggle', railSync);
+railSync();
+
+// ---------- Filtres ----------
+$('f-ex').onchange = async () => { S.ex = $('f-ex').value; prodLimit = 25; await refreshEx(); };
+$('f-canal').onchange = async () => { S.canal = $('f-canal').value; prodLimit = 25; await refreshEx(); };
+$('q-prod').oninput = () => renderProd();
+$('toggle-month-table').onclick = () => { const t = $('tbl-month'); t.classList.toggle('hidden'); $('toggle-month-table').textContent = t.classList.contains('hidden') ? 'Voir le tableau' : 'Masquer le tableau'; };
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => S.ex && render(), 150); });
+
+async function refreshEx() {
+  $('fresh').textContent = 'Chargement…';
+  try { await loadExercice(); render(); } catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
+}
+
+// ---------- Auth ----------
+$('login-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const email = $('login-email').value.trim().toLowerCase();
+  $('login-msg').textContent = 'Envoi…';
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+  $('login-msg').textContent = error ? 'Erreur : ' + error.message : `Lien envoyé à ${email}. Ouvre-le depuis ce navigateur.`;
+};
+const logout = async () => { await sb.auth.signOut(); location.reload(); };
+$('logout').onclick = logout; $('logout-2').onclick = logout;
+
+async function start(session) {
+  ['login', 'denied', 'app'].forEach(id => $(id).classList.add('hidden'));
+  if (!session) { $('login').classList.remove('hidden'); return; }
+  const { data: acces } = await sb.rpc('mon_acces');
+  if (!acces || !acces.role) {
+    $('denied-msg').textContent = `${session.user.email} n'est pas dans la liste des accès du board. Demande à Robin de t'ajouter.`;
+    $('denied').classList.remove('hidden'); return;
+  }
+  S.acces = acces;
+  $('who').textContent = `Connecté : ${acces.email}${acces.role !== 'lecture' ? ' · ' + (acces.role === 'admin' ? 'administrateur' : 'validation des segments') : ''}`;
+  $('app').classList.remove('hidden');
+  try { await loadBase(); await loadExercice(); render(); }
+  catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
+}
+let started = false;
+sb.auth.onAuthStateChange((ev, session) => { if (ev === 'SIGNED_OUT') return; if (!started || ev === 'SIGNED_IN') { started = true; start(session); } });
+sb.auth.getSession().then(({ data }) => { if (!started) { started = true; start(data.session); } });
+})();
+</script>
+</body>
+</html>
