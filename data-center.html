@@ -1,0 +1,1191 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data Center SHINE</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Crect x='7' y='16' width='4' height='9' rx='1' fill='white'/%3E%3Crect x='14' y='10' width='4' height='15' rx='1' fill='white'/%3E%3Crect x='21' y='6' width='4' height='19' rx='1' fill='white'/%3E%3C/svg%3E">
+<style>
+:root {
+  color-scheme: light;
+  --page: #eef1f6;
+  --surface: #fbfcfe;
+  --surface-2: rgba(255,255,255,0.55);
+  --glass: rgba(255,255,255,0.52);
+  --glass-strong: rgba(255,255,255,0.72);
+  --glass-edge: rgba(255,255,255,0.85);
+  --glass-edge-2: rgba(255,255,255,0.25);
+  --glass-shadow: 0 8px 32px rgba(31,41,74,0.10), 0 1px 2px rgba(31,41,74,0.06);
+  --ink: #0b0b0b;
+  --ink-2: #45454a;
+  --muted: #66666d;
+  --grid: rgba(60,60,67,0.12);
+  --axis: rgba(60,60,67,0.30);
+  --ring: rgba(60,60,67,0.14);
+  --accent: #2a78d6;
+  --good: #006300;
+  --bad: #b42828;
+  --warn-bg: rgba(255,214,120,0.30);
+  --warn-ink: #5c4000;
+  --s-b2c: #2a78d6; --s-pro: #eb6834; --s-rev: #1baf7a; --s-mkt: #eda100; --s-intra: #4a3aa7; --s-none: #b9b8b0; --s-mdd: #e87ba4; --s-autre: #008300; --s-hors: #8a8983;
+  --n1: #7d7c78; --bar: #2a78d6; --bar-track: rgba(60,60,67,0.08);
+  --blob-1: #b8d4ff; --blob-2: #ffd3bd; --blob-3: #c6f0de; --blob-4: #e3d9ff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0b0c10; --surface: #1c1d22; --surface-2: rgba(255,255,255,0.06);
+    --glass: rgba(34,35,42,0.50); --glass-strong: rgba(40,41,48,0.72);
+    --glass-edge: rgba(255,255,255,0.22); --glass-edge-2: rgba(255,255,255,0.04);
+    --glass-shadow: 0 10px 40px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+    --ink: #ffffff; --ink-2: #d0d0d6; --muted: #9c9ca5;
+    --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
+    --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
+    --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
+    --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974;
+    --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
+    --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0b0c10; --surface: #1c1d22; --surface-2: rgba(255,255,255,0.06);
+  --glass: rgba(34,35,42,0.50); --glass-strong: rgba(40,41,48,0.72);
+  --glass-edge: rgba(255,255,255,0.22); --glass-edge-2: rgba(255,255,255,0.04);
+  --glass-shadow: 0 10px 40px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+  --ink: #ffffff; --ink-2: #d0d0d6; --muted: #9c9ca5;
+  --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
+  --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
+  --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
+  --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974;
+  --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
+  --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page); color: var(--ink); min-height: 100vh;
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* Fond : taches de couleur floues, fixes, sous le verre */
+body::before {
+  content: ""; position: fixed; inset: -10vmax; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38vmax 32vmax at 12% 8%, var(--blob-1), transparent 70%),
+    radial-gradient(34vmax 30vmax at 92% 14%, var(--blob-2), transparent 70%),
+    radial-gradient(40vmax 34vmax at 78% 88%, var(--blob-3), transparent 70%),
+    radial-gradient(36vmax 30vmax at 8% 82%, var(--blob-4), transparent 70%),
+    var(--page);
+  filter: saturate(115%);
+}
+button, select, input { font: inherit; color: inherit; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 64px; }
+
+/* Verre : surface translucide, flou d'arrière-plan, liseré lumineux, ombre douce */
+.glass, .card, header.top, .tip, .note, select, input[type=email], input[type=search], .btn {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-edge-2);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 var(--glass-edge-2);
+}
+.card { border-radius: 22px; padding: 18px 20px; position: relative; overflow: hidden; }
+.card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 38%);
+  opacity: .55; mix-blend-mode: soft-light;
+}
+.card > * { position: relative; z-index: 1; }
+
+header.top {
+  position: sticky; top: 10px; z-index: 10;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px;
+  margin-bottom: 18px; padding: 12px 14px 12px 20px; border-radius: 26px;
+  background: var(--glass-strong);
+}
+h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+.sub { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+select, input[type=email], input[type=search] {
+  border-radius: 999px; padding: 8px 14px; min-height: 38px; outline: none; background: var(--glass-strong);
+}
+select:focus, input:focus { box-shadow: var(--glass-shadow), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.btn { border-radius: 999px; padding: 8px 16px; min-height: 38px; cursor: pointer; transition: transform .15s, background .15s; }
+.btn:hover { background: var(--glass-strong); }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: color-mix(in srgb, var(--accent) 88%, transparent); border-color: rgba(255,255,255,0.35); color: #fff; }
+.btn.primary:hover { background: var(--accent); }
+.btn.small { min-height: 30px; padding: 4px 12px; font-size: 13px; }
+.btn[disabled] { opacity: .55; cursor: default; }
+#theme { width: 38px; padding: 0; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-weight: 550; }
+.grid { display: grid; gap: 14px; }
+.tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 14px; }
+details.tech > summary { cursor: pointer; list-style: none; }
+details.tech > summary::-webkit-details-marker { display: none; }
+details.tech > summary::before { content: '▸ '; }
+details.tech[open] > summary::before { content: '▾ '; }
+.two { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+@media (max-width: 900px) { .tiles { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } header.top { position: static; } }
+.tile .label { color: var(--ink-2); font-size: 13px; font-weight: 500; }
+.tile .value { font-size: 30px; font-weight: 700; margin-top: 4px; letter-spacing: -0.02em; white-space: nowrap; }
+@media (max-width: 520px) { .tile .value { font-size: 24px; } .card { padding: 16px; border-radius: 20px; } }
+.tile .delta { font-size: 13px; margin-top: 2px; color: var(--ink-2); }
+.delta .up { color: var(--good); font-weight: 650; }
+.delta .down { color: var(--bad); font-weight: 650; }
+h2 { font-size: 15px; font-weight: 680; margin: 0; letter-spacing: -0.01em; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.card-head .hint { color: var(--muted); font-size: 12.5px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ink-2); margin: 2px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.sw.line { height: 2px; width: 14px; border-radius: 1px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.axis text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tip {
+  position: fixed; pointer-events: none; z-index: 30; color: var(--ink); background: var(--glass-strong);
+  border-radius: 14px; padding: 10px 12px; font-size: 12.5px; min-width: 180px; display: none;
+}
+.tip .t { font-weight: 680; margin-bottom: 4px; }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; }
+.tip .r span:first-child { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.tip .r b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip hr { border: 0; border-top: 1px solid var(--grid); margin: 5px 0; }
+.hbars { display: grid; gap: 8px; }
+.hb { display: grid; grid-template-columns: minmax(120px, 34%) 1fr auto; align-items: center; gap: 10px; font-size: 13px; }
+.hb .l { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb .track { height: 16px; position: relative; background: var(--bar-track); border-radius: 999px; }
+.hb .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar); border-radius: 999px; min-width: 4px; }
+.hb .v { font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
+.hb .v small { color: var(--muted); margin-left: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 8px; border-bottom: 1px solid var(--grid); text-align: left; vertical-align: middle; }
+th { color: var(--muted); font-weight: 550; font-size: 12px; white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr:hover td { background: var(--surface-2); }
+tbody tr:last-child td { border-bottom: 0; }
+.tbl-wrap { overflow-x: auto; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; border: 1px solid var(--ring); }
+.pill.ok { color: var(--good); }
+.note { color: var(--warn-ink); border-radius: 16px; padding: 11px 16px; font-size: 13px; margin-bottom: 12px; background: var(--warn-bg); }
+.section-title { font-size: 12.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin: 30px 4px 10px; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 7px 16px; font-size: 13px; }
+.kv div:nth-child(odd) { color: var(--ink-2); }
+.kv div:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+#login { max-width: 440px; margin: 14vh auto 0; }
+#login h1 { margin-bottom: 6px; }
+#login form { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+#login input { flex: 1; min-width: 200px; }
+.muted { color: var(--muted); }
+.hidden { display: none !important; }
+.row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+.row-actions select { min-height: 30px; padding: 3px 10px; font-size: 12.5px; }
+.progress { font-size: 12.5px; color: var(--ink-2); }
+footer { margin-top: 36px; color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 0 4px; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .card, header.top, .tip, .note, select, input, .btn { background: var(--surface); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .card, header.top, .tip, select, input, .btn { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* ===== Liquid Glass (boutons, sélecteurs, champs) =====
+   Verre clair peu dépoli, liseré spéculaire (haut-gauche vif, bas-droit plus doux),
+   reflet bombé, ombre portée légère, enfoncement élastique au clic. */
+:root {
+  --lg-fill: rgba(255,255,255,0.30);
+  --lg-fill-hover: rgba(255,255,255,0.46);
+  --lg-rim-a: rgba(255,255,255,0.98);
+  --lg-rim-b: rgba(255,255,255,0.10);
+  --lg-rim-c: rgba(255,255,255,0.70);
+  --lg-sheen: rgba(255,255,255,0.65);
+  --lg-drop: 0 6px 18px rgba(20,30,60,0.12), 0 1px 3px rgba(20,30,60,0.10);
+  --lg-inner: inset 0 -1px 1px rgba(20,30,60,0.06), inset 0 1px 0 rgba(255,255,255,0.55);
+  --lg-menu: rgba(250,251,255,0.62);
+  --lg-hl: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --lg-fill: rgba(255,255,255,0.07);
+    --lg-fill-hover: rgba(255,255,255,0.13);
+    --lg-rim-a: rgba(255,255,255,0.55);
+    --lg-rim-b: rgba(255,255,255,0.04);
+    --lg-rim-c: rgba(255,255,255,0.28);
+    --lg-sheen: rgba(255,255,255,0.16);
+    --lg-drop: 0 8px 22px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.35);
+    --lg-inner: inset 0 -1px 1px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.14);
+    --lg-menu: rgba(38,40,48,0.62);
+    --lg-hl: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+}
+:root[data-theme="dark"] {
+  --lg-fill: rgba(255,255,255,0.07);
+  --lg-fill-hover: rgba(255,255,255,0.13);
+  --lg-rim-a: rgba(255,255,255,0.55);
+  --lg-rim-b: rgba(255,255,255,0.04);
+  --lg-rim-c: rgba(255,255,255,0.28);
+  --lg-sheen: rgba(255,255,255,0.16);
+  --lg-drop: 0 8px 22px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.35);
+  --lg-inner: inset 0 -1px 1px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.14);
+  --lg-menu: rgba(38,40,48,0.62);
+  --lg-hl: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.btn {
+  position: relative; isolation: isolate; border: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 9px 18px; min-height: 40px; font-weight: 560; letter-spacing: -0.01em;
+  background: var(--lg-fill);
+  -webkit-backdrop-filter: blur(8px) saturate(190%) brightness(1.04);
+  backdrop-filter: blur(8px) saturate(190%) brightness(1.04);
+  box-shadow: var(--lg-drop), var(--lg-inner);
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s, box-shadow .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+/* liseré spéculaire : dégradé détouré en anneau de 1 px */
+.btn::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1; pointer-events: none;
+  background: linear-gradient(140deg, var(--lg-rim-a) 0%, var(--lg-rim-b) 38%, var(--lg-rim-b) 62%, var(--lg-rim-c) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* reflet bombé en haut du verre */
+.btn::after {
+  content: ""; position: absolute; inset: 1px; border-radius: inherit; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 28% -10%, var(--lg-sheen), transparent 55%),
+    radial-gradient(80% 60% at 85% 120%, color-mix(in srgb, var(--lg-sheen) 45%, transparent), transparent 60%);
+  opacity: .85; transition: opacity .2s;
+}
+.btn:hover { background: var(--lg-fill-hover); }
+.btn:hover::after { opacity: 1; }
+.btn:active { transform: scale(0.955); transition-duration: .12s; }
+.btn:active::after { opacity: 1; filter: brightness(1.25); }
+.btn:focus-visible { outline: none; box-shadow: var(--lg-drop), var(--lg-inner), 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+.btn.primary {
+  color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.18);
+  background: color-mix(in srgb, var(--accent) 78%, transparent);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 35%, transparent), var(--lg-inner);
+}
+.btn.primary:hover { background: color-mix(in srgb, var(--accent) 90%, transparent); }
+.btn.primary::after { background: radial-gradient(120% 90% at 28% -10%, rgba(255,255,255,0.55), transparent 55%); }
+.btn.small { min-height: 30px; padding: 4px 13px; font-size: 13px; }
+.btn[disabled] { opacity: .5; cursor: default; transform: none; }
+#theme { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; font-size: 16px; }
+
+/* Sélecteur Liquid Glass (remplace l'affichage des <select> du haut) */
+.lg-native { position: absolute !important; opacity: 0; pointer-events: none; width: 1px; height: 1px; overflow: hidden; }
+.lg-select { justify-content: space-between; padding-right: 12px; max-width: 100%; }
+.filters { min-width: 0; max-width: 100%; }
+.filters .lg-select { flex: 0 1 auto; min-width: 0; }
+.lg-select .lg-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-select .lg-chev { width: 12px; height: 12px; flex: none; opacity: .7; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+.lg-select[aria-expanded="true"] .lg-chev { transform: rotate(180deg); }
+.lg-menu {
+  position: fixed; z-index: 50; min-width: 200px; max-width: calc(100vw - 32px); max-height: 60vh; overflow: auto;
+  padding: 6px; border-radius: 20px;
+  background: var(--lg-menu);
+  -webkit-backdrop-filter: blur(30px) saturate(200%); backdrop-filter: blur(30px) saturate(200%);
+  box-shadow: 0 18px 50px rgba(15,20,40,0.22), 0 2px 6px rgba(15,20,40,0.12), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c);
+  transform-origin: top center; animation: lg-pop .32s cubic-bezier(.34,1.56,.64,1);
+}
+.lg-menu.up { transform-origin: bottom center; }
+@keyframes lg-pop { from { opacity: 0; transform: scale(.92) translateY(-4px); } to { opacity: 1; transform: none; } }
+.lg-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 9px 12px 9px 10px; border: 0; border-radius: 13px; background: transparent; cursor: pointer;
+  font-size: 14px; color: var(--ink);
+}
+.lg-opt .ck { width: 16px; flex: none; color: var(--accent); visibility: hidden; font-weight: 700; }
+.lg-opt[aria-selected="true"] .ck { visibility: visible; }
+.lg-opt[aria-selected="true"] { font-weight: 600; }
+.lg-opt:hover, .lg-opt:focus-visible { outline: none; background: var(--lg-hl); }
+
+/* <select> natifs restants (tableaux) et champs texte : même verre, sans pseudo-éléments */
+select, input[type=email], input[type=search] {
+  border: 0; background-color: var(--lg-fill);
+  -webkit-backdrop-filter: blur(8px) saturate(190%); backdrop-filter: blur(8px) saturate(190%);
+  box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), inset 0 -1px 1px rgba(20,30,60,0.06);
+  transition: background-color .2s, box-shadow .2s;
+}
+select {
+  -webkit-appearance: none; appearance: none; padding-right: 32px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%238a8a93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;
+}
+select:hover, input[type=email]:hover, input[type=search]:hover { background-color: var(--lg-fill-hover); }
+select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.row-actions select { padding-right: 28px; background-position: right 10px center; }
+
+/* ===== Menu latéral Liquid Glass (capsule de verre clair, lentille active qui glisse) ===== */
+:root {
+  --rail-ink: #55555c;
+  --rail-on: var(--accent);
+  --rail-lens: rgba(255,255,255,0.72);
+  --rail-lens-shadow: 0 6px 16px rgba(20,30,60,0.16), 0 1px 3px rgba(20,30,60,0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --rail-ink: #a9a9b2; --rail-lens: rgba(255,255,255,0.16); --rail-lens-shadow: 0 6px 16px rgba(0,0,0,0.45); }
+}
+:root[data-theme="dark"] { --rail-ink: #a9a9b2; --rail-lens: rgba(255,255,255,0.16); --rail-lens-shadow: 0 6px 16px rgba(0,0,0,0.45); }
+.rail {
+  position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 20;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px; border-radius: 999px;
+  background: var(--lg-fill); isolation: isolate;
+  -webkit-backdrop-filter: blur(14px) saturate(190%) brightness(1.05); backdrop-filter: blur(14px) saturate(190%) brightness(1.05);
+  box-shadow: var(--lg-drop), var(--lg-inner);
+}
+/* liseré spéculaire */
+.rail::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1; pointer-events: none;
+  background: linear-gradient(160deg, var(--lg-rim-a) 0%, var(--lg-rim-b) 35%, var(--lg-rim-b) 65%, var(--lg-rim-c) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* reflet bombé */
+.rail::after {
+  content: ""; position: absolute; inset: 1px; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: radial-gradient(140% 40% at 30% 0%, var(--lg-sheen), transparent 70%), radial-gradient(120% 30% at 70% 100%, color-mix(in srgb, var(--lg-sheen) 40%, transparent), transparent 70%);
+  opacity: .8;
+}
+.rail-sep { width: 22px; height: 1px; background: var(--grid); margin: 4px 0; flex: none; }
+.rail-item {
+  position: relative; z-index: 1; width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; padding: 0;
+  display: grid; place-items: center; background: transparent; color: var(--rail-ink); cursor: pointer;
+  transition: color .25s, transform .35s cubic-bezier(.34,1.56,.64,1); -webkit-tap-highlight-color: transparent;
+}
+.rail-item[hidden] { display: none; }
+.rail-item svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.rail-item:hover { color: var(--ink); }
+.rail-item[aria-current="true"] { color: var(--rail-on); }
+.rail-item[aria-current="true"] svg { stroke-width: 2; }
+.rail-item:active { transform: scale(0.9); }
+.rail-item:focus-visible { outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
+/* lentille de verre sous l'icône active */
+.rail-pill {
+  position: absolute; left: 0; top: 0; width: 44px; height: 44px; border-radius: 50%; z-index: 0; pointer-events: none;
+  background: radial-gradient(120% 90% at 30% -10%, var(--lg-sheen), transparent 60%), var(--rail-lens);
+  -webkit-backdrop-filter: blur(4px) saturate(160%); backdrop-filter: blur(4px) saturate(160%);
+  box-shadow: var(--rail-lens-shadow), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), inset 0 -1px 1px rgba(20,30,60,0.08);
+  transition: transform .5s cubic-bezier(.34,1.45,.64,1), opacity .2s;
+}
+/* étiquette au survol, en verre, à droite de la capsule */
+.rail-item::after {
+  content: attr(data-label); position: absolute; left: calc(100% + 18px); top: 50%; white-space: nowrap;
+  padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 560; color: var(--ink);
+  background: var(--lg-menu); -webkit-backdrop-filter: blur(24px) saturate(190%); backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(15,20,40,0.18), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c);
+  opacity: 0; transform: translate(-6px, -50%) scale(.96); transition: opacity .18s, transform .3s cubic-bezier(.34,1.56,.64,1); pointer-events: none;
+}
+.rail-item:hover::after, .rail-item:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+[data-sec] { scroll-margin-top: 104px; }
+@media (min-width: 901px) { #app { padding-left: 96px; } }
+@media (min-width: 901px) and (max-height: 520px) { .rail { top: 16px; transform: none; } }
+@media (max-width: 900px) {
+  .rail { left: 50%; top: auto; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); flex-direction: row; padding: 6px; }
+  .rail-sep { width: 1px; height: 22px; margin: 0 2px; }
+  .rail-item::after { display: none; }
+  #app { padding-bottom: 110px; }
+  [data-sec] { scroll-margin-top: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .btn, .lg-menu, .lg-select .lg-chev, .rail-pill, .rail-item, .rail-item::after { transition: none; animation: none; } }
+@media (prefers-reduced-transparency: reduce) {
+  .btn, select, input, .lg-menu { background-color: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .btn.primary { background: var(--accent); }
+}
+
+/* ===== Assistant ventes (panneau de discussion) ===== */
+.rail-ai[aria-expanded="true"] { color: var(--rail-on); background: var(--rail-lens); box-shadow: var(--rail-lens-shadow), inset 0 1px 0 var(--lg-rim-a); }
+.rail-ai[aria-expanded="true"] svg { stroke-width: 2; }
+.ai-panel {
+  position: fixed; right: 16px; top: 16px; bottom: 16px; width: min(460px, calc(100vw - 32px)); z-index: 40;
+  display: flex; flex-direction: column; border-radius: 26px; overflow: hidden;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-edge-2);
+  box-shadow: 0 24px 64px rgba(15,20,40,0.22), inset 0 1px 0 var(--glass-edge);
+  transform: translateX(calc(100% + 24px)); opacity: 0; visibility: hidden;
+  transition: transform .45s cubic-bezier(.3,1.2,.5,1), opacity .2s, visibility 0s linear .45s;
+}
+.ai-panel.open { transform: none; opacity: 1; visibility: visible; transition: transform .45s cubic-bezier(.3,1.2,.5,1), opacity .2s, visibility 0s; }
+.ai-head { display: flex; align-items: center; gap: 10px; padding: 14px 14px 12px 20px; border-bottom: 1px solid var(--grid); }
+.ai-head h2 { font-size: 16px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+.ai-head .sub { margin: 0; font-size: 12px; }
+.ai-head .grow { flex: 1; min-width: 0; }
+.ai-icon-btn { width: 34px; height: 34px; min-height: 34px; padding: 0; display: grid; place-items: center; }
+.ai-icon-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ai-log { flex: 1; overflow-y: auto; padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 12px; overscroll-behavior: contain; }
+.ai-empty { margin: auto 0; text-align: center; padding: 8px 6px 0; }
+.ai-empty .ai-orb { width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 10px; display: grid; place-items: center; color: #fff;
+  background: radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,.55), transparent 55%), linear-gradient(135deg, var(--s-b2c), var(--s-intra)); box-shadow: var(--lg-drop); }
+.ai-empty .ai-orb svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ai-empty h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+.ai-empty p { margin: 0 auto 14px; color: var(--ink-2); font-size: 13px; max-width: 320px; }
+.ai-sugg { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.ai-sugg .btn { text-align: left; border-radius: 14px; font-size: 13px; padding: 9px 14px; min-height: 0; }
+.ai-msg { max-width: 92%; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.ai-msg.user { align-self: flex-end; background: color-mix(in srgb, var(--accent) 90%, transparent); color: #fff; padding: 9px 14px; border-radius: 18px 18px 6px 18px; white-space: pre-wrap; }
+.ai-msg.bot { align-self: flex-start; max-width: 100%; width: 100%; }
+.ai-msg.bot .ai-text { background: var(--surface-2); border: 1px solid var(--grid); padding: 10px 14px; border-radius: 6px 18px 18px 18px; }
+.ai-msg.bot .ai-text p { margin: 0 0 6px; } .ai-msg.bot .ai-text p:last-child { margin-bottom: 0; }
+.ai-msg.bot .ai-text ul { margin: 4px 0 6px; padding-left: 18px; }
+.ai-msg.bot .ai-text code { font-size: 12px; background: var(--bar-track); padding: 1px 5px; border-radius: 6px; }
+.ai-msg.err .ai-text { background: var(--warn-bg); color: var(--warn-ink); border-color: transparent; }
+.ai-table { margin-top: 8px; border: 1px solid var(--grid); border-radius: 14px; overflow: hidden; background: var(--surface-2); }
+.ai-table-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px 8px 12px; border-bottom: 1px solid var(--grid); }
+.ai-table-head b { font-size: 12.5px; font-weight: 600; min-width: 0; }
+.ai-table-head .btn { white-space: nowrap; flex: none; }
+.ai-table-head .muted { font-size: 12px; color: var(--muted); font-weight: 400; }
+.ai-table-scroll { overflow: auto; max-height: 300px; }
+.ai-table table { font-size: 12px; }
+.ai-table th, .ai-table td { padding: 6px 10px; white-space: nowrap; }
+.ai-table thead th { position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.ai-table-foot { padding: 6px 12px; font-size: 12px; border-top: 1px solid var(--grid); }
+.ai-typing { display: inline-flex; gap: 4px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--grid); border-radius: 6px 18px 18px 18px; align-self: flex-start; }
+.ai-typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: aiDot 1.1s infinite ease-in-out; }
+.ai-typing i:nth-child(2) { animation-delay: .15s; } .ai-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes aiDot { 0%, 80%, 100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+.ai-compose { padding: 10px 12px 12px; border-top: 1px solid var(--grid); }
+.ai-ctx { font-size: 11.5px; color: var(--muted); padding: 0 6px 6px; }
+.ai-box { display: flex; align-items: flex-end; gap: 8px; background: var(--glass-strong); border: 1px solid var(--ring); border-radius: 20px; padding: 6px 6px 6px 14px; }
+.ai-box:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.ai-box textarea { flex: 1; border: 0; background: transparent; outline: none; resize: none; font: inherit; color: inherit; padding: 6px 0; max-height: 140px; min-height: 22px; line-height: 1.45; }
+.ai-send { width: 34px; height: 34px; border-radius: 50%; border: 0; flex: none; display: grid; place-items: center; cursor: pointer; background: var(--accent); color: #fff; transition: transform .15s, opacity .15s; }
+.ai-send:active { transform: scale(.92); } .ai-send[disabled] { opacity: .4; cursor: default; }
+.ai-send svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 900px) {
+  .ai-panel { inset: 0; width: 100%; border-radius: 0; padding-bottom: env(safe-area-inset-bottom); transform: translateY(24px); }
+  .ai-panel.open { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .ai-panel, .ai-typing i { transition: none; animation: none; } }
+@media (prefers-reduced-transparency: reduce) { .ai-panel { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+</style>
+<style>
+/* ===== Data Center : compléments ===== */
+.tiles.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1100px) { .tiles.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .tiles.four { grid-template-columns: 1fr; } }
+.tile .nature { display: inline-block; font-size: 10.5px; font-weight: 650; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-left: 6px; }
+.tile .cmp { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+.tile.flag .value::after { content: " ●"; font-size: 14px; color: var(--warn-ink); vertical-align: super; }
+.fiab { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 14px; padding: 12px 16px; border-radius: 18px; }
+.fiab b { font-size: 12.5px; font-weight: 650; color: var(--ink-2); margin-right: 4px; }
+.pill.warn { color: var(--warn-ink); background: var(--warn-bg); border-color: transparent; }
+.pill.bad { color: var(--bad); }
+.pill.ok { color: var(--good); }
+.periode { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.periode input[type=date] { border-radius: 999px; padding: 7px 12px; min-height: 38px; border: 0; background: var(--lg-fill); color: var(--ink);
+  box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c); font-variant-numeric: tabular-nums; }
+.periode .vs { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.periode .perso { display: inline-flex; gap: 6px; align-items: center; }
+.delta-up { color: var(--good); font-weight: 650; }
+.delta-down { color: var(--bad); font-weight: 650; }
+td .d { display: block; font-size: 11.5px; }
+.est { font-style: italic; }
+.reco { border-radius: 18px; padding: 14px 16px; margin-bottom: 10px; background: var(--surface-2); border: 1px solid var(--ring); }
+.reco h3 { margin: 0 0 4px; font-size: 14.5px; font-weight: 650; }
+.reco .meta { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.reco p { margin: 4px 0; font-size: 13px; }
+.reco .actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.g-haute { border-left: 4px solid var(--bad); }
+.g-moyenne { border-left: 4px solid var(--s-mkt); }
+.g-info { border-left: 4px solid var(--accent); }
+.vide { padding: 18px; text-align: center; color: var(--muted); font-size: 13px; }
+.vide b { color: var(--ink-2); }
+th.sort { cursor: pointer; }
+th.sort:hover { color: var(--ink); }
+.board-menu .lg-opt small { color: var(--muted); font-size: 12px; margin-left: auto; }
+.one { grid-template-columns: 1fr; margin-top: 14px; }
+@media (max-width: 900px) {
+  .rail { max-width: calc(100vw - 20px); overflow-x: auto; scrollbar-width: none; justify-content: flex-start; gap: 2px; }
+  .rail::-webkit-scrollbar { display: none; }
+  .rail-item, .rail-pill { width: 38px; height: 38px; }
+  .rail-item svg { width: 19px; height: 19px; }
+}
+</style>
+</head>
+<body>
+
+<div id="login" class="wrap hidden">
+  <div class="card">
+    <h1>Data Center SHINE</h1>
+    <div class="sub">Accès réservé. Connecte-toi depuis le board : le lien de connexion vaut pour les deux.</div>
+    <p><a class="btn primary" href="./">Se connecter</a></p>
+  </div>
+</div>
+
+<div id="denied" class="wrap hidden">
+  <div class="card">
+    <h1>Accès non autorisé</h1>
+    <div class="sub" id="denied-msg"></div>
+    <p><a class="btn" href="./">Retour au board Ventes</a> <button class="btn" id="logout-2">Se déconnecter</button></p>
+  </div>
+</div>
+
+<div id="app" class="wrap hidden">
+  <nav class="rail" id="rail" aria-label="Onglets du Data Center">
+    <span class="rail-pill" id="rail-pill" aria-hidden="true"></span>
+    <button class="rail-item" data-vue="apercu" data-label="Vue d'ensemble" aria-label="Vue d'ensemble"><svg viewBox="0 0 24 24"><path d="M4 19V11M10 19V5M16 19v-6M22 19H2"/></svg></button>
+    <button class="rail-item" data-vue="acquisition" data-label="Publicité payante" aria-label="Publicité payante"><svg viewBox="0 0 24 24"><path d="M4 10v4h3l6 4V6L7 10z"/><path d="M16.5 9a4 4 0 0 1 0 6M19 6.5a7.5 7.5 0 0 1 0 11"/></svg></button>
+    <button class="rail-item" data-vue="trafic" data-label="Canaux et trafic" aria-label="Canaux et trafic"><svg viewBox="0 0 24 24"><path d="M3 7h10M3 12h14M3 17h7"/><circle cx="18" cy="7" r="2"/><circle cx="20" cy="17" r="2"/></svg></button>
+    <button class="rail-item" data-vue="organique" data-label="Réseaux organiques" aria-label="Réseaux organiques"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/></svg></button>
+    <button class="rail-item" data-vue="email" data-label="E-mail" aria-label="E-mail"><svg viewBox="0 0 24 24"><rect x="3" y="5.5" width="18" height="13" rx="2"/><path d="M3.5 7l8.5 6 8.5-6"/></svg></button>
+    <button class="rail-item" data-vue="seo" data-label="Référencement naturel" aria-label="Référencement naturel"><svg viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg></button>
+    <button class="rail-item" data-vue="reco" data-label="Préconisations" aria-label="Préconisations"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.4 1.1 2.2h5c0-.8.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/></svg></button>
+    <button class="rail-item" data-vue="fiabilite" data-label="Fiabilité des données" aria-label="Fiabilité des données"><svg viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8.2-8 9-4.6-.8-8-4.5-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></button>
+    <span class="rail-sep" aria-hidden="true"></span>
+    <button class="rail-item" id="rail-boards" data-label="Changer de board" aria-label="Changer de board" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></button>
+  </nav>
+
+  <header class="top">
+    <div>
+      <h1>Data Center<span id="vue-titre"></span></h1>
+      <div class="sub" id="fresh">Chargement…</div>
+    </div>
+    <div class="filters periode">
+      <select id="f-per" aria-label="Période"></select>
+      <span class="perso hidden" id="per-perso"><input type="date" id="per-du" aria-label="Du"><input type="date" id="per-au" aria-label="Au"></span>
+      <span class="vs">comparé à</span>
+      <select id="f-cmp" aria-label="Comparaison">
+        <option value="n1">N-1 (mêmes dates)</option>
+        <option value="n1s">N-1 (même jour de semaine)</option>
+        <option value="prec">Période précédente</option>
+        <option value="perso">Dates choisies…</option>
+        <option value="aucune">Aucune comparaison</option>
+      </select>
+      <span class="perso hidden" id="cmp-perso"><input type="date" id="cmp-du" aria-label="Comparer du"><input type="date" id="cmp-au" aria-label="Comparer au"></span>
+      <button class="btn" id="theme" title="Changer de thème" aria-label="Changer de thème">◐</button>
+    </div>
+  </header>
+
+  <div class="fiab card" id="fiab"></div>
+  <div id="notes"></div>
+
+  <!-- ===== Vue d'ensemble ===== -->
+  <section data-panel="apercu">
+    <div class="grid tiles four" id="tiles"></div>
+    <div class="card" data-sec>
+      <div class="card-head"><h2>CA encaissé HT par jour <span class="nature">PrestaShop · particuliers</span></h2><span class="hint" id="h-ca"></span></div>
+      <div class="legend" id="leg-ca"></div>
+      <div class="chart" id="ch-ca"></div>
+    </div>
+    <div class="grid one">
+      <div class="card" data-sec>
+        <div class="card-head"><h2>Dépense publicitaire par jour</h2><span class="hint">additionnable entre régies</span></div>
+        <div class="legend" id="leg-dep"></div>
+        <div class="chart" id="ch-dep"></div>
+      </div>
+      <div class="card" data-sec>
+        <div class="card-head"><h2>Ce que chacun dit</h2><span class="hint">jamais additionné</span></div>
+        <div class="tbl-wrap" id="tbl-verite"></div>
+        <p class="sub" style="margin-top:10px">Revendiqué = ce que la régie s'attribue. Mesuré = ce que GA4 voit (dernier clic, ~87 % des commandes). Encaissé = factures PrestaShop des particuliers. Le MER (encaissé ÷ dépense totale) est le seul chiffre qui ne dépend d'aucun tracking.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Publicité payante ===== -->
+  <section data-panel="acquisition" class="hidden">
+    <div class="card" data-sec>
+      <div class="card-head"><h2>Campagnes</h2><span class="hint">triées par dépense · ROAS mesuré = CA GA4 ÷ dépense</span></div>
+      <div class="tbl-wrap" id="tbl-camp"></div>
+    </div>
+    <div class="grid one">
+      <div class="card" data-sec>
+        <div class="card-head"><h2>Réseaux de diffusion</h2><span class="hint">où la pub s'affiche</span></div>
+        <div class="tbl-wrap" id="tbl-res"></div>
+      </div>
+      <div class="card" data-sec>
+        <div class="card-head"><h2>Dépense Google par réseau et par jour</h2><span class="hint">repère les réseaux qui dépensent sans valeur</span></div>
+        <div class="legend" id="leg-res"></div>
+        <div class="chart" id="ch-res"></div>
+      </div>
+    </div>
+    <div class="card" data-sec style="margin-top:14px">
+      <div class="card-head"><h2>Publicités Meta</h2><span class="hint">nom de pub = utm_content, relié à GA4</span></div>
+      <div class="tbl-wrap" id="tbl-pubs"></div>
+    </div>
+  </section>
+
+  <!-- ===== Canaux et trafic ===== -->
+  <section data-panel="trafic" class="hidden">
+    <div class="grid tiles four" id="tiles-trafic"></div>
+    <div class="card" data-sec>
+      <div class="card-head"><h2>Canaux</h2><span class="hint">GA4, groupe de canaux de la session</span></div>
+      <div class="tbl-wrap" id="tbl-canaux"></div>
+    </div>
+    <div class="grid two">
+      <div class="card" data-sec>
+        <div class="card-head"><h2>Sources / supports</h2><span class="hint">40 premiers</span></div>
+        <div class="tbl-wrap" id="tbl-sources"></div>
+      </div>
+      <div class="card" data-sec>
+        <div class="card-head"><h2>Pages d'entrée</h2><span class="hint">25 premières</span></div>
+        <div class="tbl-wrap" id="tbl-pages"></div>
+      </div>
+    </div>
+  </section>
+
+  <section data-panel="organique" class="hidden">
+    <div class="card" data-sec><div class="card-head"><h2>Réseaux organiques</h2><span class="hint">Instagram, Facebook, TikTok, YouTube, Pinterest</span></div><div id="org"></div></div>
+    <div class="card" data-sec style="margin-top:14px"><div class="card-head"><h2>Publications les plus engageantes</h2></div><div class="tbl-wrap" id="tbl-posts"></div></div>
+  </section>
+
+  <section data-panel="email" class="hidden">
+    <div class="card" data-sec><div class="card-head"><h2>Envois Omnisend</h2><span class="hint">ce qu'Omnisend revendique, à côté de ce que GA4 mesure</span></div><div class="tbl-wrap" id="tbl-email"></div></div>
+  </section>
+
+  <section data-panel="seo" class="hidden">
+    <div class="grid tiles four" id="tiles-seo"></div>
+    <div class="card" data-sec><div class="card-head"><h2>Requêtes Google</h2><span class="hint">Search Console · shine-group.fr</span></div><div class="tbl-wrap" id="tbl-seo"></div></div>
+  </section>
+
+  <section data-panel="reco" class="hidden">
+    <div class="card" data-sec><div class="card-head"><h2>Préconisations en cours</h2><span class="hint" id="h-reco"></span></div><div id="reco"></div></div>
+  </section>
+
+  <section data-panel="fiabilite" class="hidden">
+    <div class="card" data-sec><div class="card-head"><h2>Périodes de données non fiables</h2><span class="hint">journal de fiabilité</span></div><div class="tbl-wrap" id="tbl-fiab"></div></div>
+    <div class="card" data-sec style="margin-top:14px"><div class="card-head"><h2>Contrôles automatiques en échec</h2><span class="hint">chaque nuit après le chargement</span></div><div class="tbl-wrap" id="tbl-ctrl"></div></div>
+  </section>
+
+  <footer><span id="who"></span><button class="link" id="logout">Se déconnecter</button></footer>
+</div>
+
+<div class="tip" id="tip"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script>
+(() => {
+const SUPABASE_URL = 'https://dfolpanugctzebwpfhze.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_k4fwRYCWpfxHvljJgQDiiw_wLCnxu3n';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtEur = (v, dec = 0) => (v == null || isNaN(v)) ? '–' : new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR', maximumFractionDigits: dec, minimumFractionDigits: dec }).format(v);
+const fmtN = (v, dec = 0) => (v == null || isNaN(v)) ? '–' : new Intl.NumberFormat('fr-FR', { maximumFractionDigits: dec, minimumFractionDigits: dec }).format(v);
+const fmtK = (v) => { const a = Math.abs(v); if (a >= 1e6) return fmtN(v / 1e6, 2) + ' M€'; if (a >= 1e3) return fmtN(v / 1e3, 1) + ' k€'; return fmtN(v, 0) + ' €'; };
+const fmtP = (v, dec = 1) => v == null || isNaN(v) ? '–' : fmtN(v, dec) + ' %';
+const div = (a, b) => (b ? a / b : null);
+const sum = (arr, f) => arr.reduce((a, r) => a + (+f(r) || 0), 0);
+
+// ---------- Thème ----------
+(function initTheme() {
+  let t = null; try { t = localStorage.getItem('shine-theme'); } catch (e) {}
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  $('theme').onclick = () => {
+    const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const nxt = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nxt);
+    try { localStorage.setItem('shine-theme', nxt); } catch (e) {}
+    render();
+  };
+})();
+
+// ---------- Dates ----------
+const pad = n => String(n).padStart(2, '0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
+const nbJours = (a, b) => Math.round((parse(b) - parse(a)) / 864e5) + 1;
+const shiftYear = (s, n) => { const [y, m, d] = s.split('-').map(Number); const dd = (m === 2 && d === 29) ? 28 : d; return `${y + n}-${pad(m)}-${pad(dd)}`; };
+const JOURS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+const fmtD = s => { const d = parse(s); return `${JOURS[d.getDay()]} ${d.getDate()}/${pad(d.getMonth() + 1)}`; };
+const fmtDL = s => { const d = parse(s); return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }); };
+const HIER = iso(new Date(Date.now() - 864e5));
+const AUJ = iso(new Date());
+
+const S = { acces: null, role: null, vue: 'apercu', ops: [], per: null, cmp: null, d: null, c: null };
+
+function presets() {
+  const t = parse(AUJ);
+  const debMois = iso(new Date(t.getFullYear(), t.getMonth(), 1));
+  const debMoisP = iso(new Date(t.getFullYear(), t.getMonth() - 1, 1));
+  const finMoisP = iso(new Date(t.getFullYear(), t.getMonth(), 0));
+  const debEx = t.getMonth() >= 9 ? `${t.getFullYear()}-10-01` : `${t.getFullYear() - 1}-10-01`;
+  const out = [
+    { v: 'hier', t: 'Hier', du: HIER, au: HIER },
+    { v: '7', t: '7 derniers jours', du: addDays(HIER, -6), au: HIER },
+    { v: '30', t: '30 derniers jours', du: addDays(HIER, -29), au: HIER },
+    { v: 'mois', t: 'Mois en cours', du: debMois, au: AUJ === debMois ? AUJ : HIER },
+    { v: 'moisp', t: 'Mois dernier', du: debMoisP, au: finMoisP },
+    { v: 'ex', t: 'Exercice en cours (depuis le 1er oct.)', du: debEx, au: HIER },
+  ];
+  for (const o of S.ops) out.push({ v: 'op' + o.id, t: `${o.nom} (${fmtD(o.du)} → ${fmtD(o.au)})`, du: o.du, au: o.au > HIER ? HIER : o.au });
+  out.push({ v: 'perso', t: 'Dates choisies…' });
+  return out;
+}
+function periode() {
+  const v = $('f-per').value;
+  if (v === 'perso') return { du: $('per-du').value || addDays(HIER, -6), au: $('per-au').value || HIER };
+  const p = presets().find(x => x.v === v) || presets()[1];
+  return { du: p.du, au: p.au };
+}
+function comparaison(p) {
+  const v = $('f-cmp').value, n = nbJours(p.du, p.au);
+  if (v === 'aucune') return null;
+  if (v === 'n1') return { du: shiftYear(p.du, -1), au: shiftYear(p.au, -1), t: 'N-1' };
+  if (v === 'n1s') return { du: addDays(p.du, -364), au: addDays(p.au, -364), t: 'N-1 (jour de semaine)' };
+  if (v === 'prec') return { du: addDays(p.du, -n), au: addDays(p.du, -1), t: 'période précédente' };
+  return { du: $('cmp-du').value || shiftYear(p.du, -1), au: $('cmp-au').value || shiftYear(p.au, -1), t: 'dates choisies' };
+}
+
+// ---------- Tooltip ----------
+const tip = $('tip');
+function showTip(html, ev) {
+  tip.innerHTML = html; tip.style.display = 'block';
+  const r = tip.getBoundingClientRect();
+  let x = ev.clientX + 14, y = ev.clientY + 14;
+  if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - 14;
+  tip.style.left = Math.max(8, x) + 'px'; tip.style.top = Math.max(8, y) + 'px';
+}
+function hideTip() { tip.style.display = 'none'; }
+
+// ---------- Chargement ----------
+async function charger() {
+  const p = periode(), c = comparaison(p);
+  S.per = p; S.cmp = c;
+  $('fresh').textContent = 'Chargement…';
+  try {
+    const [a, b] = await Promise.all([
+      sb.rpc('dc_donnees', { p_du: p.du, p_au: p.au }),
+      c ? sb.rpc('dc_donnees', { p_du: c.du, p_au: c.au }) : Promise.resolve({ data: null })
+    ]);
+    if (a.error) throw a.error;
+    S.d = a.data; S.c = b.data || null;
+    render();
+  } catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
+}
+
+// ---------- Agrégats ----------
+function agreger(d) {
+  if (!d) return null;
+  const com = d.commerce || [], rj = d.regie_jour || [], g = d.ga4_jour || [];
+  const plat = {};
+  for (const r of rj) { const p = plat[r.plateforme] ||= { depense: 0, clics: 0, conv: 0, valeur: 0 }; p.depense += +r.depense || 0; p.clics += +r.clics || 0; p.conv += +r.conv || 0; p.valeur += +r.valeur || 0; }
+  const mes = {};
+  for (const c of d.campagnes || []) { mes[c.plateforme] = (mes[c.plateforme] || 0) + (+c.ca_mesure || 0); }
+  const a = {
+    ca: sum(com, r => r.ca_ht), port: sum(com, r => r.port_ht), commandes: sum(com, r => r.commandes),
+    nouveaux: +d.nouveaux_clients || 0, depense: sum(rj, r => r.depense),
+    sessions: sum(g, r => r.sessions), engagees: sum(g, r => r.sessions_engagees), tx: sum(g, r => r.transactions), ca_ga4: sum(g, r => r.ca_mesure),
+    plat, mes, jours: nbJours(d.du, d.au)
+  };
+  a.panier = div(a.ca, a.commandes); a.mer = div(a.ca, a.depense);
+  a.conv = div(a.commandes, a.sessions); a.engag = div(a.engagees, a.sessions); a.captation = div(a.tx, a.commandes);
+  return a;
+}
+function delta(cur, prev, inverse) {
+  if (prev == null || cur == null || !isFinite(prev) || prev === 0) return '';
+  const v = 100 * (cur - prev) / Math.abs(prev); const good = inverse ? v < 0 : v > 0;
+  return `<span class="${Math.abs(v) < 0.5 ? '' : good ? 'delta-up' : 'delta-down'}">${v >= 0 ? '+' : ''}${fmtN(v, 1)} %</span>`;
+}
+
+// ---------- Fiabilité ----------
+const FIAB_LIB = { non_fiable: 'non fiable', anomalie: 'anomalie', a_verifier: 'à vérifier', partiel: 'partiel' };
+const FIAB_CL = { non_fiable: 'bad', anomalie: 'bad', a_verifier: 'warn', partiel: 'warn' };
+const PLAT = { google_ads: 'Google Ads', meta: 'Meta', tiktok_ads: 'TikTok Ads', ga4: 'GA4' };
+const fiabDe = (metrique, plateforme) => (S.d?.fiabilite || []).filter(f => (f.metrique === metrique || f.metrique === 'tout') && (!plateforme || !f.plateforme || f.plateforme === plateforme) && f.perimetre === 'tout');
+function renderFiab() {
+  const d = S.d, p = S.per; const parts = [];
+  const grp = [['sessions', 'Sessions'], ['conversions', 'Conversions régies'], ['valeur', 'Valeur des conversions'], ['attribution', 'Attribution']];
+  parts.push('<b>Fiabilité de la période</b>');
+  for (const [m, lib] of grp) {
+    const f = fiabDe(m);
+    if (!f.length) { parts.push(`<span class="pill ok">${lib} : fiable</span>`); continue; }
+    const detail = f.map(x => `${x.plateforme ? PLAT[x.plateforme] || x.plateforme : 'Toutes sources'} : ${FIAB_LIB[x.fiabilite]} (${fmtD(x.du)}${x.au ? ' → ' + fmtD(x.au) : ' → en cours'}) — ${x.raison}`).join('\n');
+    const pire = f.some(x => ['non_fiable', 'anomalie'].includes(x.fiabilite)) ? 'bad' : 'warn';
+    parts.push(`<span class="pill ${pire}" title="${esc(detail)}">${lib} : ${f.map(x => (x.plateforme ? PLAT[x.plateforme] || x.plateforme : 'tout') + ' ' + FIAB_LIB[x.fiabilite]).join(', ')}</span>`);
+  }
+  const prov = p.au > addDays(AUJ, -4);
+  if (prov) parts.push(`<span class="pill warn" title="Les régies et GA4 continuent de compléter les 3 derniers jours">3 derniers jours provisoires</span>`);
+  const ko = d.controles_ko || [];
+  if (ko.length) parts.push(`<span class="pill warn" title="${esc(ko.map(k => `${fmtD(k.jour)} ${k.controle} : ${fmtN(k.ecart_pct, 1)}`).join('\n'))}">${ko.length} contrôle${ko.length > 1 ? 's' : ''} en échec</span>`);
+  $('fiab').innerHTML = parts.join('');
+}
+
+// ---------- Tuiles ----------
+function tile({ label, nature, v, fmt, prev, inverse, flag, hint }) {
+  const cmp = S.cmp ? `<div class="cmp">${S.cmp.t} : ${prev == null ? '–' : fmt(prev)} ${delta(v, prev, inverse)}</div>` : '';
+  return `<div class="card tile${flag ? ' flag' : ''}" ${flag ? `title="${esc(flag)}"` : ''}><div class="label">${label}${nature ? `<span class="nature">${nature}</span>` : ''}</div><div class="value">${fmt(v)}</div>${cmp}${hint ? `<div class="cmp">${hint}</div>` : ''}</div>`;
+}
+const flagSessions = () => { const f = fiabDe('sessions'); return f.length ? f.map(x => x.raison).join(' · ') : null; };
+
+// ---------- Graphiques ----------
+function niceTicks(max, n) {
+  const raw = max / n || 1; const p = Math.pow(10, Math.floor(Math.log10(raw))); const f = raw / p;
+  const step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+  const out = []; for (let v = 0; v <= max + step * 0.999; v += step) out.push(+v.toFixed(6)); return out;
+}
+// Courbe principale + courbe de comparaison alignée jour par jour (un seul axe, en €)
+function lineChart(el, labels, series, fmtAxis, fmtVal) {
+  const W = Math.max(300, el.clientWidth), H = 260, ml = el.clientWidth < 500 ? 46 : 58, mr = 12, mt = 10, mb = 26;
+  const iw = W - ml - mr, ih = H - mt - mb, n = labels.length;
+  const maxV = Math.max(1, ...series.flatMap(s => s.v.filter(x => x != null)));
+  const ticks = niceTicks(maxV, 4), top = ticks[ticks.length - 1];
+  const xS = i => ml + (n === 1 ? iw / 2 : (iw * i) / (n - 1)), yS = v => mt + ih - (v / top) * ih;
+  let s = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img"><g class="axis">`;
+  for (const t of ticks) s += `<line x1="${ml}" x2="${W - mr}" y1="${yS(t)}" y2="${yS(t)}" stroke="var(${t === 0 ? '--axis' : '--grid'})"/><text x="${ml - 8}" y="${yS(t) + 4}" text-anchor="end">${fmtAxis(t)}</text>`;
+  const pas = Math.ceil(n / Math.max(2, Math.floor(iw / 64)));
+  labels.forEach((l, i) => { if (i % pas === 0 || i === n - 1) s += `<text x="${xS(i)}" y="${H - 6}" text-anchor="middle">${esc(l)}</text>`; });
+  s += `</g>`;
+  for (const se of series) {
+    const pts = se.v.map((v, i) => v == null ? null : [xS(i), yS(v)]).filter(Boolean);
+    if (pts.length > 1) s += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="var(${se.c})" stroke-width="${se.dash ? 1.8 : 2.4}" ${se.dash ? 'stroke-dasharray="5 4"' : ''} stroke-linejoin="round" stroke-linecap="round"/>`;
+    if (n <= 40) pts.forEach(p => { s += `<circle cx="${p[0]}" cy="${p[1]}" r="${se.dash ? 2.5 : 3.5}" fill="var(${se.c})" stroke="var(--surface)" stroke-width="1.5"/>`; });
+  }
+  s += `<line id="cur" x1="0" x2="0" y1="${mt}" y2="${mt + ih}" stroke="var(--axis)" stroke-dasharray="3 3" visibility="hidden"/>`;
+  s += `<rect class="hit" x="${ml}" y="${mt}" width="${iw}" height="${ih}" fill="transparent"/></svg>`;
+  el.innerHTML = s;
+  const svg = el.querySelector('svg'), cur = el.querySelector('#cur'), hit = el.querySelector('.hit');
+  hit.addEventListener('mousemove', ev => {
+    const r = svg.getBoundingClientRect(); const x = (ev.clientX - r.left) * (W / r.width);
+    const i = Math.max(0, Math.min(n - 1, Math.round(n === 1 ? 0 : ((x - ml) / iw) * (n - 1))));
+    cur.setAttribute('x1', xS(i)); cur.setAttribute('x2', xS(i)); cur.setAttribute('visibility', 'visible');
+    let h = `<div class="t">${esc(series[0].lab ? series[0].lab[i] : labels[i])}</div>`;
+    for (const se of series) h += `<div class="r"><span><i class="sw line" style="background:var(${se.c})"></i>${esc(se.lab ? se.nom + ' · ' + (se.lab[i] || '') : se.nom)}</span><b>${fmtVal(se.v[i])}</b></div>`;
+    showTip(h, ev);
+  });
+  hit.addEventListener('mouseleave', () => { hideTip(); cur.setAttribute('visibility', 'hidden'); });
+}
+function stackChart(el, labels, keys, data, fmtAxis) {
+  const W = Math.max(300, el.clientWidth), H = 240, ml = el.clientWidth < 500 ? 46 : 58, mr = 10, mt = 10, mb = 26;
+  const iw = W - ml - mr, ih = H - mt - mb, n = labels.length;
+  const tots = data.map(d => keys.reduce((a, k) => a + (d[k.k] || 0), 0));
+  const ticks = niceTicks(Math.max(1, ...tots), 4), top = ticks[ticks.length - 1];
+  const yS = v => mt + ih - (v / top) * ih, band = iw / n, bw = Math.max(2, Math.min(22, band * 0.62));
+  let s = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img"><g class="axis">`;
+  for (const t of ticks) s += `<line x1="${ml}" x2="${W - mr}" y1="${yS(t)}" y2="${yS(t)}" stroke="var(${t === 0 ? '--axis' : '--grid'})"/><text x="${ml - 8}" y="${yS(t) + 4}" text-anchor="end">${fmtAxis(t)}</text>`;
+  const pas = Math.ceil(n / Math.max(2, Math.floor(iw / 64)));
+  labels.forEach((l, i) => { if (i % pas === 0) s += `<text x="${ml + band * i + band / 2}" y="${H - 6}" text-anchor="middle">${esc(l)}</text>`; });
+  s += `</g>`;
+  data.forEach((d, i) => {
+    const x = ml + band * i + (band - bw) / 2; let acc = 0;
+    const ks = keys.filter(k => (d[k.k] || 0) > 0);
+    ks.forEach((k, j) => { const v = d[k.k]; const y0 = yS(acc), y1 = yS(acc + v); acc += v; const h = Math.max(0, y0 - y1 - (j < ks.length - 1 ? 1 : 0)); if (h > 0) s += `<rect x="${x}" y="${y1 + (j < ks.length - 1 ? 1 : 0)}" width="${bw}" height="${h}" rx="${j === ks.length - 1 ? Math.min(3, bw / 2) : 0}" fill="var(${k.c})"/>`; });
+    s += `<rect class="hit" data-i="${i}" x="${ml + band * i}" y="${mt}" width="${band}" height="${ih}" fill="transparent"/>`;
+  });
+  s += `</svg>`; el.innerHTML = s;
+  el.querySelectorAll('.hit').forEach(h => {
+    h.addEventListener('mousemove', ev => { const i = +h.dataset.i, d = data[i]; let t = `<div class="t">${esc(labels[i])}</div>`; for (const k of keys) if (d[k.k]) t += `<div class="r"><span><i class="sw" style="background:var(${k.c})"></i>${esc(k.l)}</span><b>${fmtEur(d[k.k])}</b></div>`; t += `<hr><div class="r"><span>Total</span><b>${fmtEur(tots[i])}</b></div>`; showTip(t, ev); });
+    h.addEventListener('mouseleave', hideTip);
+  });
+}
+const legend = (el, items) => { el.innerHTML = items.map(i => `<span><i class="sw ${i.line ? 'line' : ''}" style="background:var(${i.c})"></i>${esc(i.l)}</span>`).join(''); };
+function jours(p) { const out = []; for (let d = p.du; d <= p.au; d = addDays(d, 1)) out.push(d); return out; }
+
+// ---------- Tableaux ----------
+function table(el, cols, rows, vide) {
+  if (!rows.length) { el.innerHTML = `<div class="vide">${vide || 'Aucune donnée sur la période.'}</div>`; return; }
+  el.innerHTML = `<table><thead><tr>${cols.map(c => `<th class="${c.n ? 'n' : ''}" ${c.title ? `title="${esc(c.title)}"` : ''}>${c.l}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${cols.map(c => `<td class="${c.n ? 'n' : ''}">${c.f(r)}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+const withD = (v, prev, f, inverse) => `${f(v)}${S.cmp && prev != null ? `<span class="d">${delta(v, prev, inverse) || '<span class="muted">=</span>'}</span>` : ''}`;
+
+// ---------- Rendu ----------
+const VUES = { apercu: "Vue d'ensemble", acquisition: 'Publicité payante', trafic: 'Canaux et trafic', organique: 'Réseaux organiques', email: 'E-mail', seo: 'Référencement naturel', reco: 'Préconisations', fiabilite: 'Fiabilité des données' };
+function render() {
+  if (!S.d) return;
+  const p = S.per, c = S.cmp;
+  $('vue-titre').textContent = ' · ' + VUES[S.vue];
+  const fr = S.d.fraicheur || {}; const derniere = Object.values(fr).sort().pop();
+  $('fresh').textContent = `${fmtDL(p.du)} → ${fmtDL(p.au)} (${nbJours(p.du, p.au)} j)${c ? ` · comparé à ${fmtDL(c.du)} → ${fmtDL(c.au)}` : ''}${derniere ? ` · données du ${new Date(derniere).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}` : ''}`;
+  renderFiab();
+  document.querySelectorAll('[data-panel]').forEach(s => s.classList.toggle('hidden', s.dataset.panel !== S.vue));
+  ({ apercu: rApercu, acquisition: rAcq, trafic: rTrafic, organique: rOrg, email: rEmail, seo: rSeo, reco: rReco, fiabilite: rFiabilite })[S.vue]();
+}
+
+function rApercu() {
+  const a = agreger(S.d), b = agreger(S.c), fs = flagSessions();
+  $('tiles').innerHTML = [
+    tile({ label: 'CA encaissé HT', nature: 'encaissé', v: a.ca, prev: b?.ca, fmt: v => fmtEur(v) }),
+    tile({ label: 'Commandes', nature: 'encaissé', v: a.commandes, prev: b?.commandes, fmt: v => fmtN(v) }),
+    tile({ label: 'Panier moyen HT', nature: 'encaissé', v: a.panier, prev: b?.panier, fmt: v => fmtEur(v, 2) }),
+    tile({ label: 'Nouveaux clients', nature: 'encaissé', v: a.nouveaux, prev: b?.nouveaux, fmt: v => fmtN(v), hint: a.commandes ? `${fmtP(100 * a.nouveaux / a.commandes, 0)} des commandes` : '' }),
+    tile({ label: 'Dépense publicitaire', v: a.depense, prev: b?.depense, fmt: v => fmtEur(v), inverse: true }),
+    tile({ label: 'MER', nature: 'encaissé ÷ dépense', v: a.mer, prev: b?.mer, fmt: v => v == null ? '–' : fmtN(v, 1) }),
+    tile({ label: 'Sessions', nature: 'mesuré', v: a.sessions, prev: b?.sessions, fmt: v => fmtN(v), flag: fs }),
+    tile({ label: 'Taux de conversion', nature: 'commandes ÷ sessions', v: a.conv == null ? null : 100 * a.conv, prev: b?.conv == null ? null : 100 * b.conv, fmt: v => fmtP(v, 2), flag: fs }),
+  ].join('');
+  // CA par jour vs comparaison
+  const jp = jours(S.per), m = Object.fromEntries((S.d.commerce || []).map(r => [r.jour, +r.ca_ht]));
+  const series = [{ nom: 'Période', c: '--s-b2c', v: jp.map(j => m[j] ?? (j <= S.per.au ? 0 : null)), lab: jp.map(fmtD) }];
+  if (S.cmp && S.c) {
+    const jc = jours(S.cmp), mc = Object.fromEntries((S.c.commerce || []).map(r => [r.jour, +r.ca_ht]));
+    series.push({ nom: S.cmp.t, c: '--n1', dash: true, v: jp.map((_, i) => jc[i] ? (mc[jc[i]] ?? 0) : null), lab: jp.map((_, i) => jc[i] ? fmtD(jc[i]) : '') });
+  }
+  legend($('leg-ca'), series.map(s => ({ l: s.nom, c: s.c, line: true })));
+  $('h-ca').textContent = S.cmp ? 'comparaison alignée jour par jour' : '';
+  lineChart($('ch-ca'), jp.map(fmtD), series, fmtK, v => fmtEur(v));
+  // Dépense par jour et par régie
+  const keys = [{ k: 'google_ads', l: 'Google Ads', c: '--s-b2c' }, { k: 'meta', l: 'Meta', c: '--s-pro' }, { k: 'tiktok_ads', l: 'TikTok Ads', c: '--s-rev' }];
+  const dd = jp.map(j => { const o = {}; for (const r of S.d.regie_jour || []) if (r.jour === j) o[r.plateforme] = (o[r.plateforme] || 0) + +r.depense; return o; });
+  const kp = keys.filter(k => dd.some(d => d[k.k]));
+  legend($('leg-dep'), kp); stackChart($('ch-dep'), jp.map(fmtD), kp, dd, fmtK);
+  // Revendiqué / mesuré / encaissé
+  const rows = Object.entries(a.plat).map(([pl, v]) => ({ pl, ...v, mes: a.mes[pl] || 0, prev: b?.plat?.[pl], prevMes: b?.mes?.[pl] }));
+  const tb = `<table><thead><tr><th>Régie</th><th class="n">Dépense</th><th class="n" title="Valeur des achats que la régie s'attribue">Revendiqué</th><th class="n" title="CA GA4 des sessions de ses campagnes">Mesuré</th><th class="n" title="Revendiqué ÷ mesuré">Facteur</th><th class="n" title="Mesuré ÷ dépense">ROAS mesuré</th></tr></thead><tbody>` +
+    rows.map(r => `<tr><td>${PLAT[r.pl] || r.pl}</td><td class="n">${withD(r.depense, r.prev?.depense, v => fmtEur(v), true)}</td><td class="n">${fmtEur(r.valeur)}</td><td class="n">${fmtEur(r.mes)}</td><td class="n">${r.mes ? fmtN(r.valeur / r.mes, 2) : '–'}</td><td class="n">${withD(div(r.mes, r.depense), r.prev ? div(r.prevMes, r.prev.depense) : null, v => v == null ? '–' : fmtN(v, 2))}</td></tr>`).join('') +
+    `<tr><td><b>Toutes régies</b></td><td class="n"><b>${fmtEur(a.depense)}</b></td><td class="n muted">jamais additionné</td><td class="n muted">—</td><td></td><td></td></tr>` +
+    `<tr><td><b>Encaissé PrestaShop</b></td><td></td><td></td><td class="n"><b>${fmtEur(a.ca)}</b> HT</td><td class="n">MER</td><td class="n"><b>${a.mer == null ? '–' : fmtN(a.mer, 1)}</b></td></tr></tbody></table>`;
+  $('tbl-verite').innerHTML = rows.length ? tb : '<div class="vide">Aucune dépense chargée sur la période.</div>';
+}
+
+function rAcq() {
+  const cmpC = Object.fromEntries((S.c?.campagnes || []).map(r => [r.plateforme + r.campagne_id, r]));
+  const camp = (S.d.campagnes || []).map(r => ({ ...r, roas: div(+r.ca_mesure, +r.depense), cpa: div(+r.depense, +r.transactions), fact: +r.ca_mesure ? +r.valeur_rev / +r.ca_mesure : null, p: cmpC[r.plateforme + r.campagne_id] }));
+  table($('tbl-camp'), [
+    { l: 'Régie', f: r => PLAT[r.plateforme] || r.plateforme },
+    { l: 'Campagne', f: r => `${esc(r.campagne || r.campagne_id)}${r.roas != null && r.roas < 1.5 && +r.depense > 100 ? ' <span class="pill bad">ROAS < 1,5</span>' : ''}` },
+    { l: 'Dépense', n: 1, f: r => withD(+r.depense, r.p ? +r.p.depense : null, v => fmtEur(v), true) },
+    { l: 'Clics', n: 1, f: r => fmtN(r.clics) },
+    { l: 'Sessions', n: 1, f: r => fmtN(r.sessions) },
+    { l: 'Commandes', n: 1, title: 'Transactions GA4 (mesuré)', f: r => fmtN(r.transactions) },
+    { l: 'CA mesuré', n: 1, f: r => fmtEur(+r.ca_mesure) },
+    { l: 'ROAS mesuré', n: 1, f: r => withD(r.roas, r.p ? div(+r.p.ca_mesure, +r.p.depense) : null, v => v == null ? '–' : fmtN(v, 2)) },
+    { l: 'Coût / commande', n: 1, f: r => r.cpa == null ? '–' : fmtEur(r.cpa, 2) },
+    { l: 'Revendiqué', n: 1, title: 'Valeur des conversions selon la régie', f: r => fmtEur(+r.valeur_rev) },
+    { l: 'Facteur', n: 1, title: 'Revendiqué ÷ mesuré', f: r => r.fact == null ? '–' : `${fmtN(r.fact, 2)}${r.fact > 5 ? ' <span class="pill warn">&gt; 5</span>' : ''}` },
+  ], camp);
+  const nj = nbJours(S.per.du, S.per.au);
+  const res = (S.d.reseaux || []).map(r => ({ ...r, sansValeur: +r.depense > 20 * Math.min(nj, 3) && !(+r.valeur_rev > 0) }));
+  table($('tbl-res'), [
+    { l: 'Régie', f: r => PLAT[r.plateforme] || r.plateforme },
+    { l: 'Réseau', f: r => `${esc(r.reseau)}${r.sansValeur ? ' <span class="pill bad">dépense sans valeur</span>' : ''}` },
+    { l: 'Dépense', n: 1, f: r => fmtEur(+r.depense) },
+    { l: 'Clics', n: 1, f: r => fmtN(r.clics) },
+    { l: 'Revendiqué', n: 1, f: r => fmtEur(+r.valeur_rev) },
+    { l: 'ROAS revendiqué', n: 1, f: r => +r.depense ? fmtN(+r.valeur_rev / +r.depense, 2) : '–' },
+  ], res);
+  const jp = jours(S.per); const COL = ['--s-b2c', '--s-pro', '--s-rev', '--s-mkt', '--s-intra', '--s-mdd', '--s-autre'];
+  const rz = [...new Set((S.d.reseaux_jour || []).filter(r => r.plateforme === 'google_ads').map(r => r.reseau))];
+  const keys = rz.map((k, i) => ({ k, l: k, c: COL[i % COL.length] }));
+  const data = jp.map(j => { const o = {}; for (const r of S.d.reseaux_jour || []) if (r.jour === j && r.plateforme === 'google_ads') o[r.reseau] = (o[r.reseau] || 0) + +r.depense; return o; });
+  legend($('leg-res'), keys); stackChart($('ch-res'), jp.map(fmtD), keys, data, fmtK);
+  table($('tbl-pubs'), [
+    { l: 'Publicité', f: r => esc(r.pub_nom) },
+    { l: 'Campagne', f: r => `<span class="muted">${esc(r.campagne || '')}</span>` },
+    { l: 'Dépense', n: 1, f: r => fmtEur(+r.depense) },
+    { l: 'Clics lien', n: 1, f: r => fmtN(r.clics_lien) },
+    { l: 'Sessions', n: 1, f: r => fmtN(r.sessions) },
+    { l: 'Commandes', n: 1, f: r => fmtN(r.transactions) },
+    { l: 'CA mesuré', n: 1, f: r => fmtEur(+r.ca_mesure) },
+    { l: 'ROAS mesuré', n: 1, f: r => +r.depense ? fmtN((+r.ca_mesure || 0) / +r.depense, 2) : '–' },
+    { l: 'Achats revendiqués', n: 1, f: r => fmtN(r.conv_rev, 0) },
+  ], S.d.pubs || []);
+}
+
+function rTrafic() {
+  const a = agreger(S.d), b = agreger(S.c), fs = flagSessions();
+  $('tiles-trafic').innerHTML = [
+    tile({ label: 'Sessions', nature: 'mesuré', v: a.sessions, prev: b?.sessions, fmt: v => fmtN(v), flag: fs }),
+    tile({ label: "Taux d'engagement", v: a.engag == null ? null : 100 * a.engag, prev: b?.engag == null ? null : 100 * b.engag, fmt: v => fmtP(v, 1), flag: fs }),
+    tile({ label: 'Commandes vues par GA4', nature: 'mesuré', v: a.tx, prev: b?.tx, fmt: v => fmtN(v) }),
+    tile({ label: 'Captation GA4', nature: 'GA4 ÷ PrestaShop', v: a.captation == null ? null : 100 * a.captation, prev: b?.captation == null ? null : 100 * b.captation, fmt: v => fmtP(v, 1), hint: 'normal : 85 à 95 %' }),
+  ].join('');
+  const pc = Object.fromEntries((S.c?.canaux || []).map(r => [r.canal, r]));
+  table($('tbl-canaux'), [
+    { l: 'Canal', f: r => esc(r.canal) },
+    { l: 'Sessions', n: 1, f: r => withD(+r.sessions, pc[r.canal] ? +pc[r.canal].sessions : null, v => fmtN(v)) },
+    { l: 'Engagement', n: 1, f: r => fmtP(100 * div(+r.engagees, +r.sessions), 0) },
+    { l: 'Commandes', n: 1, f: r => withD(+r.transactions, pc[r.canal] ? +pc[r.canal].transactions : null, v => fmtN(v)) },
+    { l: 'CA mesuré', n: 1, f: r => withD(+r.ca, pc[r.canal] ? +pc[r.canal].ca : null, v => fmtEur(v)) },
+    { l: 'Conversion', n: 1, f: r => fmtP(100 * div(+r.transactions, +r.sessions), 2) },
+    { l: 'Panier', n: 1, f: r => +r.transactions ? fmtEur(+r.ca / +r.transactions, 2) : '–' },
+  ], S.d.canaux || []);
+  const SUSPECT = r => /(\{|\}|test|diagnostic)/i.test(r.sm) || (/^google \/ cpc$/.test(r.sm) && false);
+  table($('tbl-sources'), [
+    { l: 'Source / support', f: r => `${esc(r.sm)}${SUSPECT(r) ? ' <span class="pill warn">suspect</span>' : ''}` },
+    { l: 'Sessions', n: 1, f: r => fmtN(r.sessions) },
+    { l: 'Commandes', n: 1, f: r => fmtN(r.transactions) },
+    { l: 'CA mesuré', n: 1, f: r => fmtEur(+r.ca) },
+  ], S.d.sources || []);
+  table($('tbl-pages'), [
+    { l: "Page d'entrée", f: r => `<span title="${esc(r.page_entree)}">${esc(r.page_entree.length > 48 ? r.page_entree.slice(0, 47) + '…' : r.page_entree)}</span>${r.page_entree === '(sans page)' ? ' <span class="pill warn">à surveiller</span>' : ''}` },
+    { l: 'Sessions', n: 1, f: r => fmtN(r.sessions) },
+    { l: 'Engagement', n: 1, f: r => fmtP(100 * div(+r.engagees, +r.sessions), 0) },
+    { l: 'Commandes', n: 1, f: r => fmtN(r.transactions) },
+  ], S.d.pages || []);
+}
+
+const RESEAUX = { instagram: 'Instagram', facebook_page: 'Facebook (page)', tiktok_organique: 'TikTok', youtube: 'YouTube', pinterest: 'Pinterest' };
+function rOrg() {
+  const o = S.d.organique || [];
+  if (!o.length) { $('org').innerHTML = `<div class="vide"><b>Pas encore de données organiques.</b><br>Les comptes Instagram, Facebook, TikTok, YouTube et Pinterest doivent être connectés dans Windsor. Le chargement démarre la nuit suivante.</div>`; $('tbl-posts').innerHTML = ''; return; }
+  const po = Object.fromEntries((S.c?.organique || []).map(r => [r.plateforme, r]));
+  table($('org'), [
+    { l: 'Réseau', f: r => RESEAUX[r.plateforme] || r.plateforme },
+    { l: 'Abonnés', n: 1, f: r => withD(+r.abonnes, po[r.plateforme] ? +po[r.plateforme].abonnes : null, v => fmtN(v)) },
+    { l: 'Gagnés', n: 1, f: r => fmtN(r.gagnes) },
+    { l: 'Portée', n: 1, f: r => withD(+r.portee, po[r.plateforme] ? +po[r.plateforme].portee : null, v => fmtN(v)) },
+    { l: 'Vues', n: 1, f: r => fmtN(r.vues) },
+    { l: 'Engagements', n: 1, f: r => withD(+r.engagements, po[r.plateforme] ? +po[r.plateforme].engagements : null, v => fmtN(v)) },
+    { l: 'Clics lien', n: 1, f: r => fmtN(r.clics_lien) },
+    { l: 'Publications', n: 1, f: r => fmtN(r.publications) },
+  ], o);
+  table($('tbl-posts'), [
+    { l: 'Réseau', f: r => RESEAUX[r.plateforme] || r.plateforme },
+    { l: 'Publication', f: r => `${r.lien ? `<a href="${esc(r.lien)}" target="_blank" rel="noopener">` : ''}${esc(r.legende || r.post_id)}${r.lien ? '</a>' : ''} <span class="muted">${esc(r.format || '')}</span>` },
+    { l: 'Date', f: r => r.publie_le ? fmtD(r.publie_le.slice(0, 10)) : '' },
+    { l: 'Vues', n: 1, f: r => fmtN(r.vues) },
+    { l: 'Engagements', n: 1, f: r => fmtN(r.engagements) },
+    { l: 'Partages', n: 1, f: r => fmtN(r.partages) },
+    { l: 'Enreg.', n: 1, f: r => fmtN(r.enregistrements) },
+  ], S.d.posts || []);
+}
+
+function rEmail() {
+  table($('tbl-email'), [
+    { l: 'Envoi', f: r => esc(r.nom) },
+    { l: 'Date', f: r => r.envoye_le ? fmtD(r.envoye_le.slice(0, 10)) : '' },
+    { l: 'Destinataires', n: 1, f: r => fmtN(r.destinataires) },
+    { l: 'Ouverture', n: 1, f: r => fmtP(100 * div(+r.ouvertures_uniques, +r.delivres || +r.destinataires), 1) },
+    { l: 'Clic', n: 1, f: r => fmtP(100 * div(+r.clics_uniques, +r.delivres || +r.destinataires), 1) },
+    { l: 'Désabo.', n: 1, f: r => fmtN(r.desabonnements) },
+    { l: 'CA revendiqué', n: 1, f: r => fmtEur(+r.ca_revendique) },
+  ], S.d.emails || [], '<b>Omnisend n\'est pas encore connecté.</b><br>En attendant, le canal « Email » de GA4 est visible dans l\'onglet Canaux et trafic.');
+}
+
+function rSeo() {
+  const s = S.d.seo_jour || [], sc = S.c?.seo_jour || [];
+  const cl = sum(s, r => r.clics), im = sum(s, r => r.impressions), clp = sum(sc, r => r.clics), imp = sum(sc, r => r.impressions);
+  const pos = s.length ? sum(s, r => r.position) / s.length : null, posp = sc.length ? sum(sc, r => r.position) / sc.length : null;
+  $('tiles-seo').innerHTML = [
+    tile({ label: 'Clics Google', v: cl, prev: S.c ? clp : null, fmt: v => fmtN(v) }),
+    tile({ label: 'Impressions', v: im, prev: S.c ? imp : null, fmt: v => fmtN(v) }),
+    tile({ label: 'Taux de clic', v: im ? 100 * cl / im : null, prev: imp ? 100 * clp / imp : null, fmt: v => fmtP(v, 2) }),
+    tile({ label: 'Position moyenne', v: pos, prev: posp, fmt: v => v == null ? '–' : fmtN(v, 1), inverse: true }),
+  ].join('');
+  table($('tbl-seo'), [
+    { l: 'Requête', f: r => esc(r.requete) },
+    { l: 'Clics', n: 1, f: r => fmtN(r.clics) },
+    { l: 'Impressions', n: 1, f: r => fmtN(r.impressions) },
+    { l: 'Taux de clic', n: 1, f: r => fmtP(100 * div(+r.clics, +r.impressions), 1) },
+    { l: 'Position', n: 1, f: r => fmtN(r.position, 1) },
+  ], S.d.seo_requetes || []);
+}
+
+function rReco() {
+  const l = S.d.preconisations || []; const admin = S.role === 'admin';
+  $('h-reco').textContent = admin ? 'tu peux accepter, marquer comme faite ou refuser' : 'lecture seule';
+  $('reco').innerHTML = l.length ? l.map(r => `<div class="reco g-${r.gravite}"><div class="meta"><span class="pill ${r.gravite === 'haute' ? 'bad' : r.gravite === 'moyenne' ? 'warn' : ''}">${r.gravite}</span><span>${r.origine === 'ia' ? 'synthèse IA' : r.origine === 'regle' ? 'règle automatique' : 'ajout manuel'}</span><span>${new Date(r.cree_le).toLocaleDateString('fr-FR')}</span>${r.statut === 'acceptee' ? '<span class="pill ok">acceptée</span>' : ''}${r.fiabilite_donnee ? `<span>donnée : ${esc(r.fiabilite_donnee)}</span>` : ''}</div>
+    <h3>${esc(r.titre)}</h3>${r.constat ? `<p>${esc(r.constat)}</p>` : ''}${r.action_proposee ? `<p><b>Action :</b> ${esc(r.action_proposee)}</p>` : ''}${r.gain_estime ? `<p><b>Gain estimé :</b> ${esc(r.gain_estime)}</p>` : ''}
+    ${admin ? `<div class="actions">${r.statut !== 'acceptee' ? `<button class="btn small" data-id="${r.id}" data-s="acceptee">Accepter</button>` : ''}<button class="btn small" data-id="${r.id}" data-s="faite">Faite</button><button class="btn small" data-id="${r.id}" data-s="refusee">Refuser</button></div>` : ''}</div>`).join('')
+    : '<div class="vide">Aucune préconisation en cours. Les règles tournent chaque nuit après le chargement.</div>';
+  $('reco').querySelectorAll('button[data-id]').forEach(b => b.onclick = async () => {
+    b.disabled = true; const { error } = await sb.rpc('dc_statuer', { p_id: +b.dataset.id, p_statut: b.dataset.s });
+    if (error) { b.textContent = 'Erreur'; return; } await charger();
+  });
+}
+
+function rFiabilite() {
+  table($('tbl-fiab'), [
+    { l: 'Du', f: r => fmtD(r.du) }, { l: 'Au', f: r => r.au ? fmtD(r.au) : 'en cours' },
+    { l: 'Source', f: r => r.plateforme ? PLAT[r.plateforme] || r.plateforme : 'toutes' },
+    { l: 'Métrique', f: r => esc(r.metrique) + (r.perimetre !== 'tout' ? ` <span class="muted">(${esc(r.perimetre)})</span>` : '') },
+    { l: 'État', f: r => `<span class="pill ${FIAB_CL[r.fiabilite]}">${FIAB_LIB[r.fiabilite]}</span>` },
+    { l: 'Raison', f: r => esc(r.raison) },
+  ], S.d.fiabilite || [], 'Aucune réserve sur la période.');
+  const LIB = { sessions_detail_vs_total: 'Sessions : détail ≠ total GA4', transactions_detail_vs_total: 'Commandes : détail ≠ total GA4', captation_vs_prestashop: 'Captation GA4 hors bande 80–110 %', sessions_sans_page_entree: "Sessions sans page d'entrée > 10 %" };
+  table($('tbl-ctrl'), [
+    { l: 'Jour', f: r => fmtD(r.jour) }, { l: 'Contrôle', f: r => LIB[r.controle] || esc(r.controle) },
+    { l: 'Attendu', n: 1, f: r => fmtN(r.attendu) }, { l: 'Obtenu', n: 1, f: r => fmtN(r.obtenu) }, { l: 'Écart', n: 1, f: r => fmtN(r.ecart_pct, 1) + ' %' },
+  ], S.d.controles_ko || [], 'Tous les contrôles sont au vert sur la période.');
+}
+
+// ---------- Sélecteurs ----------
+const VALUE = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+let lgOpen = null;
+function lgClose(focusBtn) { if (!lgOpen) return; const { menu, btn } = lgOpen; lgOpen = null; menu.remove(); btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('pointerdown', lgOutside, true); if (focusBtn) btn.focus(); }
+function lgOutside(e) { if (lgOpen && !lgOpen.menu.contains(e.target) && !lgOpen.btn.contains(e.target)) lgClose(false); }
+function ouvrirMenu(btn, items, onPick, cls) {
+  if (lgOpen && lgOpen.btn === btn) return lgClose(false);
+  lgClose(false);
+  const menu = document.createElement('div'); menu.className = 'lg-menu ' + (cls || ''); menu.setAttribute('role', 'listbox');
+  menu.innerHTML = items.map((o, i) => `<button type="button" class="lg-opt" role="option" data-i="${i}" aria-selected="${!!o.sel}"><span class="ck">✓</span><span>${esc(o.t)}</span>${o.small ? `<small>${esc(o.small)}</small>` : ''}</button>`).join('');
+  document.body.appendChild(menu);
+  const r = btn.getBoundingClientRect(); menu.style.minWidth = Math.max(220, r.width) + 'px';
+  const m = { width: menu.offsetWidth, height: menu.offsetHeight };
+  let left = Math.max(16, Math.min(r.left, innerWidth - 16 - m.width));
+  if (cls === 'board-menu' && innerWidth > 900) { left = r.right + 14; menu.style.top = Math.max(16, Math.min(r.top - 8, innerHeight - m.height - 16)) + 'px'; }
+  else { const bas = r.bottom + 8 + m.height <= innerHeight - 8 || r.top < m.height + 16; if (bas) menu.style.top = (r.bottom + 8) + 'px'; else { menu.style.top = (r.top - 8 - m.height) + 'px'; menu.classList.add('up'); } }
+  menu.style.left = left + 'px';
+  btn.setAttribute('aria-expanded', 'true'); lgOpen = { menu, btn };
+  const opts = [...menu.querySelectorAll('.lg-opt')];
+  opts.forEach(b => b.addEventListener('click', () => { lgClose(true); onPick(items[+b.dataset.i]); }));
+  menu.addEventListener('keydown', e => { const k = opts.indexOf(document.activeElement); if (e.key === 'ArrowDown') { e.preventDefault(); opts[Math.min(opts.length - 1, k + 1)].focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); opts[Math.max(0, k - 1)].focus(); } else if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); lgClose(true); } });
+  (opts.find(b => b.getAttribute('aria-selected') === 'true') || opts[0])?.focus({ preventScroll: true });
+  setTimeout(() => document.addEventListener('pointerdown', lgOutside, true));
+}
+function glassSelect(sel) {
+  sel.classList.add('lg-native'); sel.tabIndex = -1; sel.setAttribute('aria-hidden', 'true');
+  const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'btn lg-select';
+  btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', sel.getAttribute('aria-label') || '');
+  btn.innerHTML = '<span class="lg-val"></span><svg class="lg-chev" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 4.5l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  sel.after(btn);
+  const upd = () => { const o = sel.options[sel.selectedIndex]; btn.querySelector('.lg-val').textContent = o ? o.text : ''; };
+  Object.defineProperty(sel, 'value', { configurable: true, get() { return VALUE.get.call(sel); }, set(v) { VALUE.set.call(sel, v); upd(); } });
+  new MutationObserver(upd).observe(sel, { childList: true, subtree: true });
+  btn.addEventListener('click', () => ouvrirMenu(btn, [...sel.options].map(o => ({ t: o.text, v: o.value, sel: o.selected })), o => { if (o.v === VALUE.get.call(sel)) return; sel.value = o.v; sel.dispatchEvent(new Event('change', { bubbles: true })); }));
+  upd();
+}
+addEventListener('scroll', () => lgClose(false), { passive: true });
+
+// ---------- Menu latéral et changement de board ----------
+const BOARDS = [{ k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' }, { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }];
+const railItems = [...document.querySelectorAll('.rail-item[data-vue]')];
+function railSync() { const a = railItems.find(b => b.dataset.vue === S.vue) || railItems[0]; railItems.forEach(b => b.setAttribute('aria-current', String(b === a))); $('rail-pill').style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`; }
+function setVue(v) { S.vue = v; history.replaceState(null, '', '#' + v); railSync(); render(); }
+railItems.forEach(b => b.addEventListener('click', () => setVue(b.dataset.vue)));
+addEventListener('resize', railSync);
+$('rail-boards').addEventListener('click', () => {
+  const acc = S.acces || {}; const ok = k => acc.role === 'admin' || (acc.boards && acc.boards[k]) || (k === 'ventes' && acc.role);
+  ouvrirMenu($('rail-boards'), BOARDS.filter(b => ok(b.k)).map(b => ({ ...b, sel: b.k === 'data_center' })), b => { if (b.k !== 'data_center') location.href = b.href; }, 'board-menu');
+});
+let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 150); });
+
+// ---------- Filtres ----------
+function remplirPeriodes() {
+  const cur = $('f-per').value || '7';
+  $('f-per').innerHTML = presets().map(p => `<option value="${p.v}">${esc(p.t)}</option>`).join('');
+  $('f-per').value = presets().some(p => p.v === cur) ? cur : '7';
+}
+$('f-per').addEventListener('change', () => {
+  const perso = $('f-per').value === 'perso'; $('per-perso').classList.toggle('hidden', !perso);
+  if (perso && !$('per-du').value) { $('per-du').value = S.per?.du || addDays(HIER, -6); $('per-au').value = S.per?.au || HIER; }
+  charger();
+});
+$('f-cmp').addEventListener('change', () => {
+  const perso = $('f-cmp').value === 'perso'; $('cmp-perso').classList.toggle('hidden', !perso);
+  if (perso && !$('cmp-du').value) { $('cmp-du').value = shiftYear(S.per.du, -1); $('cmp-au').value = shiftYear(S.per.au, -1); }
+  charger();
+});
+['per-du', 'per-au', 'cmp-du', 'cmp-au'].forEach(id => { $(id).max = HIER; $(id).addEventListener('change', () => { if ($('per-du').value > $('per-au').value && id.startsWith('per')) $('per-au').value = $('per-du').value; charger(); }); });
+
+// ---------- Connexion ----------
+const logout = async () => { await sb.auth.signOut(); location.href = './'; };
+$('logout').onclick = logout; $('logout-2').onclick = logout;
+async function start(session) {
+  ['login', 'denied', 'app'].forEach(id => $(id).classList.add('hidden'));
+  if (!session) { $('login').classList.remove('hidden'); return; }
+  const { data: acces } = await sb.rpc('mon_acces');
+  const role = acces && (acces.boards?.data_center || (acces.role === 'admin' ? 'admin' : null));
+  if (!role) { $('denied-msg').textContent = `${session.user.email} n'a pas accès au Data Center. Demande à Jérémy ou Robin de t'ajouter.`; $('denied').classList.remove('hidden'); return; }
+  S.acces = acces; S.role = role;
+  $('who').textContent = `Connecté : ${acces.email} · ${role === 'admin' ? 'administrateur' : 'lecture seule'}`;
+  $('app').classList.remove('hidden');
+  const { data: ops } = await sb.rpc('dc_operations'); S.ops = ops || [];
+  remplirPeriodes(); glassSelect($('f-per')); glassSelect($('f-cmp'));
+  const h = location.hash.slice(1); if (VUES[h]) S.vue = h;
+  railSync(); await charger();
+}
+let started = false;
+sb.auth.onAuthStateChange((ev, session) => { if (ev === 'SIGNED_OUT') return; if (!started || ev === 'SIGNED_IN') { started = true; start(session); } });
+sb.auth.getSession().then(({ data }) => { if (!started) { started = true; start(data.session); } });
+})();
+</script>
+</body>
+</html>

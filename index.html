@@ -496,6 +496,7 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     <button class="rail-item" data-vue="revendeurs" data-label="Revendeurs" aria-label="Revendeurs"><svg viewBox="0 0 24 24"><path d="M4 9.5 5.6 4.5h12.8L20 9.5M4 9.5h16M4 9.5c0 1.5 1.2 2.5 2.7 2.5s2.6-1 2.6-2.5c0 1.5 1.2 2.5 2.7 2.5s2.7-1 2.7-2.5c0 1.5 1.1 2.5 2.6 2.5S20 11 20 9.5M5.5 12v7.5h13V12M10 19.5v-4.5h4v4.5"/></svg></button>
     <button class="rail-item" data-vue="myclear" data-label="MyClear" aria-label="MyClear"><svg viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12h-11zM9 10.5V7a3 3 0 0 1 6 0v3.5"/></svg></button>
     <span class="rail-sep" aria-hidden="true"></span>
+    <button class="rail-item" id="rail-boards" data-label="Changer de board" aria-label="Changer de board" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></button>
     <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant ventes" aria-label="Assistant ventes" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
   </nav>
 
@@ -1310,6 +1311,31 @@ function railSync() {
 railItems.forEach(b => b.addEventListener('click', () => setVue(b.dataset.vue)));
 addEventListener('resize', railSync);
 railSync();
+
+// ---------- Changement de board (Ventes / Data Center) ----------
+// N'affiche que les boards auxquels la personne a accès (acces_board.role, acces_board.boards).
+const BOARDS = [
+  { k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' },
+  { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }
+];
+$('rail-boards').addEventListener('click', () => {
+  const btn = $('rail-boards');
+  if (lgOpen && lgOpen.btn === btn) return lgClose(false);
+  lgClose(false);
+  const a = S.acces || {};
+  const dispo = BOARDS.filter(b => b.k === 'ventes' || a.role === 'admin' || (a.boards && a.boards[b.k]));
+  const menu = document.createElement('div');
+  menu.className = 'lg-menu'; menu.setAttribute('role', 'menu');
+  menu.innerHTML = dispo.map((b, i) => `<button type="button" class="lg-opt" role="menuitem" data-i="${i}" aria-selected="${b.k === 'ventes'}"><span class="ck">✓</span><span>${esc(b.t)}</span><small style="color:var(--muted);font-size:12px;margin-left:auto">${esc(b.small)}</small></button>`).join('');
+  document.body.appendChild(menu);
+  const r = btn.getBoundingClientRect(), m = { width: menu.offsetWidth, height: menu.offsetHeight };
+  if (innerWidth > 900) { menu.style.left = (r.right + 14) + 'px'; menu.style.top = Math.max(16, Math.min(r.top - 8, innerHeight - m.height - 16)) + 'px'; }
+  else { menu.style.left = Math.max(16, Math.min(r.left, innerWidth - 16 - m.width)) + 'px'; menu.style.top = (r.top - 8 - m.height) + 'px'; menu.classList.add('up'); }
+  btn.setAttribute('aria-expanded', 'true'); lgOpen = { menu, btn };
+  menu.querySelectorAll('.lg-opt').forEach(o => o.addEventListener('click', () => { const b = dispo[+o.dataset.i]; lgClose(false); if (b.k !== 'ventes') location.href = b.href; }));
+  menu.querySelector('.lg-opt')?.focus({ preventScroll: true });
+  setTimeout(() => document.addEventListener('pointerdown', lgOutside, true));
+});
 
 // ---------- Assistant ventes (interface) ----------
 // Contrat avec le back (Edge Function Supabase « assistant », à brancher par Robin) :
