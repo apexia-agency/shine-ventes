@@ -397,6 +397,72 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
   .btn, select, input, .lg-menu { background-color: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
   .btn.primary { background: var(--accent); }
 }
+
+/* ===== Assistant ventes (panneau de discussion) ===== */
+.rail-ai[aria-expanded="true"] { color: var(--rail-on); background: var(--rail-lens); box-shadow: var(--rail-lens-shadow), inset 0 1px 0 var(--lg-rim-a); }
+.rail-ai[aria-expanded="true"] svg { stroke-width: 2; }
+.ai-panel {
+  position: fixed; right: 16px; top: 16px; bottom: 16px; width: min(460px, calc(100vw - 32px)); z-index: 40;
+  display: flex; flex-direction: column; border-radius: 26px; overflow: hidden;
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-edge-2);
+  box-shadow: 0 24px 64px rgba(15,20,40,0.22), inset 0 1px 0 var(--glass-edge);
+  transform: translateX(calc(100% + 24px)); opacity: 0; visibility: hidden;
+  transition: transform .45s cubic-bezier(.3,1.2,.5,1), opacity .2s, visibility 0s linear .45s;
+}
+.ai-panel.open { transform: none; opacity: 1; visibility: visible; transition: transform .45s cubic-bezier(.3,1.2,.5,1), opacity .2s, visibility 0s; }
+.ai-head { display: flex; align-items: center; gap: 10px; padding: 14px 14px 12px 20px; border-bottom: 1px solid var(--grid); }
+.ai-head h2 { font-size: 16px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+.ai-head .sub { margin: 0; font-size: 12px; }
+.ai-head .grow { flex: 1; min-width: 0; }
+.ai-icon-btn { width: 34px; height: 34px; min-height: 34px; padding: 0; display: grid; place-items: center; }
+.ai-icon-btn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ai-log { flex: 1; overflow-y: auto; padding: 16px 16px 8px; display: flex; flex-direction: column; gap: 12px; overscroll-behavior: contain; }
+.ai-empty { margin: auto 0; text-align: center; padding: 8px 6px 0; }
+.ai-empty .ai-orb { width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 10px; display: grid; place-items: center; color: #fff;
+  background: radial-gradient(120% 90% at 30% 0%, rgba(255,255,255,.55), transparent 55%), linear-gradient(135deg, var(--s-b2c), var(--s-intra)); box-shadow: var(--lg-drop); }
+.ai-empty .ai-orb svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ai-empty h3 { margin: 0 0 4px; font-size: 15px; font-weight: 650; }
+.ai-empty p { margin: 0 auto 14px; color: var(--ink-2); font-size: 13px; max-width: 320px; }
+.ai-sugg { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.ai-sugg .btn { text-align: left; border-radius: 14px; font-size: 13px; padding: 9px 14px; min-height: 0; }
+.ai-msg { max-width: 92%; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.ai-msg.user { align-self: flex-end; background: color-mix(in srgb, var(--accent) 90%, transparent); color: #fff; padding: 9px 14px; border-radius: 18px 18px 6px 18px; white-space: pre-wrap; }
+.ai-msg.bot { align-self: flex-start; max-width: 100%; width: 100%; }
+.ai-msg.bot .ai-text { background: var(--surface-2); border: 1px solid var(--grid); padding: 10px 14px; border-radius: 6px 18px 18px 18px; }
+.ai-msg.bot .ai-text p { margin: 0 0 6px; } .ai-msg.bot .ai-text p:last-child { margin-bottom: 0; }
+.ai-msg.bot .ai-text ul { margin: 4px 0 6px; padding-left: 18px; }
+.ai-msg.bot .ai-text code { font-size: 12px; background: var(--bar-track); padding: 1px 5px; border-radius: 6px; }
+.ai-msg.err .ai-text { background: var(--warn-bg); color: var(--warn-ink); border-color: transparent; }
+.ai-table { margin-top: 8px; border: 1px solid var(--grid); border-radius: 14px; overflow: hidden; background: var(--surface-2); }
+.ai-table-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px 8px 12px; border-bottom: 1px solid var(--grid); }
+.ai-table-head b { font-size: 12.5px; font-weight: 600; min-width: 0; }
+.ai-table-head .btn { white-space: nowrap; flex: none; }
+.ai-table-head .muted { font-size: 12px; color: var(--muted); font-weight: 400; }
+.ai-table-scroll { overflow: auto; max-height: 300px; }
+.ai-table table { font-size: 12px; }
+.ai-table th, .ai-table td { padding: 6px 10px; white-space: nowrap; }
+.ai-table thead th { position: sticky; top: 0; background: var(--surface); z-index: 1; }
+.ai-table-foot { padding: 6px 12px; font-size: 12px; border-top: 1px solid var(--grid); }
+.ai-typing { display: inline-flex; gap: 4px; padding: 12px 14px; background: var(--surface-2); border: 1px solid var(--grid); border-radius: 6px 18px 18px 18px; align-self: flex-start; }
+.ai-typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: aiDot 1.1s infinite ease-in-out; }
+.ai-typing i:nth-child(2) { animation-delay: .15s; } .ai-typing i:nth-child(3) { animation-delay: .3s; }
+@keyframes aiDot { 0%, 80%, 100% { opacity: .3; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
+.ai-compose { padding: 10px 12px 12px; border-top: 1px solid var(--grid); }
+.ai-ctx { font-size: 11.5px; color: var(--muted); padding: 0 6px 6px; }
+.ai-box { display: flex; align-items: flex-end; gap: 8px; background: var(--glass-strong); border: 1px solid var(--ring); border-radius: 20px; padding: 6px 6px 6px 14px; }
+.ai-box:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.ai-box textarea { flex: 1; border: 0; background: transparent; outline: none; resize: none; font: inherit; color: inherit; padding: 6px 0; max-height: 140px; min-height: 22px; line-height: 1.45; }
+.ai-send { width: 34px; height: 34px; border-radius: 50%; border: 0; flex: none; display: grid; place-items: center; cursor: pointer; background: var(--accent); color: #fff; transition: transform .15s, opacity .15s; }
+.ai-send:active { transform: scale(.92); } .ai-send[disabled] { opacity: .4; cursor: default; }
+.ai-send svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 900px) {
+  .ai-panel { inset: 0; width: 100%; border-radius: 0; padding-bottom: env(safe-area-inset-bottom); transform: translateY(24px); }
+  .ai-panel.open { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .ai-panel, .ai-typing i { transition: none; animation: none; } }
+@media (prefers-reduced-transparency: reduce) { .ai-panel { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 </style>
 </head>
 <body>
@@ -431,6 +497,8 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     <button class="rail-item" data-go="card-transport" data-label="Transport" aria-label="Transport"><svg viewBox="0 0 24 24"><path d="M2.8 6.5h11v10h-11zM13.8 10h4.2l3.2 3.3v3.2h-7.4"/><circle cx="6.8" cy="17.6" r="1.9"/><circle cx="17.4" cy="17.6" r="1.9"/></svg></button>
     <span class="rail-sep" aria-hidden="true"></span>
     <button class="rail-item" data-go="sec-donnees" data-label="Données, validation et export" aria-label="Données, validation et export"><svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="2.7"/><path d="M5 6v6c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7V6M5 12v6c0 1.5 3.1 2.7 7 2.7s7-1.2 7-2.7v-6"/></svg></button>
+    <span class="rail-sep" aria-hidden="true"></span>
+    <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant ventes" aria-label="Assistant ventes" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
   </nav>
 
   <header class="top">
@@ -549,6 +617,25 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     <button class="link" id="logout">Se déconnecter</button>
   </footer>
 </div>
+
+<aside class="ai-panel" id="ai-panel" role="dialog" aria-modal="false" aria-labelledby="ai-title" aria-hidden="true">
+  <div class="ai-head">
+    <div class="grow">
+      <h2 id="ai-title">Assistant ventes</h2>
+      <div class="sub">Questions sur les ventes et exports de données</div>
+    </div>
+    <button class="btn ai-icon-btn" id="ai-reset" title="Nouvelle conversation" aria-label="Nouvelle conversation"><svg viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v3.9h3.9"/></svg></button>
+    <button class="btn ai-icon-btn" id="ai-close" title="Fermer" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="ai-log" id="ai-log" aria-live="polite"></div>
+  <form class="ai-compose" id="ai-form">
+    <div class="ai-ctx" id="ai-ctx"></div>
+    <div class="ai-box">
+      <textarea id="ai-input" rows="1" placeholder="Pose une question ou demande un export…" aria-label="Message à l'assistant"></textarea>
+      <button class="ai-send" id="ai-send" type="submit" aria-label="Envoyer" disabled><svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"/></svg></button>
+    </div>
+  </form>
+</aside>
 
 <div class="tip" id="tip"></div>
 
@@ -1117,7 +1204,7 @@ addEventListener('resize', () => lgClose(false));
 ['f-ex', 'f-canal', 'f-sf'].forEach(id => glassSelect($(id)));
 
 // ---------- Menu latéral ----------
-const railItems = [...document.querySelectorAll('.rail-item')];
+const railItems = [...document.querySelectorAll('.rail-item[data-go]')];
 let railLock = null, railLockT = 0; // section choisie au clic, tenue pendant le défilement
 function railActif() {
   if (railLock && !railLock.hidden) return railLock;
@@ -1151,9 +1238,131 @@ addEventListener('resize', railSync);
 $('sec-donnees').addEventListener('toggle', railSync);
 railSync();
 
+// ---------- Assistant ventes (interface) ----------
+// Contrat avec le back (Edge Function Supabase « assistant », à brancher par Robin) :
+//   appel : sb.functions.invoke('assistant', { body: { question, historique, contexte } })
+//     question   : texte de l'utilisateur
+//     historique : [{ role: 'user' | 'assistant', content: '…' }, …] (échanges précédents, texte seul)
+//     contexte   : { exercice: '2025-2026', canal: 'SHINE' | 'TOUS' | '<canal>', email }
+//   réponse attendue (JSON) :
+//     { reponse: 'texte (markdown simple : **gras**, listes « - », `code`)',
+//       tableaux: [ { titre: 'Top clients', colonnes: ['client', 'ca_ht'], lignes: [['Dupont', 1234.5], …], fichier: 'top_clients' } ] }
+//     « lignes » peut aussi être un tableau d'objets ; « colonnes » est alors déduit des clés.
+//     Chaque tableau affiche un bouton « Exporter CSV » (séparateur « ; », virgule décimale, UTF-8 BOM, comme l'export existant).
+const AI_FN = 'assistant';
+const AI = { hist: [], busy: false };
+const AI_SUGG = [
+  'Quel est le CA HT du mois dernier, comparé à N-1 ?',
+  'Top 20 des clients revendeurs sur l\'exercice',
+  'Quels produits progressent le plus depuis 3 mois ?',
+  'Exporte les factures pros de septembre en CSV'
+];
+const aiPanel = $('ai-panel'), aiLog = $('ai-log'), aiInput = $('ai-input'), aiSend = $('ai-send'), aiBtn = $('rail-ai');
+
+function aiMd(t) {
+  const inline = s => esc(s).replace(/`([^`]+)`/g, '<code>$1</code>').replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  const out = []; let list = null;
+  for (const raw of String(t || '').split('\n')) {
+    const l = raw.trim(); const m = l.match(/^[-*•]\s+(.*)$/);
+    if (m) { (list = list || []).push(`<li>${inline(m[1])}</li>`); continue; }
+    if (list) { out.push(`<ul>${list.join('')}</ul>`); list = null; }
+    if (l) out.push(`<p>${inline(l)}</p>`);
+  }
+  if (list) out.push(`<ul>${list.join('')}</ul>`);
+  return out.join('');
+}
+function aiNorm(t) {
+  let cols = Array.isArray(t.colonnes) ? t.colonnes : null, rows = Array.isArray(t.lignes) ? t.lignes : [];
+  if (rows.length && !Array.isArray(rows[0])) { cols = cols || Object.keys(rows[0]); rows = rows.map(o => cols.map(c => o[c])); }
+  return { titre: t.titre || 'Résultat', cols: cols || [], rows, fichier: t.fichier || t.titre || 'export' };
+}
+const aiIsNum = v => typeof v === 'number' || (typeof v === 'string' && v.trim() !== '' && /^-?\d+(\.\d+)?$/.test(v.trim()));
+function aiCell(v) {
+  if (v == null) return '<span class="muted">–</span>';
+  if (aiIsNum(v)) { const n = +v; return fmtN(n, Number.isInteger(n) ? 0 : 2); }
+  return esc(v);
+}
+function aiCsv(t) {
+  const cell = v => { if (v == null) return ''; if (aiIsNum(v)) return String(v).replace('.', ','); const s = String(v); return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const lines = [t.cols.map(cell).join(';'), ...t.rows.map(r => r.map(cell).join(';'))];
+  const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const slug = String(t.fichier).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'export';
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `${slug}_${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function aiTable(t) {
+  const box = document.createElement('div'); box.className = 'ai-table';
+  const LIM = 12; let shown = Math.min(LIM, t.rows.length);
+  const numCol = t.cols.map((_, j) => t.rows.length > 0 && t.rows.every(r => r[j] == null || aiIsNum(r[j])));
+  const draw = () => {
+    box.innerHTML = `<div class="ai-table-head"><b>${esc(t.titre)} <span class="muted">· ${fmtN(t.rows.length)} ligne${t.rows.length > 1 ? 's' : ''}</span></b>` +
+      `<button class="btn small" data-csv>Exporter CSV</button></div>` +
+      `<div class="ai-table-scroll"><table><thead><tr>${t.cols.map((c, j) => `<th${numCol[j] ? ' class="n"' : ''}>${esc(c)}</th>`).join('')}</tr></thead><tbody>` +
+      t.rows.slice(0, shown).map(r => `<tr>${t.cols.map((_, j) => `<td${numCol[j] ? ' class="n"' : ''}>${aiCell(r[j])}</td>`).join('')}</tr>`).join('') +
+      `</tbody></table></div>` +
+      (t.rows.length > shown ? `<div class="ai-table-foot"><button class="link" data-more>Afficher ${fmtN(Math.min(200, t.rows.length) - shown)} lignes de plus</button>${t.rows.length > 200 ? ' <span class="muted">(le CSV contient tout)</span>' : ''}</div>` : '');
+    box.querySelector('[data-csv]').onclick = () => aiCsv(t);
+    const more = box.querySelector('[data-more]'); if (more) more.onclick = () => { shown = Math.min(200, t.rows.length); draw(); };
+  };
+  draw(); return box;
+}
+function aiAdd(role, text, tables, err) {
+  aiLog.querySelector('.ai-empty')?.remove();
+  const m = document.createElement('div'); m.className = `ai-msg ${role}${err ? ' err' : ''}`;
+  if (role === 'user') m.textContent = text;
+  else {
+    if (text) { const d = document.createElement('div'); d.className = 'ai-text'; d.innerHTML = aiMd(text); m.appendChild(d); }
+    (tables || []).map(aiNorm).filter(t => t.cols.length).forEach(t => m.appendChild(aiTable(t)));
+  }
+  aiLog.appendChild(m); aiLog.scrollTop = aiLog.scrollHeight;
+}
+function aiEmpty() {
+  aiLog.innerHTML = `<div class="ai-empty"><div class="ai-orb"><svg viewBox="0 0 24 24"><path d="M12 4.5l1.6 4.2 4.2 1.6-4.2 1.6L12 16.1l-1.6-4.2-4.2-1.6 4.2-1.6z"/><path d="M18.3 15.6l.6 1.5 1.5.6-1.5.6-.6 1.5-.6-1.5-1.5-.6 1.5-.6z"/></svg></div>` +
+    `<h3>Que veux-tu savoir ?</h3><p>Pose une question sur les ventes, les clients ou les produits, ou demande un export : le tableau se télécharge en CSV.</p>` +
+    `<div class="ai-sugg">${AI_SUGG.map(s => `<button class="btn" type="button">${esc(s)}</button>`).join('')}</div></div>`;
+  aiLog.querySelectorAll('.ai-sugg .btn').forEach(b => b.onclick = () => { aiInput.value = b.textContent; aiAsk(); });
+}
+function aiCtx() {
+  const canal = S.canal === 'SHINE' ? 'SHINE (hors MyClear)' : S.canal === 'TOUS' ? 'tous canaux' : S.canal;
+  $('ai-ctx').textContent = S.ex ? `Contexte : exercice ${S.ex.replace('-', '–')} · ${canal}` : '';
+}
+function aiGrow() { aiInput.style.height = 'auto'; aiInput.style.height = Math.min(140, aiInput.scrollHeight) + 'px'; aiSend.disabled = AI.busy || !aiInput.value.trim(); }
+async function aiAsk() {
+  const q = aiInput.value.trim(); if (!q || AI.busy) return;
+  AI.busy = true; aiInput.value = ''; aiGrow(); aiAdd('user', q);
+  const typing = document.createElement('div'); typing.className = 'ai-typing'; typing.innerHTML = '<i></i><i></i><i></i>';
+  aiLog.appendChild(typing); aiLog.scrollTop = aiLog.scrollHeight;
+  try {
+    const { data, error } = await sb.functions.invoke(AI_FN, { body: { question: q, historique: AI.hist.slice(-12), contexte: { exercice: S.ex, canal: S.canal, email: S.acces?.email } } });
+    if (error) {
+      const st = error.context?.status;
+      let detail = ''; try { detail = (await error.context.json())?.error || ''; } catch (e) {}
+      throw new Error(st === 404 ? 'L\'assistant n\'est pas encore branché côté serveur (fonction « assistant » introuvable).' : st === 401 || st === 403 ? 'Accès refusé à l\'assistant pour ce compte.' : (detail || error.message || 'Erreur inconnue'));
+    }
+    const rep = typeof data === 'string' ? { reponse: data } : (data || {});
+    typing.remove(); aiAdd('bot', rep.reponse || '', rep.tableaux || []);
+    AI.hist.push({ role: 'user', content: q }, { role: 'assistant', content: rep.reponse || '' });
+  } catch (e) {
+    typing.remove(); aiAdd('bot', e.message || String(e), [], true);
+  }
+  AI.busy = false; aiGrow(); aiInput.focus();
+}
+function aiOpen(open) {
+  aiPanel.classList.toggle('open', open); aiPanel.setAttribute('aria-hidden', String(!open)); aiBtn.setAttribute('aria-expanded', String(open));
+  if (open) { aiCtx(); setTimeout(() => aiInput.focus({ preventScroll: true }), 250); } else aiBtn.focus({ preventScroll: true });
+}
+aiBtn.onclick = () => aiOpen(!aiPanel.classList.contains('open'));
+$('ai-close').onclick = () => aiOpen(false);
+$('ai-reset').onclick = () => { if (AI.busy) return; AI.hist = []; aiEmpty(); aiInput.focus(); };
+$('ai-form').onsubmit = (e) => { e.preventDefault(); aiAsk(); };
+aiInput.addEventListener('input', aiGrow);
+aiInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); aiAsk(); } });
+addEventListener('keydown', e => { if (e.key === 'Escape' && aiPanel.classList.contains('open') && !lgOpen) aiOpen(false); });
+aiEmpty();
+
 // ---------- Filtres ----------
-$('f-ex').onchange = async () => { S.ex = $('f-ex').value; prodLimit = 25; await refreshEx(); };
-$('f-canal').onchange = async () => { S.canal = $('f-canal').value; prodLimit = 25; await refreshEx(); };
+$('f-ex').onchange = async () => { S.ex = $('f-ex').value; aiCtx(); prodLimit = 25; await refreshEx(); };
+$('f-canal').onchange = async () => { S.canal = $('f-canal').value; aiCtx(); prodLimit = 25; await refreshEx(); };
 $('q-prod').oninput = () => renderProd();
 $('toggle-month-table').onclick = () => { const t = $('tbl-month'); t.classList.toggle('hidden'); $('toggle-month-table').textContent = t.classList.contains('hidden') ? 'Voir le tableau' : 'Masquer le tableau'; };
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => S.ex && render(), 150); });
