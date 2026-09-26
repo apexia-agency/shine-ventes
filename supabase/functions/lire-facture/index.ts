@@ -153,6 +153,8 @@ Deno.serve(async (req) => {
   if (ttcNom != null && ttc != null && lu.devise === "EUR" && Math.abs(ttcNom - ttc) > Math.max(1, ttc * 0.01)) motifs.push(`TTC différent du nom du fichier (${ttcNom})`);
   if (lu.confiance < 0.8) motifs.push("confiance " + lu.confiance);
   if (lu.devise !== "EUR") motifs.push("devise " + lu.devise);
+  // La remarque du modèle est gardée pour information (autoliquidation, gaz…) mais ne bloque pas à elle seule
+  const aVerifier = motifs.length > 0;
   if (lu.remarque) motifs.push(lu.remarque);
 
   const u = rep.usage;
@@ -163,7 +165,7 @@ Deno.serve(async (req) => {
     date_facture: lu.date_facture && /^\d{4}-\d{2}-\d{2}$/.test(lu.date_facture) ? lu.date_facture : null,
     devise: lu.devise, montant_ht: ht, montant_tva: tva, montant_ttc: ttc,
     bloc: lu.bloc, poste: lu.poste, categorie: lu.categorie, lignes: lu.lignes,
-    confiance: Math.max(0, Math.min(1, lu.confiance)), a_verifier: motifs.length > 0, motif: motifs.join(" ; ") || null,
+    confiance: Math.max(0, Math.min(1, lu.confiance)), a_verifier: aVerifier, motif: motifs.join(" ; ") || null,
     modele: MODELE, jetons_entree: entree, jetons_sortie: u.output_tokens, cout_usd: Math.round(cout * 10000) / 10000,
   };
   const { data, error } = await sb.from("factures_achats").upsert(ligne, { onConflict: "empreinte" }).select("id").single();
