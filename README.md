@@ -25,15 +25,16 @@ Panneau de questions ouvert depuis le menu latéral (icône bulle).
 
 Le dossier `supabase/` et ce fichier ne sont pas publiés avec le board (voir `.vercelignore`).
 
-## Chiffres de contrôle (25/09/2026, après retrait des doublons de la bascule du site pro)
+## Chiffres de contrôle (26/09/2026, après retrait des doublons)
 
 | Exercice | CA HT total | dont CA produits | dont pros |
 |---|---|---|---|
-| 2024-2025 | 4 123 165 € | 4 049 907 € | 361 527 € |
-| 2025-2026 | 4 734 925 € | 4 702 320 € | 333 498 € |
+| 2024-2025 | 4 122 607 € | 4 049 349 € | 361 527 € |
+| 2025-2026 (au 26/09) | 4 740 326 € | 4 707 682 € | 333 719 € |
 
+L'exercice 2024-2025 est clos : son total ne doit plus bouger. 2025-2026 augmente chaque nuit avec les nouvelles factures.
 Ces totaux ne doivent pas bouger quand on éclate des packs ou qu'on détaille EBP.
-Doublons de la bascule du site pro : voir `supabase/migrations/20260925_doublons_bascule.sql`.
+Doublons retirés : bascule du site pro (`supabase/migrations/20260925_doublons_bascule.sql`) et factures PrestaShop en double (`supabase/migrations/20260925_doublons_factures.sql`).
 
 ## Data Center (board particuliers, marketing)
 
