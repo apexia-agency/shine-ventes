@@ -1,0 +1,13 @@
+-- Fusion des fiches clients pros coupées par la bascule du site pro (avril 2026). Appliqué le 26/09/2026.
+-- Le nouveau site pro a créé de nouveaux identifiants : un même pro avait une fiche « ancien site » (prestashop_b2c)
+-- et une fiche « site pro ». Les rattachements (clients_sources) de la fiche du site pro sont redirigés vers l'ancienne ;
+-- la fiche absorbée reste (actif = false, note « Fusionnée dans … »). Rien n'est supprimé.
+--   - par numéro de TVA valide (fusions_clients_tva / fusionner_clients_tva) : 356 fiches ;
+--   - par e-mail (fusions_clients_email / fusionner_clients_email) : 1 622 fiches.
+-- E-mails : jamais stockés. Table clients_email_empreinte = empreinte SHA-256 de l'e-mail en minuscules, chargée
+-- chaque dimanche par le workflow n8n « ENRICHISSEMENT — Rapprochement des clients pros par e-mail »
+-- (charger_emails_clients ; côté ancien site, seuls les comptes classés Pros, via ids_pros_ancien_site).
+-- Les deux fusions tournent aussi dans finaliser_collecte() après chaque collecte.
+-- Sauvegardes : bak_clients_sources_20260926, bak_clients_20260926.
+-- Retour arrière : restaurer clients_sources et clients depuis ces deux tables, puis select rafraichir_agregats();
+-- (La définition complète des fonctions est dans la base.)
