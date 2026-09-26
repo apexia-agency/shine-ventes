@@ -180,6 +180,43 @@ tbody tr:last-child td { border-bottom: 0; }
 #login form, #mdp form { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
 #login input, #mdp input { flex: 1; min-width: 200px; }
 .login-col { flex-direction: column; }
+
+/* ===== Animation de connexion : le logo SHINE se trace, se remplit, un reflet le traverse ===== */
+.intro {
+  position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; pointer-events: none;
+  background: color-mix(in srgb, var(--page) 72%, transparent);
+  -webkit-backdrop-filter: blur(28px) saturate(160%); backdrop-filter: blur(28px) saturate(160%);
+  animation: intro-sortie .55s cubic-bezier(.4,0,.2,1) 2.15s forwards;
+}
+.intro-coeur { display: grid; justify-items: center; gap: 22px; animation: intro-recul .55s cubic-bezier(.4,0,.2,1) 2.15s forwards; }
+.intro-logo { width: min(440px, 72vw); height: auto; overflow: visible; color: var(--ink); filter: drop-shadow(0 10px 30px color-mix(in srgb, var(--accent) 22%, transparent)); }
+.intro-trace { fill: currentColor; fill-opacity: 0; stroke: currentColor; stroke-width: .28; stroke-linejoin: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: intro-trait 1.05s cubic-bezier(.65,0,.35,1) .1s forwards, intro-remplir .5s ease-out .85s forwards; }
+.intro-lueur { stop-color: #ffffff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .intro-lueur { stop-color: #8cc0ff; } }
+:root[data-theme="dark"] .intro-lueur { stop-color: #8cc0ff; }
+.intro-reflet { transform: translateX(-40px); animation: intro-balayage .75s cubic-bezier(.45,0,.25,1) 1.2s forwards; }
+.intro-texte { display: flex; align-items: center; gap: 10px; font-size: 15px; color: var(--ink-2); opacity: 0; transform: translateY(8px);
+  animation: intro-apparait .45s cubic-bezier(.2,.8,.2,1) 1.35s forwards; }
+.intro-texte b { color: var(--ink); font-weight: 650; }
+.intro-coche { width: 22px; height: 22px; flex: none; }
+.intro-coche circle { fill: color-mix(in srgb, var(--good) 14%, transparent); stroke: var(--good); stroke-width: 1.6; }
+.intro-coche path { fill: none; stroke: var(--good); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1;
+  animation: intro-trait .35s ease-out 1.55s forwards; }
+@keyframes intro-trait { to { stroke-dashoffset: 0; } }
+@keyframes intro-remplir { to { fill-opacity: 1; stroke-width: 0; } }
+@keyframes intro-balayage { to { transform: translateX(150px); } }
+@keyframes intro-apparait { to { opacity: 1; transform: none; } }
+@keyframes intro-recul { to { transform: scale(1.06); opacity: 0; filter: blur(6px); } }
+@keyframes intro-sortie { to { opacity: 0; visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) {
+  .intro, .intro-coeur { animation: intro-sortie .4s ease 1.3s forwards; }
+  .intro-trace { animation: none; fill-opacity: 1; stroke-width: 0; stroke-dashoffset: 0; }
+  .intro-reflet { display: none; }
+  .intro-texte { animation: none; opacity: 1; transform: none; }
+  .intro-coche path { animation: none; stroke-dashoffset: 0; }
+}
 .login-col input, .login-col .btn { width: 100%; }
 input[type=password] {
   border: 0; border-radius: 999px; padding: 8px 14px; min-height: 38px; outline: none; background-color: var(--lg-fill);
@@ -509,6 +546,31 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     <div id="mdp-msg" class="sub" style="margin-top:10px"></div>
   </div>
 </div>
+
+<!-- Animation jouée juste après une connexion réussie (voir jouerIntro) -->
+<template id="intro-modele">
+  <div class="intro" aria-hidden="true">
+    <div class="intro-coeur">
+      <svg class="intro-logo" viewBox="-1 -1 111.65 21.08" role="img" aria-label="SHINE">
+        <defs>
+          <path id="intro-forme" pathLength="1" d="M 8.1448219,7.6754597 H 18.194705 c 4.50036,0 6.930002,1.684184 6.930002,5.0525513 0,3.782511 -2.291594,6.046496 -7.923946,6.046496 H 0 L 3.6720729,14.025661 H 17.642514 c 1.352869,0 1.960279,-0.386534 1.960279,-1.352869 0,-0.938725 -0.60741,-1.325259 -1.960279,-1.325259 H 7.5926309 c -4.7488454,0 -6.9300013,-2.1259373 -6.9300013,-5.3010373 0,-3.478806 2.3192038,-5.7427905 7.9239453,-5.7427905 H 24.627735 L 20.955662,5.1077697 H 8.1448219 c -1.325259,0 -1.960279,0.331315 -1.960279,1.270041 0,0.938725 0.63502,1.297649 1.960279,1.297649 z M 50.0807,0.3037052 V 18.774507 H 44.393129 V 11.651238 H 33.404521 v 7.123269 H 27.66173 V 0.3037052 h 5.742791 V 6.8471727 H 44.393129 V 0.3037052 Z m 9.316947,0 V 18.774507 h -5.71518 V 0.3037052 Z M 81.674921,19.078212 c -0.717849,0 -1.408088,-0.165657 -2.291594,-0.993944 L 68.063404,7.9239457 V 18.774507 H 62.872805 V 3.4511957 C 62.872805,0.9939444 64.363721,0 65.992686,0 66.682925,0 67.373164,0.1656574 68.28428,0.9939444 L 79.604203,11.154266 V 0.3037052 h 5.218209 V 15.599406 c 0,2.457252 -1.490917,3.478806 -3.147491,3.478806 z m 12.260416,-5.052551 h 15.710143 l -3.67207,4.748846 H 88.192554 V 0.3037052 h 21.397706 l -3.69968,4.8040645 H 93.935337 v 2.208766 H 108.56871 L 105.28317,11.51319 H 93.935337 Z"/>
+          <clipPath id="intro-clip"><use href="#intro-forme"/></clipPath>
+          <linearGradient id="intro-degrade" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0" class="intro-lueur" stop-opacity="0"/>
+            <stop offset=".5" class="intro-lueur" stop-opacity=".95"/>
+            <stop offset="1" class="intro-lueur" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <use href="#intro-forme" class="intro-trace"/>
+        <g clip-path="url(#intro-clip)"><g transform="skewX(-20)"><rect class="intro-reflet" x="0" y="-6" width="22" height="32" fill="url(#intro-degrade)"/></g></g>
+      </svg>
+      <div class="intro-texte">
+        <svg class="intro-coche" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10.5"/><path d="M7.5 12.3l3 3 6-6.4" pathLength="1"/></svg>
+        <span><b class="intro-nom"></b> · connexion validée</span>
+      </div>
+    </div>
+  </div>
+</template>
 
 <div id="denied" class="wrap hidden">
   <div class="card">
@@ -1692,8 +1754,16 @@ $('login-form').onsubmit = async (e) => {
   $('login-msg').textContent = 'Connexion…';
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) $('login-msg').textContent = /invalid/i.test(error.message) ? 'Adresse ou mot de passe incorrect.' : 'Erreur : ' + error.message;
-  else { $('login-msg').textContent = ''; $('login-mdp').value = ''; }
+  else { $('login-msg').textContent = ''; $('login-mdp').value = ''; animerConnexion = true; }
 };
+// Animation de connexion (logo SHINE) : jouée une fois, juste après une connexion réussie
+let animerConnexion = false;
+function jouerIntro(nom) {
+  const el = $('intro-modele').content.firstElementChild.cloneNode(true);
+  el.querySelector('.intro-nom').textContent = nom ? 'Bonjour ' + nom : 'Bonjour';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2900);
+}
 $('reset-form').onsubmit = async (e) => {
   e.preventDefault();
   const email = $('reset-email').value.trim().toLowerCase();
@@ -1727,6 +1797,7 @@ $('mdp-form').onsubmit = async (e) => {
   const { error } = await sb.auth.updateUser({ password: a });
   if (error) { $('mdp-msg').textContent = /session/i.test(error.message) ? 'Le lien a expiré : redemande-en un depuis l\'écran de connexion.' : 'Erreur : ' + error.message; return; }
   $('mdp-1').value = $('mdp-2').value = '';
+  if (choixMdp) animerConnexion = true; // première connexion : on accueille avec l'animation
   choixMdp = false;
   try { history.replaceState(null, '', location.pathname + location.search); } catch (err) {}
   $('mdp').classList.add('hidden');
@@ -1746,6 +1817,7 @@ async function start(session) {
     $('denied').classList.remove('hidden'); return;
   }
   S.acces = acces;
+  if (animerConnexion) { animerConnexion = false; jouerIntro(acces.nom); }
   $('who').textContent = `Connecté : ${acces.email}${acces.role !== 'lecture' ? ' · ' + (acces.role === 'admin' ? 'administrateur' : 'validation des segments') : ''}`;
   $('app').classList.remove('hidden');
   // Onglet ouvert directement par l'adresse (ex. …/#revendeurs)
