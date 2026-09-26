@@ -161,6 +161,10 @@ h2 { font-size: 15px; font-weight: 680; margin: 0; letter-spacing: -0.01em; }
 .hb .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar); border-radius: 999px; min-width: 4px; }
 .hb .v { font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
 .hb .v small { color: var(--muted); margin-left: 6px; }
+.hb .stack { position: absolute; left: 0; top: 0; bottom: 0; display: flex; border-radius: 999px; overflow: hidden; min-width: 4px; }
+.hb .stack i { display: block; height: 100%; }
+.cond-unite { display: inline-flex; gap: 6px; }
+.cond-unite .btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 88%, transparent); color: #fff; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { padding: 8px 8px; border-bottom: 1px solid var(--grid); text-align: left; vertical-align: middle; }
 th { color: var(--muted); font-weight: 550; font-size: 12px; white-space: nowrap; }
@@ -636,6 +640,20 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
       <div class="chart" id="fin-ch"></div>
       <div class="tbl-wrap hidden" id="fin-tbl-mois"></div>
     </div>
+    <!-- Achats : volumes vendus par conditionnement (150 ml, 450 ml, 5 L…) et par famille de clients -->
+    <div class="card" id="card-cond" style="margin-top:14px">
+      <div class="card-head">
+        <h2>Volumes vendus par conditionnement</h2>
+        <div class="cond-unite" role="group" aria-label="Unité">
+          <button class="btn small" data-u="unites" aria-pressed="true">Unités</button>
+          <button class="btn small" data-u="litres" aria-pressed="false">Litres</button>
+        </div>
+      </div>
+      <div class="sub" id="cond-note" style="margin:-4px 0 12px"></div>
+      <div class="legend" id="cond-leg"></div>
+      <div class="hbars" id="cond-hb"></div>
+      <div class="tbl-wrap" id="cond-tbl" style="margin-top:16px"></div>
+    </div>
     <div class="card" style="margin-top:14px">
       <div class="card-head"><h2 id="fin-titre-rep">Répartition</h2><span class="hint" id="fin-hint-rep"></span></div>
       <div class="hbars" id="fin-hb"></div>
@@ -908,16 +926,18 @@ function canalFilter(rows) {
 function canalInShine(c) { const x = S.canaux.find(k => k.code === c); return !x || x.dans_ca_shine; }
 
 async function loadBase() {
-  const [{ data: canaux }, mensuel, commandes, { data: meta }, { data: compta }, { data: transport }, treso] = await Promise.all([
+  const [{ data: canaux }, mensuel, commandes, { data: meta }, { data: compta }, { data: transport }, treso, contenances] = await Promise.all([
     sb.from('canaux').select('*'),
     fetchAll('agg_ventes_mensuel'),
     fetchAll('agg_commandes_mensuel'),
     sb.from('agg_meta').select('*'),
     sb.from('compta_ca_mensuel').select('*'),
     sb.from('couts_transport').select('*'),
-    fetchAll('tresorerie_mensuel').catch(() => [])
+    fetchAll('tresorerie_mensuel').catch(() => []),
+    fetchAll('produits').catch(() => [])
   ]);
   S.transport = transport || []; S.treso = treso || [];
+  S.contenance = Object.fromEntries(contenances.map(p => [p.sku, p.contenance_l == null ? null : +p.contenance_l]));
   S.canaux = canaux || []; S.mensuel = mensuel; S.commandes = commandes; S.compta = compta || [];
   S.meta = Object.fromEntries((meta || []).map(m => [m.cle, m.valeur]));
   const exs = [...new Set(mensuel.map(r => r.exercice))].filter(Boolean).sort().reverse();
@@ -1091,7 +1111,67 @@ function renderFinance() {
     `</tbody></table>` + (liste.length > finLimit ? `<p><button class="link" id="more-fin">Afficher ${Math.min(50, liste.length - finLimit)} de plus (${fmtN(liste.length)} lignes)</button></p>` : '')
     : '<div class="muted">Aucune ligne sur cette sélection.</div>';
   const mf = $('more-fin'); if (mf) mf.onclick = () => { finLimit += 50; renderFinance(); };
+  $('card-cond').classList.toggle('hidden', !achats);
+  if (achats) renderCond();
 }
+
+// ---------- Achats : volumes vendus par conditionnement ----------
+// Unités de chimie vendues (conditionnée et produit fini) sur l'exercice, CA SHINE hors MyClear, packs éclatés compris
+// (agg_produits). Le conditionnement vient de produits.contenance_l ; sans contenance → « Non renseigné ».
+const COND_FAM = ['CHIMIE_CONDITIONNEE', 'CHIMIE_PF'];
+let condUnite = 'unites';
+const condLib = l => l == null ? 'Non renseigné' : l < 1 ? `${fmtN(l * 1000, 0)} ml` : `${fmtN(l, l % 1 ? 1 : 0)} L`;
+function renderCond() {
+  const lignes = (S.prod || []).filter(r => COND_FAM.includes(r.famille) && canalOk(r.canal) && +r.quantite);
+  const val = r => condUnite === 'litres' ? +r.quantite * (S.contenance?.[r.sku] || 0) : +r.quantite;
+  const conds = new Map(); // contenance → { tot, seg: Map, skus: Map(libellé → unités) }
+  for (const r of lignes) {
+    const l = S.contenance?.[r.sku] ?? null, k = l == null ? 'x' : String(l);
+    const o = conds.get(k) || { l, tot: 0, seg: new Map(), skus: new Map() };
+    const v = val(r), seg = r.segment || 'NON_SEGMENTE';
+    o.tot += v; o.seg.set(seg, (o.seg.get(seg) || 0) + v);
+    o.skus.set(r.libelle || r.sku, (o.skus.get(r.libelle || r.sku) || 0) + +r.quantite);
+    conds.set(k, o);
+  }
+  // Petits formats d'abord, « Non renseigné » à la fin (et masqué en litres : pas de contenance)
+  const liste = [...conds.values()].filter(o => condUnite === 'unites' || o.l != null)
+    .sort((a, b) => (a.l == null) - (b.l == null) || a.l - b.l);
+  const segs = SEGMENTS.filter(s => liste.some(o => o.seg.get(s.k)));
+  const total = liste.reduce((a, o) => a + o.tot, 0);
+  const u = condUnite === 'litres' ? ' L' : '';
+  const fmtV = v => fmtN(v, condUnite === 'litres' && Math.abs(v) < 100 ? 1 : 0) + u;
+  const sansCond = conds.get('x');
+  $('cond-note').innerHTML = `Exercice ${S.ex.replace('-', '–')}, chimie conditionnée et produits finis, CA SHINE hors MyClear, packs éclatés compris. ` +
+    `Total : <b>${fmtV(total)}</b>${condUnite === 'unites' ? ' vendues' : ''}.` +
+    (sansCond ? ` ${fmtN([...sansCond.skus.values()].reduce((a, v) => a + v, 0))} unités sans contenance renseignée (${sansCond.skus.size} produits)${condUnite === 'litres' ? ', non comptées en litres' : ', détail au survol'}.` : '');
+  $('cond-leg').innerHTML = segs.map(s => `<span><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</span>`).join('');
+  const max = Math.max(1, ...liste.map(o => o.tot));
+  const el = $('cond-hb');
+  el.innerHTML = liste.length ? liste.map((o, i) => `<div class="hb" data-i="${i}"><div class="l">${esc(condLib(o.l))}</div>` +
+    `<div class="track"><div class="stack" style="width:${Math.max(0, 100 * o.tot / max)}%">${segs.map(s => { const v = o.seg.get(s.k) || 0; return v > 0 ? `<i style="width:${100 * v / o.tot}%;background:var(${s.v})"></i>` : ''; }).join('')}</div></div>` +
+    `<div class="v">${fmtV(o.tot)}<small>${total ? fmtN(pct(o.tot, total), 0) + ' %' : ''}</small></div></div>`).join('')
+    : '<div class="muted">Aucune vente de chimie sur cet exercice.</div>';
+  el.querySelectorAll('.hb').forEach(b => {
+    b.addEventListener('mousemove', ev => {
+      const o = liste[+b.dataset.i];
+      let h = `<div class="t">${esc(condLib(o.l))}</div>` + segs.filter(s => o.seg.get(s.k)).map(s => `<div class="r"><span><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</span><b>${fmtV(o.seg.get(s.k))}</b></div>`).join('');
+      const top = [...o.skus.entries()].sort((a, b) => b[1] - a[1]);
+      h += `<hr>${top.slice(0, 8).map(([n, v]) => `<div class="r"><span>${esc(n.length > 42 ? n.slice(0, 41) + '…' : n)}</span><b>${fmtN(v)}</b></div>`).join('')}${top.length > 8 ? `<div class="r"><span class="muted">+ ${top.length - 8} autres produits</span></div>` : ''}`;
+      showTip(h, ev);
+    });
+    b.addEventListener('mouseleave', hideTip);
+  });
+  // Tableau conditionnement × famille de clients
+  const cell = v => v ? fmtV(v) : '<span class="muted">–</span>';
+  $('cond-tbl').innerHTML = liste.length ? `<table><thead><tr><th>Conditionnement</th>${segs.map(s => `<th class="n">${esc(s.label)}</th>`).join('')}<th class="n">Total</th><th class="n">Part</th></tr></thead><tbody>` +
+    liste.map(o => `<tr><td>${esc(condLib(o.l))}</td>${segs.map(s => `<td class="n">${cell(o.seg.get(s.k))}</td>`).join('')}<td class="n"><b>${fmtV(o.tot)}</b></td><td class="n">${total ? fmtN(pct(o.tot, total), 1) + ' %' : ''}</td></tr>`).join('') +
+    `<tr><td><b>Total</b></td>${segs.map(s => `<td class="n"><b>${fmtV(liste.reduce((a, o) => a + (o.seg.get(s.k) || 0), 0))}</b></td>`).join('')}<td class="n"><b>${fmtV(total)}</b></td><td></td></tr></tbody></table>` : '';
+}
+document.querySelectorAll('.cond-unite .btn').forEach(b => b.onclick = () => {
+  condUnite = b.dataset.u;
+  document.querySelectorAll('.cond-unite .btn').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  renderCond();
+});
 // Barres empilées par mois (oct. → sept.) avec la courbe N-1 ; utilisé par les onglets Achats et Charges
 function graphiqueEmpile(ids, series, data, n1t, y, libN1) {
   const segs = series.filter(s => data.some(d => (d[s.k] || 0) > 0));
