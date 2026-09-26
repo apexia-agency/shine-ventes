@@ -445,6 +445,23 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
   .btn.primary { background: var(--accent); }
 }
 
+/* ===== Fiche client (fenêtre ouverte au clic sur un nom de client) ===== */
+.fiche { position: fixed; inset: 0; z-index: 45; display: grid; place-items: start center; padding: 5vh 16px; overflow-y: auto;
+  background: color-mix(in srgb, var(--page) 55%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); animation: fiche-fond .2s ease; }
+.fiche-carte { width: min(980px, 100%); border-radius: 26px; padding: 20px 22px 24px; background: var(--glass-strong);
+  -webkit-backdrop-filter: blur(28px) saturate(180%); backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid var(--glass-edge-2); box-shadow: 0 24px 64px rgba(15,20,40,0.22), inset 0 1px 0 var(--glass-edge);
+  animation: lg-pop .32s cubic-bezier(.34,1.56,.64,1); }
+.fiche-tete { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.fiche-tete .grow { flex: 1; min-width: 0; }
+.fiche-tete h2 { font-size: 20px; margin: 0; letter-spacing: -0.02em; }
+.fiche-tete .pill { margin: 6px 6px 0 0; }
+.fiche .tiles { margin-bottom: 14px; }
+.fiche .card { background: var(--surface-2); box-shadow: none; }
+.fiche h3 { font-size: 14px; font-weight: 680; margin: 0 0 8px; }
+@keyframes fiche-fond { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .fiche, .fiche-carte { animation: none; } }
+
 /* ===== Assistant ventes (panneau de discussion) ===== */
 .rail-ai[aria-expanded="true"] { color: var(--rail-on); background: var(--rail-lens); box-shadow: var(--rail-lens-shadow), inset 0 1px 0 var(--lg-rim-a); }
 .rail-ai[aria-expanded="true"] svg { stroke-width: 2; }
@@ -682,7 +699,9 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
   </div>
 
   <div class="card hidden" id="card-top" style="margin-top:14px">
-    <div class="card-head"><h2>Principaux clients</h2><span class="hint" id="top-hint"></span></div>
+    <div class="card-head"><h2>Principaux clients</h2>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="hint" id="top-hint"></span><input type="search" id="q-top" placeholder="Chercher un client" style="min-width:200px"></div>
+    </div>
     <div class="tbl-wrap" id="tbl-top"></div>
   </div>
 
@@ -738,6 +757,20 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     <span id="who"></span>
     <span style="display:flex;gap:16px;flex-wrap:wrap"><button class="link" id="changer-mdp">Changer mon mot de passe</button><button class="link" id="logout">Se déconnecter</button></span>
   </footer>
+</div>
+
+<!-- Fiche client : historique d'un client (fonction fiche_client) -->
+<div class="fiche hidden" id="fiche" role="dialog" aria-modal="true" aria-labelledby="fiche-nom">
+  <div class="fiche-carte" id="fiche-carte">
+    <div class="fiche-tete">
+      <div class="grow">
+        <h2 id="fiche-nom">Client</h2>
+        <div id="fiche-infos"></div>
+      </div>
+      <button class="btn ai-icon-btn" id="fiche-fermer" title="Fermer" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+    </div>
+    <div id="fiche-corps"><div class="muted">Chargement…</div></div>
+  </div>
 </div>
 
 <aside class="ai-panel" id="ai-panel" role="dialog" aria-modal="false" aria-labelledby="ai-title" aria-hidden="true">
@@ -930,7 +963,7 @@ async function loadTop() {
   if (error) throw error;
   const m = new Map();
   for (const r of data) {
-    const o = m.get(r.client_id) || { nom: r.client_nom, groupe: r.groupe_client, pays: r.pays, canaux: new Set(), nb: 0, ca: 0, der: null };
+    const o = m.get(r.client_id) || { id: r.client_id, nom: r.client_nom, groupe: r.groupe_client, pays: r.pays, canaux: new Set(), nb: 0, ca: 0, der: null };
     o.canaux.add(r.canal); o.nb += r.nb_factures; o.ca += +r.ca_ht;
     if (r.derniere_facture && (!o.der || r.derniere_facture > o.der)) o.der = r.derniere_facture;
     m.set(r.client_id, o);
@@ -1408,12 +1441,14 @@ function renderTop() {
   if (S.vue === 'general') return;
   const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
   const tot = S.top.reduce((a, o) => a + o.ca, 0);
-  $('top-hint').textContent = `CA HT produits de l'exercice ${S.ex.replace('-', '–')}, par client`;
-  const shown = S.top.slice(0, topLimit);
+  $('top-hint').textContent = `CA HT produits de l'exercice ${S.ex.replace('-', '–')} · clic sur un nom pour sa fiche`;
+  const q = ($('q-top').value || '').toLowerCase().trim();
+  const liste = q ? S.top.filter(o => ((o.nom || '') + ' ' + (o.groupe || '')).toLowerCase().includes(q)) : S.top;
+  const shown = liste.slice(0, topLimit);
   $('tbl-top').innerHTML = shown.length ? `<table><thead><tr><th class="n">#</th><th>Client</th><th>Groupe</th><th>Canal</th><th>Pays</th><th class="n">Factures</th><th class="n">CA HT</th><th class="n">Part</th><th class="n">Dernière facture</th></tr></thead><tbody>` +
-    shown.map((o, i) => `<tr><td class="n muted">${i + 1}</td><td>${esc(o.nom)}</td><td>${esc(o.groupe || '')}</td><td>${esc([...o.canaux].map(lib).join(', '))}</td><td>${esc(o.pays || '')}</td><td class="n">${fmtN(o.nb)}</td><td class="n">${fmtEur(o.ca)}</td><td class="n">${fmtN(pct(o.ca, tot), 1)} %</td><td class="n">${o.der ? new Date(o.der).toLocaleDateString('fr-FR') : ''}</td></tr>`).join('') +
-    `</tbody></table>` + (S.top.length > topLimit ? `<p><button class="link" id="more-top">Afficher ${Math.min(50, S.top.length - topLimit)} de plus</button></p>` : '')
-    : '<div class="muted">Aucun client sur cette sélection.</div>';
+    shown.map((o, i) => `<tr><td class="n muted">${S.top.indexOf(o) + 1}</td><td><button class="link" data-client="${esc(o.id)}">${esc(o.nom)}</button></td><td>${esc(o.groupe || '')}</td><td>${esc([...o.canaux].map(lib).join(', '))}</td><td>${esc(o.pays || '')}</td><td class="n">${fmtN(o.nb)}</td><td class="n">${fmtEur(o.ca)}</td><td class="n">${fmtN(pct(o.ca, tot), 1)} %</td><td class="n">${o.der ? new Date(o.der).toLocaleDateString('fr-FR') : ''}</td></tr>`).join('') +
+    `</tbody></table>` + (liste.length > topLimit ? `<p><button class="link" id="more-top">Afficher ${Math.min(50, liste.length - topLimit)} de plus</button></p>` : '')
+    : `<div class="muted">${q ? 'Aucun client ne correspond à cette recherche.' : 'Aucun client sur cette sélection.'}</div>`;
   const mt = $('more-top'); if (mt) mt.onclick = () => { topLimit += 50; renderTop(); };
 }
 function segBar(seg, tot) {
@@ -1472,7 +1507,7 @@ function renderClients() {
   const rows = S.clients.filter(perim);
   const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
   $('tbl-clients').innerHTML = rows.length ? `<table><thead><tr><th>Client</th><th>Canal</th><th>Groupe</th><th>Pays</th><th class="n">Factures</th><th class="n">CA HT</th><th class="n">${canEdit() ? 'Segment' : 'Segment proposé'}</th></tr></thead><tbody>` +
-    rows.map((r, i) => `<tr><td>${esc(r.client_nom)}</td><td>${esc(lib(r.canal))}</td><td>${esc(r.groupe_client || '')}</td><td>${esc(r.pays || '')}</td><td class="n">${fmtN(r.nb_factures)}</td><td class="n">${fmtEur(r.ca_ht)}</td>
+    rows.map((r, i) => `<tr><td><button class="link" data-client="${esc(r.client_id)}">${esc(r.client_nom)}</button></td><td>${esc(lib(r.canal))}</td><td>${esc(r.groupe_client || '')}</td><td>${esc(r.pays || '')}</td><td class="n">${fmtN(r.nb_factures)}</td><td class="n">${fmtEur(r.ca_ht)}</td>
       <td class="n">${canEdit() ? `<div class="row-actions">${segSelect(r.segment, `data-c="${i}"`)}<button class="btn small" data-cb="${i}">Valider</button></div>` : (SEG[r.segment]?.label || 'À trancher')}</td></tr>`).join('') + `</tbody></table>`
     : `<div class="muted">Tous les clients de cette sélection ont un segment validé.</div>`;
   $('tbl-clients').querySelectorAll('[data-cb]').forEach(b => b.onclick = async () => {
@@ -1729,13 +1764,91 @@ $('ai-reset').onclick = () => { if (AI.busy) return; AI.hist = []; aiEmpty(); ai
 $('ai-form').onsubmit = (e) => { e.preventDefault(); aiAsk(); };
 aiInput.addEventListener('input', aiGrow);
 aiInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); aiAsk(); } });
-addEventListener('keydown', e => { if (e.key === 'Escape' && aiPanel.classList.contains('open') && !lgOpen) aiOpen(false); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && aiPanel.classList.contains('open') && !lgOpen && $('fiche').classList.contains('hidden')) aiOpen(false); });
+
+// ---------- Fiche client ----------
+// Ouverte au clic sur un nom (tableaux « Principaux clients » et « Clients à valider »).
+// Exercice choisi en haut, comparé à N-1 sur les mêmes mois ; produits et factures sur tout l'historique chargé.
+let ficheDeclencheur = null;
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-client]'); if (!b) return;
+  ficheDeclencheur = b; ouvrirFiche(b.dataset.client, b.textContent);
+});
+$('fiche-fermer').onclick = () => fermerFiche();
+$('fiche').addEventListener('click', e => { if (e.target.id === 'fiche') fermerFiche(); });
+addEventListener('keydown', e => { if (e.key === 'Escape' && !$('fiche').classList.contains('hidden') && !lgOpen) fermerFiche(); });
+function fermerFiche() {
+  $('fiche').classList.add('hidden'); document.body.style.overflow = '';
+  if (ficheDeclencheur) ficheDeclencheur.focus({ preventScroll: true });
+}
+async function ouvrirFiche(id, nom) {
+  $('fiche-nom').textContent = nom || 'Client'; $('fiche-infos').innerHTML = '';
+  $('fiche-corps').innerHTML = '<div class="muted">Chargement…</div>';
+  $('fiche').classList.remove('hidden'); document.body.style.overflow = 'hidden';
+  setTimeout(() => $('fiche-fermer').focus({ preventScroll: true }), 50);
+  const { data, error } = await sb.rpc('fiche_client', { p_client: id });
+  if (error || !data) { $('fiche-corps').innerHTML = `<div class="note">Fiche indisponible : ${esc(error?.message || 'client introuvable')}</div>`; return; }
+  rendreFiche(data, nom);
+}
+function rendreFiche(d, nom) {
+  const c = d.client || {};
+  const lib = k => S.canaux.find(x => x.code === k)?.libelle || k;
+  const y = exerciceBornes(S.ex).y, exN1 = `${y - 1}-${y}`;
+  // Même période en N-1 : jusqu'au mois de la dernière facture de l'exercice en cours
+  const dernierMois = S.kpi?.au ? monthIndex(S.kpi.au) : 11;
+  const mois = d.mois || [];
+  const cur = mois.filter(m => m.exercice === S.ex), n1 = mois.filter(m => m.exercice === exN1);
+  const n1Comp = n1.filter(m => monthIndex(m.mois) <= dernierMois);
+  const somme = (l, k) => l.reduce((a, m) => a + (+m[k] || 0), 0);
+  const ca0 = somme(cur, 'ca'), ca1 = somme(n1Comp, 'ca'), f0 = somme(cur, 'nb_factures'), f1 = somme(n1Comp, 'nb_factures');
+  const der = d.total?.derniere ? new Date(d.total.derniere) : null;
+  const jours = der ? Math.round((Date.now() - der.getTime()) / 864e5) : null;
+  $('fiche-nom').textContent = c.client_nom || nom || 'Client';
+  const seg = SEG[c.segment]?.label;
+  $('fiche-infos').innerHTML = [seg && `<span class="pill">${esc(seg)}${c.sous_segment ? ' · ' + esc(c.sous_segment) : ''}</span>`,
+    c.groupe_client && `<span class="pill">Groupe ${esc(c.groupe_client)}</span>`, c.pays && `<span class="pill">${esc(c.pays)}</span>`,
+    c.canal_origine && `<span class="pill">${esc(lib(c.canal_origine))}</span>`,
+    c.segment && !c.segment_valide && '<span class="pill">famille à valider</span>'].filter(Boolean).join('');
+  const delta = (a, b) => {
+    if (!b) return '<div class="delta">pas de comparaison N-1</div>';
+    const p = 100 * (a - b) / Math.abs(b), up = p > 0;
+    return `<div class="delta"><span class="${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${fmtN(Math.abs(p), 1)} %</span> vs N-1 même période</div>`;
+  };
+  const tuile = (l, v, d) => `<div class="card tile"><div class="label">${l}</div><div class="value">${v}</div>${d}</div>`;
+  let h = `<div class="grid tiles">` +
+    tuile(`CA HT produits ${S.ex.replace('-', '–')}`, fmtK(ca0), delta(ca0, ca1)) +
+    tuile('Factures', fmtN(f0), `<div class="delta">panier moyen ${f0 ? fmtEur(ca0 / f0) : '–'} HT</div>` + delta(f0, f1)) +
+    tuile('Dernière facture', der ? der.toLocaleDateString('fr-FR') : '–', `<div class="delta">${jours == null ? '' : jours <= 1 ? 'hier ou aujourd\'hui' : 'il y a ' + fmtN(jours) + ' jours'} · ${fmtN(d.total?.nb_factures || 0)} factures depuis ${d.total?.premiere ? new Date(d.total.premiere).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '–'}</div>`) +
+    `</div>`;
+  h += `<div class="card"><h3>CA HT produits par mois</h3><div class="legend" id="fiche-leg"></div><div class="chart" id="fiche-ch"></div><div class="hidden" id="fiche-tbl"></div></div>`;
+  // Produits : exercice choisi vs N-1 (même période)
+  const prod = new Map();
+  for (const p of d.produits || []) {
+    const o = prod.get(p.sku) || { sku: p.sku, libelle: p.libelle, famille: p.famille, q0: 0, c0: 0, c1: 0 };
+    if (p.exercice === S.ex) { o.q0 += +p.quantite; o.c0 += +p.ca; } else if (p.exercice === exN1) o.c1 += +p.ca;
+    prod.set(p.sku, o);
+  }
+  const lp = [...prod.values()].filter(o => o.c0 || o.c1).sort((a, b) => b.c0 - a.c0 || b.c1 - a.c1).slice(0, 15);
+  const evol = (a, b) => !a && b ? 'arrêté' : b ? `${a >= b ? '+' : ''}${fmtN(100 * (a - b) / Math.abs(b), 0)} %` : 'nouveau';
+  h += `<div class="grid two"><div class="card"><h3>Produits achetés</h3><div class="tbl-wrap">` + (lp.length ? `<table><thead><tr><th>Produit</th><th class="n">Qté ${S.ex.slice(2, 4)}-${S.ex.slice(7)}</th><th class="n">CA HT</th><th class="n">vs N-1</th></tr></thead><tbody>` +
+    lp.map(o => `<tr><td title="${esc(o.sku)}">${esc(o.libelle || o.sku)}</td><td class="n">${fmtN(o.q0)}</td><td class="n">${fmtEur(o.c0)}</td><td class="n">${evol(o.c0, o.c1)}</td></tr>`).join('') + `</tbody></table>`
+    : '<div class="muted">Pas de détail produit (factures EBP non détaillées).</div>') + `</div></div>`;
+  h += `<div class="card"><h3>Dernières factures</h3><div class="tbl-wrap">` + ((d.factures || []).length ? `<table><thead><tr><th>Date</th><th>N°</th><th>Canal</th><th class="n">CA HT</th></tr></thead><tbody>` +
+    d.factures.map(f => `<tr><td>${new Date(f.date_facture).toLocaleDateString('fr-FR')}</td><td>${esc(f.num_facture || '')}${f.avoir ? ' <span class="pill">avoir</span>' : ''}</td><td>${esc(lib(f.canal))}</td><td class="n">${fmtEur(f.ca)}</td></tr>`).join('') + `</tbody></table>`
+    : '<div class="muted">Aucune facture.</div>') + `</div></div></div>`;
+  $('fiche-corps').innerHTML = h;
+  const data = MOIS.map(() => ({})), n1t = MOIS.map(() => 0);
+  for (const m of cur) data[monthIndex(m.mois)].ca = (data[monthIndex(m.mois)].ca || 0) + (+m.ca || 0);
+  for (const m of n1) n1t[monthIndex(m.mois)] += +m.ca || 0;
+  graphiqueEmpile({ leg: 'fiche-leg', ch: 'fiche-ch', tbl: 'fiche-tbl' }, [{ k: 'ca', label: `Exercice ${S.ex.replace('-', '–')}`, v: '--bar' }], data, n1t, y, 'N-1');
+}
 aiEmpty();
 
 // ---------- Filtres ----------
 $('f-ex').onchange = async () => { S.ex = $('f-ex').value; aiCtx(); prodLimit = 25; await refreshEx(); };
 $('q-prod').oninput = () => renderProd();
 $('q-fin').oninput = () => { finLimit = 30; renderFinance(); };
+$('q-top').oninput = () => { topLimit = 30; renderTop(); };
 $('fin-toggle-table').onclick = () => { const t = $('fin-tbl-mois'); t.classList.toggle('hidden'); $('fin-toggle-table').textContent = t.classList.contains('hidden') ? 'Voir le tableau' : 'Masquer le tableau'; };
 $('toggle-month-table').onclick = () => { const t = $('tbl-month'); t.classList.toggle('hidden'); $('toggle-month-table').textContent = t.classList.contains('hidden') ? 'Voir le tableau' : 'Masquer le tableau'; };
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => S.ex && render(), 150); });
