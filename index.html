@@ -175,10 +175,17 @@ tbody tr:last-child td { border-bottom: 0; }
 .kv { display: grid; grid-template-columns: 1fr auto; gap: 7px 16px; font-size: 13px; }
 .kv div:nth-child(odd) { color: var(--ink-2); }
 .kv div:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
-#login { max-width: 440px; margin: 14vh auto 0; }
-#login h1 { margin-bottom: 6px; }
-#login form { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-#login input { flex: 1; min-width: 200px; }
+#login, #mdp { max-width: 440px; margin: 14vh auto 0; }
+#login h1, #mdp h1 { margin-bottom: 6px; }
+#login form, #mdp form { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+#login input, #mdp input { flex: 1; min-width: 200px; }
+.login-col { flex-direction: column; }
+.login-col input, .login-col .btn { width: 100%; }
+input[type=password] {
+  border: 0; border-radius: 999px; padding: 8px 14px; min-height: 38px; outline: none; background-color: var(--lg-fill);
+  -webkit-backdrop-filter: blur(8px) saturate(190%); backdrop-filter: blur(8px) saturate(190%);
+  box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), inset 0 -1px 1px rgba(20,30,60,0.06);
+}
 .muted { color: var(--muted); }
 .hidden { display: none !important; }
 /* Boards Achats et Charges : on masque les blocs et les onglets de ventes */
@@ -473,12 +480,33 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
 <div id="login" class="wrap hidden">
   <div class="card">
     <h1>Ventes SHINE</h1>
-    <div class="sub">Accès réservé aux associés. Entre ton adresse : tu reçois un lien de connexion par email.</div>
-    <form id="login-form">
-      <input type="email" id="login-email" required placeholder="prenom@shine-group.fr" autocomplete="email">
+    <div class="sub" id="login-sub">Accès réservé aux associés.</div>
+    <form id="login-form" class="login-col">
+      <input type="email" id="login-email" required placeholder="prenom@shine-group.fr" autocomplete="username" aria-label="Adresse e-mail">
+      <input type="password" id="login-mdp" required placeholder="Mot de passe" autocomplete="current-password" aria-label="Mot de passe">
+      <button class="btn primary" type="submit">Se connecter</button>
+    </form>
+    <form id="reset-form" class="login-col hidden">
+      <input type="email" id="reset-email" required placeholder="prenom@shine-group.fr" autocomplete="email" aria-label="Adresse e-mail">
       <button class="btn primary" type="submit">Recevoir le lien</button>
     </form>
     <div id="login-msg" class="sub" style="margin-top:10px"></div>
+    <p style="margin:12px 0 0"><button class="link" type="button" id="login-bascule">Première connexion ou mot de passe oublié ?</button></p>
+  </div>
+</div>
+
+<!-- Choix du mot de passe : après le lien reçu par e-mail (première connexion, oubli) ou depuis le board -->
+<div id="mdp" class="wrap hidden">
+  <div class="card">
+    <h1>Choisis ton mot de passe</h1>
+    <div class="sub" id="mdp-sub">10 caractères au moins. Tu t'en serviras pour te connecter au board.</div>
+    <form id="mdp-form" class="login-col">
+      <input type="email" id="mdp-email" autocomplete="username" readonly aria-label="Adresse e-mail" style="opacity:.7">
+      <input type="password" id="mdp-1" required minlength="10" placeholder="Nouveau mot de passe" autocomplete="new-password" aria-label="Nouveau mot de passe">
+      <input type="password" id="mdp-2" required minlength="10" placeholder="Le même, une deuxième fois" autocomplete="new-password" aria-label="Confirmation du mot de passe">
+      <button class="btn primary" type="submit">Enregistrer</button>
+    </form>
+    <div id="mdp-msg" class="sub" style="margin-top:10px"></div>
   </div>
 </div>
 
@@ -646,7 +674,7 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
 
   <footer>
     <span id="who"></span>
-    <button class="link" id="logout">Se déconnecter</button>
+    <span style="display:flex;gap:16px;flex-wrap:wrap"><button class="link" id="changer-mdp">Changer mon mot de passe</button><button class="link" id="logout">Se déconnecter</button></span>
   </footer>
 </div>
 
@@ -676,6 +704,9 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
 (() => {
 const SUPABASE_URL = 'https://dfolpanugctzebwpfhze.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_k4fwRYCWpfxHvljJgQDiiw_wLCnxu3n';
+// Lien reçu par e-mail pour choisir son mot de passe (lu avant que Supabase ne nettoie l'adresse)
+const typeLien = new URLSearchParams(location.hash.slice(1)).get('type') || new URLSearchParams(location.search).get('type');
+let choixMdp = typeLien === 'recovery' || typeLien === 'invite';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
 
 const $ = (id) => document.getElementById(id);
@@ -1652,19 +1683,62 @@ async function refreshEx() {
   try { await loadExercice(); render(); } catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
 }
 
-// ---------- Auth ----------
+// ---------- Auth : e-mail + mot de passe ----------
+// Première connexion ou oubli : lien par e-mail (Supabase), puis l'associé choisit lui-même son mot de passe.
+// Le lien arrive avec type=recovery (mot de passe oublié) ou type=invite (compte créé par Robin dans Supabase).
 $('login-form').onsubmit = async (e) => {
   e.preventDefault();
-  const email = $('login-email').value.trim().toLowerCase();
-  $('login-msg').textContent = 'Envoi…';
-  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
-  $('login-msg').textContent = error ? 'Erreur : ' + error.message : `Lien envoyé à ${email}. Ouvre-le depuis ce navigateur.`;
+  const email = $('login-email').value.trim().toLowerCase(), password = $('login-mdp').value;
+  $('login-msg').textContent = 'Connexion…';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) $('login-msg').textContent = /invalid/i.test(error.message) ? 'Adresse ou mot de passe incorrect.' : 'Erreur : ' + error.message;
+  else { $('login-msg').textContent = ''; $('login-mdp').value = ''; }
 };
+$('reset-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const email = $('reset-email').value.trim().toLowerCase();
+  $('login-msg').textContent = 'Envoi…';
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  $('login-msg').textContent = error ? 'Erreur : ' + error.message : `Si ${email} a un accès au board, un lien vient d'y être envoyé pour choisir ton mot de passe. Ouvre-le depuis ce navigateur.`;
+};
+let modeReset = false;
+$('login-bascule').onclick = () => {
+  modeReset = !modeReset;
+  $('login-form').classList.toggle('hidden', modeReset); $('reset-form').classList.toggle('hidden', !modeReset);
+  if (modeReset) $('reset-email').value = $('login-email').value;
+  $('login-sub').textContent = modeReset ? 'Entre ton adresse : tu reçois un lien pour choisir ton mot de passe.' : 'Accès réservé aux associés.';
+  $('login-bascule').textContent = modeReset ? 'J\'ai déjà un mot de passe' : 'Première connexion ou mot de passe oublié ?';
+  $('login-msg').textContent = '';
+};
+function afficherChoixMdp(session, depuisBoard) {
+  ['login', 'denied', 'app'].forEach(id => $(id).classList.add('hidden'));
+  $('mdp').classList.remove('hidden');
+  $('mdp-email').value = session?.user?.email || '';
+  $('mdp-sub').textContent = (depuisBoard ? '' : 'Bienvenue. ') + '10 caractères au moins. Tu t\'en serviras pour te connecter au board.';
+  $('mdp-msg').textContent = '';
+  setTimeout(() => $('mdp-1').focus(), 50);
+}
+$('mdp-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const a = $('mdp-1').value, b = $('mdp-2').value;
+  if (a.length < 10) { $('mdp-msg').textContent = '10 caractères au moins.'; return; }
+  if (a !== b) { $('mdp-msg').textContent = 'Les deux mots de passe ne sont pas identiques.'; return; }
+  $('mdp-msg').textContent = 'Enregistrement…';
+  const { error } = await sb.auth.updateUser({ password: a });
+  if (error) { $('mdp-msg').textContent = /session/i.test(error.message) ? 'Le lien a expiré : redemande-en un depuis l\'écran de connexion.' : 'Erreur : ' + error.message; return; }
+  $('mdp-1').value = $('mdp-2').value = '';
+  choixMdp = false;
+  try { history.replaceState(null, '', location.pathname + location.search); } catch (err) {}
+  $('mdp').classList.add('hidden');
+  const { data } = await sb.auth.getSession(); start(data.session);
+};
+$('changer-mdp').onclick = async () => { const { data } = await sb.auth.getSession(); if (data.session) afficherChoixMdp(data.session, true); };
 const logout = async () => { await sb.auth.signOut(); location.reload(); };
 $('logout').onclick = logout; $('logout-2').onclick = logout;
 
 async function start(session) {
-  ['login', 'denied', 'app'].forEach(id => $(id).classList.add('hidden'));
+  ['login', 'denied', 'app', 'mdp'].forEach(id => $(id).classList.add('hidden'));
+  if (session && choixMdp) { afficherChoixMdp(session); return; }
   if (!session) { $('login').classList.remove('hidden'); return; }
   const { data: acces } = await sb.rpc('mon_acces');
   if (!acces || !acces.role) {
@@ -1682,7 +1756,11 @@ async function start(session) {
   catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
 }
 let started = false;
-sb.auth.onAuthStateChange((ev, session) => { if (ev === 'SIGNED_OUT') return; if (!started || ev === 'SIGNED_IN') { started = true; start(session); } });
+sb.auth.onAuthStateChange((ev, session) => {
+  if (ev === 'SIGNED_OUT') return;
+  if (ev === 'PASSWORD_RECOVERY') { choixMdp = true; started = true; afficherChoixMdp(session); return; }
+  if (!started || ev === 'SIGNED_IN') { started = true; start(session); }
+});
 sb.auth.getSession().then(({ data }) => { if (!started) { started = true; start(data.session); } });
 })();
 </script>
