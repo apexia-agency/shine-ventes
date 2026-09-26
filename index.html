@@ -1116,13 +1116,14 @@ function renderFinance() {
 }
 
 // ---------- Achats : volumes vendus par conditionnement ----------
-// Unités de chimie vendues (conditionnée et produit fini) sur l'exercice, CA SHINE hors MyClear, packs éclatés compris
+// Unités de chimie vendues (conditionnée et produit fini) sur l'exercice, tous canaux dont MyClear, packs éclatés compris
 // (agg_produits). Le conditionnement vient de produits.contenance_l ; sans contenance → « Non renseigné ».
 const COND_FAM = ['CHIMIE_CONDITIONNEE', 'CHIMIE_PF'];
 let condUnite = 'unites';
 const condLib = l => l == null ? 'Non renseigné' : l < 1 ? `${fmtN(l * 1000, 0)} ml` : `${fmtN(l, l % 1 ? 1 : 0)} L`;
 function renderCond() {
-  const lignes = (S.prod || []).filter(r => COND_FAM.includes(r.famille) && canalOk(r.canal) && +r.quantite);
+  // Tous les canaux, MyClear compris : tout est conditionné chez nous
+  const lignes = (S.prod || []).filter(r => COND_FAM.includes(r.famille) && +r.quantite);
   const val = r => condUnite === 'litres' ? +r.quantite * (S.contenance?.[r.sku] || 0) : +r.quantite;
   const conds = new Map(); // contenance → { tot, seg: Map, skus: Map(libellé → unités) }
   for (const r of lignes) {
@@ -1141,7 +1142,7 @@ function renderCond() {
   const u = condUnite === 'litres' ? ' L' : '';
   const fmtV = v => fmtN(v, condUnite === 'litres' && Math.abs(v) < 100 ? 1 : 0) + u;
   const sansCond = conds.get('x');
-  $('cond-note').innerHTML = `Exercice ${S.ex.replace('-', '–')}, chimie conditionnée et produits finis, CA SHINE hors MyClear, packs éclatés compris. ` +
+  $('cond-note').innerHTML = `Exercice ${S.ex.replace('-', '–')}, chimie conditionnée et produits finis, tous canaux (site, pros, revendeurs EBP, marketplaces, MyClear), packs éclatés compris. ` +
     `Total : <b>${fmtV(total)}</b>${condUnite === 'unites' ? ' vendues' : ''}.` +
     (sansCond ? ` ${fmtN([...sansCond.skus.values()].reduce((a, v) => a + v, 0))} unités sans contenance renseignée (${sansCond.skus.size} produits)${condUnite === 'litres' ? ', non comptées en litres' : ', détail au survol'}.` : '');
   $('cond-leg').innerHTML = segs.map(s => `<span><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</span>`).join('');
