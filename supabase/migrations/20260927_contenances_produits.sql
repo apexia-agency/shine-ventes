@@ -1,8 +1,9 @@
 -- Contenances manquantes des produits de chimie (produits.contenance_l, en litres), tirées de la référence
 -- ou du libellé. Ne remplit que les contenances vides : aucune valeur existante n'est modifiée.
 -- Aérosols : volume net (400 ou 500 ml), le board les regroupe dans une seule ligne « Aérosols ».
--- Laissés vides exprès : cire, polish et Inoxal (au poids), MC42-150 (référence 150 ml mais libellé 450 ml, à trancher),
--- SHTC14-650 (volume net inconnu), packs classés en chimie, produits sans format lisible.
+-- MC42-150 : 150 ml, confirmé par Jérémy le 27/09 (son libellé indique 450 mL par erreur).
+-- Laissés vides exprès : cire, polish et Inoxal (au poids), SHTC14-650 (aérosol, volume net inconnu ; compté dans
+-- « Aérosols » par le board), packs classés en chimie, produits sans format lisible.
 
 update produits p
 set contenance_l = v.l
@@ -20,7 +21,7 @@ from (values
   ('AS01-750-V', 0.75), ('AS10-750-V', 0.75), ('AS26-750-V', 0.75), ('AS16-25', 25),
   -- MyClear
   ('MC03-450', 0.45), ('MC05-450', 0.45), ('MC06-450', 0.45), ('MC09-450', 0.45), ('MC10-450', 0.45),
-  ('MC17-450', 0.45), ('MC21-450', 0.45), ('MC22-450', 0.45), ('MC28-450', 0.45),
+  ('MC17-450', 0.45), ('MC21-450', 0.45), ('MC22-450', 0.45), ('MC28-450', 0.45), ('MC42-150', 0.15),
   -- Marques distributeur : Clean Auto, Ceika, DPF, Netexpert, Shiftec, Sunshine
   ('CKA1001-450', 0.45),
   ('CLC001-450', 0.45), ('CLC001-900', 0.9), ('CLC001-5', 5), ('CLC002-250', 0.25), ('CLC002-900', 0.9),

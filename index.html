@@ -1121,7 +1121,8 @@ function renderFinance() {
 // Tous les aérosols forment une seule ligne, quel que soit leur format ; cire, polish et produits au kilo sont à part.
 const COND_FAM = ['CHIMIE_CONDITIONNEE', 'CHIMIE_PF'];
 let condUnite = 'unites';
-const estAerosol = r => /-A\d{3}/i.test(r.sku) || /a[ée]ro/i.test(r.libelle || '');
+const AEROSOLS = ['SHTC14-650']; // aérosols dont la référence ne suit pas le format -A650
+const estAerosol = r => AEROSOLS.includes(r.sku) || /-A\d{3}/i.test(r.sku) || /a[ée]ro/i.test(r.libelle || '');
 const AU_POIDS = ['AS41', 'ASPOL-250', 'ASPOL-1', 'INOXAL'];
 const estAuPoids = r => AU_POIDS.includes(r.sku) || /\b(cire|wax)\b|\d\s?(g|kg)\b/i.test(r.libelle || '');
 const condCle = r => estAerosol(r) ? 'aero' : estAuPoids(r) ? 'poids' : S.contenance?.[r.sku] == null ? 'x' : String(S.contenance[r.sku]);
