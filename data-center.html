@@ -1135,14 +1135,14 @@ function glassSelect(sel) {
 addEventListener('scroll', () => lgClose(false), { passive: true });
 
 // ---------- Menu latéral et changement de board ----------
-const BOARDS = [{ k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' }, { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }];
+const BOARDS = [{ k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' }, { k: 'achats', t: 'Achats', href: './#achats', small: 'matières premières, par fournisseur' }, { k: 'charges', t: 'Charges', href: './#charges', small: 'salaires, transport, frais généraux…' }, { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }];
 const railItems = [...document.querySelectorAll('.rail-item[data-vue]')];
 function railSync() { const a = railItems.find(b => b.dataset.vue === S.vue) || railItems[0]; railItems.forEach(b => b.setAttribute('aria-current', String(b === a))); $('rail-pill').style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`; }
 function setVue(v) { S.vue = v; history.replaceState(null, '', '#' + v); railSync(); render(); }
 railItems.forEach(b => b.addEventListener('click', () => setVue(b.dataset.vue)));
 addEventListener('resize', railSync);
 $('rail-boards').addEventListener('click', () => {
-  const acc = S.acces || {}; const ok = k => acc.role === 'admin' || (acc.boards && acc.boards[k]) || (k === 'ventes' && acc.role);
+  const acc = S.acces || {}; const ok = k => acc.role === 'admin' || (acc.boards && acc.boards[k]) || (['ventes', 'achats', 'charges'].includes(k) && acc.role);
   ouvrirMenu($('rail-boards'), BOARDS.filter(b => ok(b.k)).map(b => ({ ...b, sel: b.k === 'data_center' })), b => { if (b.k !== 'data_center') location.href = b.href; }, 'board-menu');
 });
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(render, 150); });

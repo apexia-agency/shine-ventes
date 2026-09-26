@@ -181,6 +181,9 @@ tbody tr:last-child td { border-bottom: 0; }
 #login input { flex: 1; min-width: 200px; }
 .muted { color: var(--muted); }
 .hidden { display: none !important; }
+/* Boards Achats et Charges : on masque les blocs et les onglets de ventes */
+#app.mode-finance > :not(nav):not(header):not(#vue-finance):not(footer) { display: none; }
+#app.mode-finance .rail-item[data-vue], #app.mode-finance .rail-sep-ventes, #app.mode-finance .rail-pill { display: none; }
 .row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
 .row-actions select { min-height: 30px; padding: 3px 10px; font-size: 12.5px; }
 .progress { font-size: 12.5px; color: var(--ink-2); }
@@ -495,14 +498,14 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     <button class="rail-item" data-vue="pros" data-label="Pros" aria-label="Pros"><svg viewBox="0 0 24 24"><path d="M3.5 8.5h17v10.5h-17zM9 8.5V6.2A1.2 1.2 0 0 1 10.2 5h3.6A1.2 1.2 0 0 1 15 6.2v2.3M3.5 13h17M11 13v1.8h2V13"/></svg></button>
     <button class="rail-item" data-vue="revendeurs" data-label="Revendeurs" aria-label="Revendeurs"><svg viewBox="0 0 24 24"><path d="M4 9.5 5.6 4.5h12.8L20 9.5M4 9.5h16M4 9.5c0 1.5 1.2 2.5 2.7 2.5s2.6-1 2.6-2.5c0 1.5 1.2 2.5 2.7 2.5s2.7-1 2.7-2.5c0 1.5 1.1 2.5 2.6 2.5S20 11 20 9.5M5.5 12v7.5h13V12M10 19.5v-4.5h4v4.5"/></svg></button>
     <button class="rail-item" data-vue="myclear" data-label="MyClear" aria-label="MyClear"><svg viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12h-11zM9 10.5V7a3 3 0 0 1 6 0v3.5"/></svg></button>
-    <span class="rail-sep" aria-hidden="true"></span>
+    <span class="rail-sep rail-sep-ventes" aria-hidden="true"></span>
     <button class="rail-item" id="rail-boards" data-label="Changer de board" aria-label="Changer de board" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></button>
     <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant ventes" aria-label="Assistant ventes" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
   </nav>
 
   <header class="top">
     <div>
-      <h1>Ventes SHINE<span id="vue-titre"></span></h1>
+      <h1><span id="board-nom">Ventes SHINE</span><span id="vue-titre"></span></h1>
       <div class="sub" id="fresh">Chargement…</div>
     </div>
     <div class="filters">
@@ -512,6 +515,32 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
   </header>
 
   <div id="notes"></div>
+
+  <!-- Onglets Achats et Charges : décaissements réels du plan de trésorerie -->
+  <div id="vue-finance" class="hidden">
+    <div class="note" id="fin-note"></div>
+    <div class="grid tiles" id="fin-tiles"></div>
+    <div class="card">
+      <div class="card-head">
+        <h2 id="fin-titre-mois">Par mois</h2>
+        <button class="link" id="fin-toggle-table">Voir le tableau</button>
+      </div>
+      <div class="legend" id="fin-leg"></div>
+      <div class="chart" id="fin-ch"></div>
+      <div class="tbl-wrap hidden" id="fin-tbl-mois"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-head"><h2 id="fin-titre-rep">Répartition</h2><span class="hint" id="fin-hint-rep"></span></div>
+      <div class="hbars" id="fin-hb"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-head">
+        <h2 id="fin-titre-detail">Détail</h2>
+        <input type="search" id="q-fin" placeholder="Filtrer" style="min-width:220px">
+      </div>
+      <div class="tbl-wrap" id="fin-tbl"></div>
+    </div>
+  </div>
 
   <div class="grid tiles" id="tiles"></div>
 
@@ -703,14 +732,17 @@ const VUES = {
   particuliers: { titre: 'Particuliers', seg: 'B2C', par: 'canal' },
   pros: { titre: 'Pros', seg: 'B2B_PRO' },
   revendeurs: { titre: 'Revendeurs', seg: 'B2B_REVENDEUR' },
-  myclear: { titre: 'MyClear', canal: 'myclear' }
+  myclear: { titre: 'MyClear', canal: 'myclear' },
+  // Boards Achats et Charges (plan de trésorerie) : même page, ouverts par le bouton « Changer de board »
+  achats: { titre: 'Achats', finance: 'ACHATS' },
+  charges: { titre: 'Charges', finance: 'CHARGES' }
 };
 const canalDeVue = v => VUES[v]?.canal || 'SHINE';
 const segVue = () => VUES[S.vue].seg || null;
 const segOk = r => !segVue() || r.segment === segVue();
 const canalOk = c => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(c) : c === S.canal);
 const perim = r => canalOk(r.canal) && segOk(r);
-const PALETTE = ['--s-b2c', '--s-pro', '--s-rev', '--s-mkt', '--s-intra', '--s-mdd', '--s-autre', '--s-hors'];
+const PALETTE = ['--s-b2c', '--s-pro', '--s-rev', '--s-mkt', '--s-intra', '--s-mdd', '--s-autre', '--s-hors', '--s-none', '--n1'];
 
 // ---------- Tooltip ----------
 const tip = $('tip');
@@ -750,15 +782,16 @@ function canalFilter(rows) {
 function canalInShine(c) { const x = S.canaux.find(k => k.code === c); return !x || x.dans_ca_shine; }
 
 async function loadBase() {
-  const [{ data: canaux }, mensuel, commandes, { data: meta }, { data: compta }, { data: transport }] = await Promise.all([
+  const [{ data: canaux }, mensuel, commandes, { data: meta }, { data: compta }, { data: transport }, treso] = await Promise.all([
     sb.from('canaux').select('*'),
     fetchAll('agg_ventes_mensuel'),
     fetchAll('agg_commandes_mensuel'),
     sb.from('agg_meta').select('*'),
     sb.from('compta_ca_mensuel').select('*'),
-    sb.from('couts_transport').select('*')
+    sb.from('couts_transport').select('*'),
+    fetchAll('tresorerie_mensuel').catch(() => [])
   ]);
-  S.transport = transport || [];
+  S.transport = transport || []; S.treso = treso || [];
   S.canaux = canaux || []; S.mensuel = mensuel; S.commandes = commandes; S.compta = compta || [];
   S.meta = Object.fromEntries((meta || []).map(m => [m.cle, m.valeur]));
   const exs = [...new Set(mensuel.map(r => r.exercice))].filter(Boolean).sort().reverse();
@@ -779,7 +812,7 @@ async function loadExercice() {
     sb.rpc('kpi_periode', { p_du: n1du, p_au: n1au }),
     fetchAll('v_groupes_resume', q => q.eq('exercice', S.ex)),
     loadClients(),
-    S.vue === 'general' ? null : loadTop()
+    S.vue === 'general' || VUES[S.vue].finance ? null : loadTop()
   ]);
   S.prod = prod; S.groupes = groupes; S.clients = clients;
   S.top = top?.lignes || []; S.nbClients = top?.nb ?? null;
@@ -843,18 +876,161 @@ function render() {
   renderCompta();
   renderGroupes();
   renderClients();
+  renderFinance();
   vueUI();
+}
+
+// ---------- Onglets Achats et Charges (plan de trésorerie) ----------
+// Montants payés en banque (TTC quand il y a de la TVA), mois réels seulement, comparés à N-1 sur les mêmes mois.
+const POSTES_LIB = {
+  SALAIRES: 'Salaires et charges sociales', TRANSPORT: 'Transport', 'SPACE UP': 'Space Up (holding)', 'FRAIS GÉNÉRAUX': 'Frais généraux',
+  MARKETING: 'Marketing', 'IMPÔTS ET TAXES': 'Impôts et taxes (hors TVA)', LOYERS: 'Loyers', 'VÉHICULES': 'Véhicules', AUTRES: 'Remboursements clients'
+};
+const CAT_LIB = { 'Salaires - RH': 'Salaires', 'Charges / Salaires': 'Charges sociales' };
+const estTVA = r => r.poste === 'IMPÔTS ET TAXES' && r.categorie === 'TVA';
+const exDe = iso => { const [a, m] = iso.split('-').map(Number); return m >= 10 ? `${a}-${a + 1}` : `${a - 1}-${a}`; };
+// Libellé lisible d'une ligne du plan (on retire les notes « → … » du plan)
+const libLigne = l => /^ex-carte Pleo|^dont réglé par carte/i.test(l) ? 'Réglé par carte Pleo' : String(l).split('→')[0].trim();
+let finLimit = 30;
+function renderFinance() {
+  const f = VUES[S.vue].finance; if (!f) return;
+  const achats = f === 'ACHATS';
+  const y = exerciceBornes(S.ex).y, exN1 = `${y - 1}-${y}`;
+  const rows = (S.treso || []).filter(r => r.bloc === f);
+  const tva = rows.filter(estTVA), hors = rows.filter(r => !estTVA(r));
+  const cur = hors.filter(r => exDe(r.mois) === S.ex);
+  const moisCur = new Set(cur.map(r => monthIndex(r.mois)));
+  const n1 = hors.filter(r => exDe(r.mois) === exN1 && moisCur.has(monthIndex(r.mois)));
+  const somme = l => l.reduce((a, r) => a + +r.montant, 0);
+  const groupe = r => achats ? r.categorie : (POSTES_LIB[r.poste] || r.poste);
+  const dernier = cur.length ? cur.reduce((m, r) => r.mois > m ? r.mois : m, '') : null;
+  const finMois = dernier ? new Date(dernier).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }) : '';
+  const maj = S.meta.tresorerie_maj ? new Date(S.meta.tresorerie_maj).toLocaleDateString('fr-FR', { dateStyle: 'long' }) : '';
+  $('fin-note').innerHTML = rows.length
+    ? `Montants <b>payés en banque</b> (TTC quand il y a de la TVA), tirés du plan de trésorerie${maj ? `, relu le ${maj}` : ''}. Mois réels seulement${finMois ? `, jusqu'à ${finMois}` : ''} ; la comparaison N-1 porte sur les mêmes mois.` +
+      (achats ? '' : ' La TVA reversée n\'est pas une charge : elle est comptée à part.')
+    : 'Pas encore de données du plan de trésorerie. Elles arrivent chaque lundi par le workflow n8n « IMPORT — Plan de trésorerie ».';
+  const delta = (a, b) => {
+    if (!b) return '<div class="delta">pas de comparaison N-1</div>';
+    const d = 100 * (a - b) / Math.abs(b), up = d > 0;
+    return `<div class="delta"><span class="${up ? 'down' : 'up'}">${up ? '▲' : '▼'} ${fmtN(Math.abs(d), 1)} %</span> vs N-1 mêmes mois</div>`; // une dépense qui monte est en rouge
+  };
+  const t0 = somme(cur), t1 = somme(n1);
+  const parGroupe = (l) => { const m = new Map(); for (const r of l) m.set(groupe(r), (m.get(groupe(r)) || 0) + +r.montant); return m; };
+  const g0 = parGroupe(cur), g1 = parGroupe(n1);
+  const tri = [...g0.entries()].sort((a, b) => b[1] - a[1]);
+  if (achats) {
+    const four = new Set(cur.map(r => r.ligne)).size;
+    const [c1, v1] = tri[0] || ['–', 0];
+    $('fin-tiles').innerHTML = [
+      ['Achats payés', fmtK(t0), delta(t0, t1)],
+      [`Premier poste : ${esc(c1)}`, fmtK(v1), `<div class="delta">${t0 ? fmtN(pct(v1, t0), 0) + ' % des achats' : ''}</div>` + delta(v1, g1.get(c1) || 0)],
+      ['Lignes fournisseurs payées', fmtN(four), `<div class="delta">sur l'exercice, à date</div>`]
+    ].map(([l, v, d]) => `<div class="card tile"><div class="label">${l}</div><div class="value">${v}</div>${d}</div>`).join('');
+  } else {
+    const sal = somme(cur.filter(r => r.poste === 'SALAIRES')), sal1 = somme(n1.filter(r => r.poste === 'SALAIRES'));
+    const tv0 = somme(tva.filter(r => exDe(r.mois) === S.ex)), tv1 = somme(tva.filter(r => exDe(r.mois) === exN1 && moisCur.has(monthIndex(r.mois))));
+    $('fin-tiles').innerHTML = [
+      ['Charges payées (hors TVA)', fmtK(t0), delta(t0, t1)],
+      ['Salaires et charges sociales', fmtK(sal), `<div class="delta">${t0 ? fmtN(pct(sal, t0), 0) + ' % des charges' : ''}</div>` + delta(sal, sal1)],
+      ['TVA reversée (hors charges)', fmtK(tv0), delta(tv0, tv1)]
+    ].map(([l, v, d]) => `<div class="card tile"><div class="label">${l}</div><div class="value">${v}</div>${d}</div>`).join('');
+  }
+  // Graphique mensuel empilé par famille d'achats ou par poste de charges
+  const series = tri.map(([k], i) => ({ k, label: k, v: PALETTE[i % PALETTE.length] }));
+  const data = MOIS.map(() => ({})), n1t = MOIS.map(() => 0);
+  for (const r of cur) { const i = monthIndex(r.mois), k = groupe(r); data[i][k] = (data[i][k] || 0) + +r.montant; }
+  for (const r of n1) n1t[monthIndex(r.mois)] += +r.montant;
+  $('fin-titre-mois').textContent = achats ? 'Achats payés par mois et par famille' : 'Charges payées par mois et par poste';
+  graphiqueEmpile({ leg: 'fin-leg', ch: 'fin-ch', tbl: 'fin-tbl-mois' }, series, data, n1t, y, 'Total N-1 (mêmes mois)');
+  // Répartition, avec N-1 au survol
+  $('fin-titre-rep').textContent = achats ? 'Par famille d\'achats' : 'Par poste';
+  $('fin-hint-rep').textContent = 'N-1 mêmes mois au survol';
+  hbars($('fin-hb'), tri.map(([k, v], i) => { const p = g1.get(k); return { label: k, v, sw: PALETTE[i % PALETTE.length], extra: `<div class="r"><span>N-1 mêmes mois</span><b>${p ? fmtEur(p) + ` (${v >= p ? '+' : ''}${fmtN(100 * (v - p) / Math.abs(p), 1)} %)` : '–'}</b></div>` }; }));
+  // Détail par fournisseur ou par ligne de charge
+  $('fin-titre-detail').textContent = achats ? 'Par fournisseur' : 'Détail des charges';
+  const q = ($('q-fin').value || '').toLowerCase().trim();
+  const cle = r => [r.poste, r.categorie, libLigne(r.ligne)].join('|');
+  const det = new Map();
+  for (const [l, champ] of [[cur, 'c'], [n1, 'p']]) for (const r of l) {
+    const k = cle(r); const o = det.get(k) || { poste: r.poste, cat: CAT_LIB[r.categorie] || r.categorie, ligne: CAT_LIB[libLigne(r.ligne)] || libLigne(r.ligne), c: 0, p: 0 };
+    o[champ] += +r.montant; det.set(k, o);
+  }
+  let liste = [...det.values()].filter(o => Math.abs(o.c) >= 1 || Math.abs(o.p) >= 1).sort((a, b) => b.c - a.c || b.p - a.p);
+  if (q) liste = liste.filter(o => (o.ligne + ' ' + o.cat + ' ' + (POSTES_LIB[o.poste] || '')).toLowerCase().includes(q));
+  const var1 = (a, b) => b ? `${a >= b ? '+' : ''}${fmtN(100 * (a - b) / Math.abs(b), 0)} %` : (a ? 'nouveau' : '');
+  const shown = liste.slice(0, finLimit);
+  $('fin-tbl').innerHTML = liste.length ? `<table><thead><tr>${achats ? '' : '<th>Poste</th>'}<th>${achats ? 'Famille' : 'Catégorie'}</th><th>${achats ? 'Fournisseur' : 'Ligne'}</th><th class="n">Exercice</th><th class="n">N-1 mêmes mois</th><th class="n">Évolution</th><th class="n">Part</th></tr></thead><tbody>` +
+    shown.map(o => `<tr>${achats ? '' : `<td>${esc(POSTES_LIB[o.poste] || o.poste)}</td>`}<td>${esc(o.cat)}</td><td>${esc(o.ligne)}</td><td class="n">${fmtEur(o.c)}</td><td class="n">${o.p ? fmtEur(o.p) : '–'}</td><td class="n">${var1(o.c, o.p)}</td><td class="n">${t0 ? fmtN(pct(o.c, t0), 1) + ' %' : ''}</td></tr>`).join('') +
+    `</tbody></table>` + (liste.length > finLimit ? `<p><button class="link" id="more-fin">Afficher ${Math.min(50, liste.length - finLimit)} de plus (${fmtN(liste.length)} lignes)</button></p>` : '')
+    : '<div class="muted">Aucune ligne sur cette sélection.</div>';
+  const mf = $('more-fin'); if (mf) mf.onclick = () => { finLimit += 50; renderFinance(); };
+}
+// Barres empilées par mois (oct. → sept.) avec la courbe N-1 ; utilisé par les onglets Achats et Charges
+function graphiqueEmpile(ids, series, data, n1t, y, libN1) {
+  const segs = series.filter(s => data.some(d => (d[s.k] || 0) > 0));
+  const hasN1 = n1t.some(v => v);
+  $(ids.leg).innerHTML = segs.map(s => `<span><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</span>`).join('') +
+    (hasN1 ? `<span><i class="sw line" style="background:var(--n1)"></i>${libN1}</span>` : '');
+  const el = $(ids.ch);
+  const W = Math.max(300, el.clientWidth), H = 300, ml = el.clientWidth < 500 ? 46 : 58, mr = 10, mt = 10, mb = 26;
+  const iw = W - ml - mr, ih = H - mt - mb;
+  const tots = data.map(d => Object.values(d).reduce((a, v) => a + Math.max(0, v), 0));
+  const ticks = niceTicks(Math.max(1, ...tots, ...n1t), 5), top = ticks[ticks.length - 1];
+  const yS = v => mt + ih - (v / top) * ih;
+  const band = iw / 12, bw = Math.min(24, band * 0.56);
+  let s = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Montants par mois">`;
+  s += `<g class="axis">`;
+  for (const t of ticks) s += `<line x1="${ml}" x2="${W - mr}" y1="${yS(t)}" y2="${yS(t)}" stroke="var(${t === 0 ? '--axis' : '--grid'})" stroke-width="1"/><text x="${ml - 8}" y="${yS(t) + 4}" text-anchor="end">${fmtK(t)}</text>`;
+  const pas = band < 30 ? 3 : band < 44 ? 2 : 1;
+  MOIS.forEach((m, i) => { if (i % pas === 0) s += `<text x="${ml + band * i + band / 2}" y="${H - 6}" text-anchor="middle">${m}</text>`; });
+  s += `</g>`;
+  data.forEach((d, i) => {
+    const x = ml + band * i + (band - bw) / 2; let acc = 0;
+    const pres = segs.filter(sg => (d[sg.k] || 0) > 0);
+    pres.forEach((sg, j) => {
+      const v = d[sg.k]; const y0 = yS(acc), y1 = yS(acc + v); acc += v;
+      const yt = y1 + (j < pres.length - 1 ? 1 : 0), yb = y0 - (j > 0 ? 1 : 0), h = Math.max(0, yb - yt);
+      if (h <= 0) return;
+      if (j === pres.length - 1) { const r = Math.min(4, h, bw / 2); s += `<path d="M${x},${yb} V${yt + r} Q${x},${yt} ${x + r},${yt} H${x + bw - r} Q${x + bw},${yt} ${x + bw},${yt + r} V${yb} Z" fill="var(${sg.v})"/>`; }
+      else s += `<rect x="${x}" y="${yt}" width="${bw}" height="${h}" fill="var(${sg.v})"/>`;
+    });
+  });
+  if (hasN1) {
+    const pts = n1t.map((v, i) => [ml + band * i + band / 2, yS(v)]).filter((p, i) => n1t[i]);
+    s += `<polyline points="${pts.map(p => p.join(',')).join(' ')}" fill="none" stroke="var(--n1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    pts.forEach(p => { s += `<circle cx="${p[0]}" cy="${p[1]}" r="4" fill="var(--n1)" stroke="var(--surface)" stroke-width="2"/>`; });
+  }
+  MOIS.forEach((m, i) => { s += `<rect class="hit" data-i="${i}" x="${ml + band * i}" y="${mt}" width="${band}" height="${ih}" fill="transparent"/>`; });
+  el.innerHTML = s + `</svg>`;
+  el.querySelectorAll('.hit').forEach(h => {
+    h.addEventListener('mousemove', ev => {
+      const i = +h.dataset.i, d = data[i];
+      let html = `<div class="t">${MOIS[i]} ${i < 3 ? y : y + 1}</div>`;
+      for (const sg of segs) if (d[sg.k]) html += `<div class="r"><span><i class="sw" style="background:var(${sg.v})"></i>${esc(sg.label)}</span><b>${fmtEur(d[sg.k])}</b></div>`;
+      html += `<hr><div class="r"><span>Total</span><b>${fmtEur(tots[i])}</b></div>`;
+      if (n1t[i]) html += `<div class="r"><span>N-1</span><b>${fmtEur(n1t[i])} (${tots[i] >= n1t[i] ? '+' : ''}${fmtN(100 * (tots[i] - n1t[i]) / n1t[i], 1)} %)</b></div>`;
+      showTip(html, ev);
+    });
+    h.addEventListener('mouseleave', hideTip);
+  });
+  let t = `<table><thead><tr><th>Mois</th>${segs.map(sg => `<th class="n">${esc(sg.label)}</th>`).join('')}<th class="n">Total</th>${hasN1 ? '<th class="n">N-1</th>' : ''}</tr></thead><tbody>`;
+  MOIS.forEach((m, i) => { if (!tots[i] && !n1t[i]) return; t += `<tr><td>${m} ${i < 3 ? y : y + 1}</td>${segs.map(sg => `<td class="n">${fmtEur(data[i][sg.k] || 0)}</td>`).join('')}<td class="n"><b>${fmtEur(tots[i])}</b></td>${hasN1 ? `<td class="n">${n1t[i] ? fmtEur(n1t[i]) : '–'}</td>` : ''}</tr>`; });
+  $(ids.tbl).innerHTML = t + `</tbody></table>`;
 }
 
 // Titre, blocs visibles et onglet actif selon la vue
 function vueUI() {
-  const g = S.vue === 'general';
-  $('vue-titre').textContent = g ? '' : ' · ' + VUES[S.vue].titre;
-  document.title = g ? 'Ventes SHINE' : `${VUES[S.vue].titre} · Ventes SHINE`;
+  const g = S.vue === 'general', fin = !!VUES[S.vue].finance;
+  $('board-nom').textContent = fin ? VUES[S.vue].titre + ' SHINE' : 'Ventes SHINE';
+  $('vue-titre').textContent = g || fin ? '' : ' · ' + VUES[S.vue].titre;
+  document.title = g ? 'Ventes SHINE' : fin ? VUES[S.vue].titre + ' SHINE' : `${VUES[S.vue].titre} · Ventes SHINE`;
   $('card-seg').classList.toggle('hidden', !g);
   $('card-clients').classList.toggle('hidden', S.vue === 'myclear');
   $('card-top').classList.toggle('hidden', g);
   $('card-compta').classList.toggle('hidden', !g);
+  $('app').classList.toggle('mode-finance', fin);
+  $('vue-finance').classList.toggle('hidden', !fin);
   railSync();
 }
 async function setVue(v) {
@@ -862,7 +1038,7 @@ async function setVue(v) {
   if (v === S.vue) { scrollTo({ top: 0, behavior: 'smooth' }); return; }
   S.vue = v; S.canal = canalDeVue(v);
   try { history.replaceState(null, '', location.pathname + location.search + (v === 'general' ? '' : '#' + v)); } catch (e) {}
-  prodLimit = 25; topLimit = 30; aiCtx(); vueUI();
+  prodLimit = 25; topLimit = 30; finLimit = 30; aiCtx(); vueUI();
   scrollTo({ top: 0 });
   await refreshEx();
 }
@@ -1314,25 +1490,29 @@ railSync();
 
 // ---------- Changement de board (Ventes / Data Center) ----------
 // N'affiche que les boards auxquels la personne a accès (acces_board.role, acces_board.boards).
+// Achats et Charges sont dans cette page (vue) : ouverts pour tous les associés, comme les ventes.
 const BOARDS = [
-  { k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' },
+  { k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients', vue: 'general' },
+  { k: 'achats', t: 'Achats', href: './#achats', small: 'matières premières, par fournisseur', vue: 'achats' },
+  { k: 'charges', t: 'Charges', href: './#charges', small: 'salaires, transport, frais généraux…', vue: 'charges' },
   { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }
 ];
+const boardCourant = () => VUES[S.vue].finance ? S.vue : 'ventes';
 $('rail-boards').addEventListener('click', () => {
   const btn = $('rail-boards');
   if (lgOpen && lgOpen.btn === btn) return lgClose(false);
   lgClose(false);
   const a = S.acces || {};
-  const dispo = BOARDS.filter(b => b.k === 'ventes' || a.role === 'admin' || (a.boards && a.boards[b.k]));
+  const dispo = BOARDS.filter(b => b.vue || a.role === 'admin' || (a.boards && a.boards[b.k]));
   const menu = document.createElement('div');
   menu.className = 'lg-menu'; menu.setAttribute('role', 'menu');
-  menu.innerHTML = dispo.map((b, i) => `<button type="button" class="lg-opt" role="menuitem" data-i="${i}" aria-selected="${b.k === 'ventes'}"><span class="ck">✓</span><span>${esc(b.t)}</span><small style="color:var(--muted);font-size:12px;margin-left:auto">${esc(b.small)}</small></button>`).join('');
+  menu.innerHTML = dispo.map((b, i) => `<button type="button" class="lg-opt" role="menuitem" data-i="${i}" aria-selected="${b.k === boardCourant()}"><span class="ck">✓</span><span>${esc(b.t)}</span><small style="color:var(--muted);font-size:12px;margin-left:auto">${esc(b.small)}</small></button>`).join('');
   document.body.appendChild(menu);
   const r = btn.getBoundingClientRect(), m = { width: menu.offsetWidth, height: menu.offsetHeight };
   if (innerWidth > 900) { menu.style.left = (r.right + 14) + 'px'; menu.style.top = Math.max(16, Math.min(r.top - 8, innerHeight - m.height - 16)) + 'px'; }
   else { menu.style.left = Math.max(16, Math.min(r.left, innerWidth - 16 - m.width)) + 'px'; menu.style.top = (r.top - 8 - m.height) + 'px'; menu.classList.add('up'); }
   btn.setAttribute('aria-expanded', 'true'); lgOpen = { menu, btn };
-  menu.querySelectorAll('.lg-opt').forEach(o => o.addEventListener('click', () => { const b = dispo[+o.dataset.i]; lgClose(false); if (b.k !== 'ventes') location.href = b.href; }));
+  menu.querySelectorAll('.lg-opt').forEach(o => o.addEventListener('click', () => { const b = dispo[+o.dataset.i]; lgClose(false); if (b.k === boardCourant()) return; if (b.vue) setVue(b.vue); else location.href = b.href; }));
   menu.querySelector('.lg-opt')?.focus({ preventScroll: true });
   setTimeout(() => document.addEventListener('pointerdown', lgOutside, true));
 });
@@ -1462,6 +1642,8 @@ aiEmpty();
 // ---------- Filtres ----------
 $('f-ex').onchange = async () => { S.ex = $('f-ex').value; aiCtx(); prodLimit = 25; await refreshEx(); };
 $('q-prod').oninput = () => renderProd();
+$('q-fin').oninput = () => { finLimit = 30; renderFinance(); };
+$('fin-toggle-table').onclick = () => { const t = $('fin-tbl-mois'); t.classList.toggle('hidden'); $('fin-toggle-table').textContent = t.classList.contains('hidden') ? 'Voir le tableau' : 'Masquer le tableau'; };
 $('toggle-month-table').onclick = () => { const t = $('tbl-month'); t.classList.toggle('hidden'); $('toggle-month-table').textContent = t.classList.contains('hidden') ? 'Voir le tableau' : 'Masquer le tableau'; };
 let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() => S.ex && render(), 150); });
 
