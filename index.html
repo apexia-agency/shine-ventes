@@ -1118,44 +1118,52 @@ function renderFinance() {
 // ---------- Achats : volumes vendus par conditionnement ----------
 // Unités de chimie vendues (conditionnée et produit fini) sur l'exercice, tous canaux dont MyClear, packs éclatés compris
 // (agg_produits). Le conditionnement vient de produits.contenance_l ; sans contenance → « Non renseigné ».
+// Tous les aérosols forment une seule ligne, quel que soit leur format ; cire, polish et produits au kilo sont à part.
 const COND_FAM = ['CHIMIE_CONDITIONNEE', 'CHIMIE_PF'];
 let condUnite = 'unites';
-const condLib = l => l == null ? 'Non renseigné' : l < 1 ? `${fmtN(l * 1000, 0)} ml` : `${fmtN(l, l % 1 ? 1 : 0)} L`;
+const estAerosol = r => /-A\d{3}/i.test(r.sku) || /a[ée]ro/i.test(r.libelle || '');
+const AU_POIDS = ['AS41', 'ASPOL-250', 'ASPOL-1', 'INOXAL'];
+const estAuPoids = r => AU_POIDS.includes(r.sku) || /\b(cire|wax)\b|\d\s?(g|kg)\b/i.test(r.libelle || '');
+const condCle = r => estAerosol(r) ? 'aero' : estAuPoids(r) ? 'poids' : S.contenance?.[r.sku] == null ? 'x' : String(S.contenance[r.sku]);
+const COND_SPECIAL = { aero: { rang: 1, lib: 'Aérosols (tous formats)' }, poids: { rang: 2, lib: 'Au poids (cire, polish…)' }, x: { rang: 3, lib: 'Non renseigné' } };
+const condLib = (k, l) => COND_SPECIAL[k] ? COND_SPECIAL[k].lib : l < 1 ? `${fmtN(l * 1000, 0)} ml` : `${fmtN(l, l % 1 ? 1 : 0)} L`;
 function renderCond() {
   // Tous les canaux, MyClear compris : tout est conditionné chez nous
   const lignes = (S.prod || []).filter(r => COND_FAM.includes(r.famille) && +r.quantite);
   const val = r => condUnite === 'litres' ? +r.quantite * (S.contenance?.[r.sku] || 0) : +r.quantite;
   const conds = new Map(); // contenance → { tot, seg: Map, skus: Map(libellé → unités) }
   for (const r of lignes) {
-    const l = S.contenance?.[r.sku] ?? null, k = l == null ? 'x' : String(l);
-    const o = conds.get(k) || { l, tot: 0, seg: new Map(), skus: new Map() };
+    const k = condCle(r);
+    if (condUnite === 'litres' && k === 'poids') continue;
+    const o = conds.get(k) || { k, l: COND_SPECIAL[k] ? null : +k, tot: 0, seg: new Map(), skus: new Map() };
     const v = val(r), seg = r.segment || 'NON_SEGMENTE';
     o.tot += v; o.seg.set(seg, (o.seg.get(seg) || 0) + v);
     o.skus.set(r.libelle || r.sku, (o.skus.get(r.libelle || r.sku) || 0) + +r.quantite);
     conds.set(k, o);
   }
-  // Petits formats d'abord, « Non renseigné » à la fin (et masqué en litres : pas de contenance)
-  const liste = [...conds.values()].filter(o => condUnite === 'unites' || o.l != null)
-    .sort((a, b) => (a.l == null) - (b.l == null) || a.l - b.l);
+  // Petits formats d'abord, puis aérosols, au poids, « Non renseigné » (masqué en litres : pas de contenance)
+  const rang = o => COND_SPECIAL[o.k]?.rang || 0;
+  const liste = [...conds.values()].filter(o => condUnite === 'unites' || (o.k !== 'x' && o.tot > 0))
+    .sort((a, b) => rang(a) - rang(b) || a.l - b.l);
   const segs = SEGMENTS.filter(s => liste.some(o => o.seg.get(s.k)));
   const total = liste.reduce((a, o) => a + o.tot, 0);
   const u = condUnite === 'litres' ? ' L' : '';
   const fmtV = v => fmtN(v, condUnite === 'litres' && Math.abs(v) < 100 ? 1 : 0) + u;
   const sansCond = conds.get('x');
   $('cond-note').innerHTML = `Exercice ${S.ex.replace('-', '–')}, chimie conditionnée et produits finis, tous canaux (site, pros, revendeurs EBP, marketplaces, MyClear), packs éclatés compris. ` +
-    `Total : <b>${fmtV(total)}</b>${condUnite === 'unites' ? ' vendues' : ''}.` +
+    `Total : <b>${fmtV(total)}</b>${condUnite === 'unites' ? ' vendues' : ' (aérosols en volume net, produits au poids exclus)'}.` +
     (sansCond ? ` ${fmtN([...sansCond.skus.values()].reduce((a, v) => a + v, 0))} unités sans contenance renseignée (${sansCond.skus.size} produits)${condUnite === 'litres' ? ', non comptées en litres' : ', détail au survol'}.` : '');
   $('cond-leg').innerHTML = segs.map(s => `<span><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</span>`).join('');
   const max = Math.max(1, ...liste.map(o => o.tot));
   const el = $('cond-hb');
-  el.innerHTML = liste.length ? liste.map((o, i) => `<div class="hb" data-i="${i}"><div class="l">${esc(condLib(o.l))}</div>` +
+  el.innerHTML = liste.length ? liste.map((o, i) => `<div class="hb" data-i="${i}"><div class="l">${esc(condLib(o.k, o.l))}</div>` +
     `<div class="track"><div class="stack" style="width:${Math.max(0, 100 * o.tot / max)}%">${segs.map(s => { const v = o.seg.get(s.k) || 0; return v > 0 ? `<i style="width:${100 * v / o.tot}%;background:var(${s.v})"></i>` : ''; }).join('')}</div></div>` +
     `<div class="v">${fmtV(o.tot)}<small>${total ? fmtN(pct(o.tot, total), 0) + ' %' : ''}</small></div></div>`).join('')
     : '<div class="muted">Aucune vente de chimie sur cet exercice.</div>';
   el.querySelectorAll('.hb').forEach(b => {
     b.addEventListener('mousemove', ev => {
       const o = liste[+b.dataset.i];
-      let h = `<div class="t">${esc(condLib(o.l))}</div>` + segs.filter(s => o.seg.get(s.k)).map(s => `<div class="r"><span><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</span><b>${fmtV(o.seg.get(s.k))}</b></div>`).join('');
+      let h = `<div class="t">${esc(condLib(o.k, o.l))}</div>` + segs.filter(s => o.seg.get(s.k)).map(s => `<div class="r"><span><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</span><b>${fmtV(o.seg.get(s.k))}</b></div>`).join('');
       const top = [...o.skus.entries()].sort((a, b) => b[1] - a[1]);
       h += `<hr>${top.slice(0, 8).map(([n, v]) => `<div class="r"><span>${esc(n.length > 42 ? n.slice(0, 41) + '…' : n)}</span><b>${fmtN(v)}</b></div>`).join('')}${top.length > 8 ? `<div class="r"><span class="muted">+ ${top.length - 8} autres produits</span></div>` : ''}`;
       showTip(h, ev);
@@ -1165,7 +1173,7 @@ function renderCond() {
   // Tableau conditionnement × famille de clients
   const cell = v => v ? fmtV(v) : '<span class="muted">–</span>';
   $('cond-tbl').innerHTML = liste.length ? `<table><thead><tr><th>Conditionnement</th>${segs.map(s => `<th class="n">${esc(s.label)}</th>`).join('')}<th class="n">Total</th><th class="n">Part</th></tr></thead><tbody>` +
-    liste.map(o => `<tr><td>${esc(condLib(o.l))}</td>${segs.map(s => `<td class="n">${cell(o.seg.get(s.k))}</td>`).join('')}<td class="n"><b>${fmtV(o.tot)}</b></td><td class="n">${total ? fmtN(pct(o.tot, total), 1) + ' %' : ''}</td></tr>`).join('') +
+    liste.map(o => `<tr><td>${esc(condLib(o.k, o.l))}</td>${segs.map(s => `<td class="n">${cell(o.seg.get(s.k))}</td>`).join('')}<td class="n"><b>${fmtV(o.tot)}</b></td><td class="n">${total ? fmtN(pct(o.tot, total), 1) + ' %' : ''}</td></tr>`).join('') +
     `<tr><td><b>Total</b></td>${segs.map(s => `<td class="n"><b>${fmtV(liste.reduce((a, o) => a + (o.seg.get(s.k) || 0), 0))}</b></td>`).join('')}<td class="n"><b>${fmtV(total)}</b></td><td></td></tr></tbody></table>` : '';
 }
 document.querySelectorAll('.cond-unite .btn').forEach(b => b.onclick = () => {
