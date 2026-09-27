@@ -3,7 +3,8 @@
 -- et une fiche « site pro ». Les rattachements (clients_sources) de la fiche du site pro sont redirigés vers l'ancienne ;
 -- la fiche absorbée reste (actif = false, note « Fusionnée dans … »). Rien n'est supprimé.
 --   - par numéro de TVA valide (fusions_clients_tva / fusionner_clients_tva) : 356 fiches ;
---   - par e-mail (fusions_clients_email / fusionner_clients_email) : 1 622 fiches.
+--   - par e-mail (fusions_clients_email / fusionner_clients_email) : 1 622 fiches, puis 57 le 27/09 depuis d'anciennes
+--     fiches Particuliers (elles passent en Pros avec la famille du site pro ; revendeurs et autres familles non touchés).
 -- E-mails : jamais stockés. Table clients_email_empreinte = empreinte SHA-256 de l'e-mail en minuscules, chargée
 -- chaque dimanche par le workflow n8n « ENRICHISSEMENT — Rapprochement des clients pros par e-mail »
 -- (charger_emails_clients ; depuis le 27/09, tous les comptes de l'ancien site, particuliers compris ;
