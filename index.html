@@ -1038,27 +1038,31 @@ async function loadExercice() {
   const n1du = shiftYear(du, -1);
   const n1au = shiftYear(au, -1);
   const [prod, k0, k1, groupes, clients, top] = await Promise.all([
-    S.per ? chargerProduitsPeriode() : fetchAll('agg_produits', q => q.eq('exercice', S.ex)),
+    chargerProduitsMois(),
     sb.rpc('kpi_periode', { p_du: du, p_au: au }),
     sb.rpc('kpi_periode', { p_du: n1du, p_au: n1au }),
     fetchAll('v_groupes_resume', q => q.eq('exercice', S.ex)),
     loadClients(),
     S.vue === 'general' || VUES[S.vue].finance ? null : loadTop()
   ]);
-  S.prod = prod; S.groupes = groupes; S.clients = clients;
+  S.prod = prod.prod; S.prodOrig = prod.orig; S.groupes = groupes; S.clients = clients;
   S.top = top?.lignes || []; S.nbClients = top?.nb ?? null;
   S.kpi = { cur: k0.data || [], n1: k1.data || [], au, n1au };
 }
-// Ventes par produit sur la période : table mensuelle, regroupée comme agg_produits (canal, famille de clients, produit)
-async function chargerProduitsPeriode() {
-  const rows = await fetchAll('agg_produits_mensuel', q => q.eq('exercice', S.ex).gte('mois', S.per.du).lte('mois', S.per.au));
-  const m = new Map();
-  for (const r of rows) {
-    const k = r.canal + '|' + r.segment + '|' + r.sku;
-    const o = m.get(k) || { exercice: r.exercice, canal: r.canal, segment: r.segment, sku: r.sku, libelle: r.libelle, famille: r.famille, quantite: 0, ca_ht: 0 };
-    o.quantite += +r.quantite; o.ca_ht += +r.ca_ht; m.set(k, o);
-  }
-  return [...m.values()];
+// Ventes par produit de l'exercice (ou de la période) : table mensuelle, mêmes totaux que agg_produits.
+// prod : regroupée comme agg_produits (canal, famille de clients, produit) ; orig : en plus par origine (vendu seul / issu d'un pack)
+async function chargerProduitsMois() {
+  const rows = await fetchAll('agg_produits_mensuel', q => { q = q.eq('exercice', S.ex); return S.per ? q.gte('mois', S.per.du).lte('mois', S.per.au) : q; });
+  const regrouper = avecOrigine => {
+    const m = new Map();
+    for (const r of rows) {
+      const k = r.canal + '|' + r.segment + '|' + r.sku + (avecOrigine ? '|' + r.origine : '');
+      const o = m.get(k) || { exercice: r.exercice, canal: r.canal, segment: r.segment, sku: r.sku, libelle: r.libelle, famille: r.famille, origine: avecOrigine ? (r.origine || 'seul') : null, quantite: 0, ca_ht: 0 };
+      o.quantite += +r.quantite; o.ca_ht += +r.ca_ht; m.set(k, o);
+    }
+    return [...m.values()];
+  };
+  return { prod: regrouper(false), orig: regrouper(true) };
 }
 // Filtre agg_clients sur le canal et la famille de clients de l'onglet
 function filtreClients(q) {
@@ -1217,6 +1221,9 @@ function renderFinance() {
 // Types de produits comptés (boutons Chimie / Accessoires, l'un, l'autre ou les deux)
 const COND_TYPES = { chimie: { lib: 'Chimie', fam: ['CHIMIE_CONDITIONNEE', 'CHIMIE_PF'] }, acc: { lib: 'Accessoires', fam: ['ACCESSOIRE_PF'] } };
 const condTypesOn = new Set(['chimie']);
+// Origine des unités (boutons « Vendus seuls » / « Dans des packs », l'un, l'autre ou les deux)
+const COND_ORIG = { seul: 'Vendus seuls', pack: 'Dans des packs' };
+const condOrigOn = new Set(['seul', 'pack']);
 const estAcc = r => COND_TYPES.acc.fam.includes(r.famille);
 let condUnite = 'unites';
 const AEROSOLS = ['SHTC14-650']; // aérosols dont la référence ne suit pas le format -A650
@@ -1240,13 +1247,21 @@ function renderCond() {
   // Dans le board Ventes, un onglet (Particuliers, Pros, Revendeurs, MyClear) limite à sa famille de clients ou à son canal.
   const fin = !!VUES[S.vue].finance, ong = !fin && S.vue !== 'general' ? VUES[S.vue].titre : null;
   const famOn = [...condTypesOn].flatMap(t => COND_TYPES[t].fam);
-  const toutes = (S.prod || []).filter(r => famOn.includes(r.famille) && +r.quantite &&
+  const toutes = (S.prodOrig || []).filter(r => famOn.includes(r.famille) && condOrigOn.has(r.origine) && +r.quantite &&
     (fin || (segOk(r) && (S.vue !== 'myclear' || r.canal === 'myclear'))));
   // Filtres par famille de clients (au-dessus du graphique) : on peut en retirer
   const segDispo = SEGMENTS.filter(s => toutes.some(r => (r.segment || 'NON_SEGMENTE') === s.k));
   $('cond-segs').innerHTML = (segDispo.length > 1 ? segDispo.map(s => `<button type="button" class="chip" data-seg="${s.k}" aria-pressed="${!condSegOff.has(s.k)}"><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</button>`).join('') : '') +
     '<span class="chip-sep" aria-hidden="true"></span>' +
-    Object.entries(COND_TYPES).map(([k, t]) => `<button type="button" class="chip" data-type="${k}" aria-pressed="${condTypesOn.has(k)}">${esc(t.lib)}</button>`).join('');
+    Object.entries(COND_TYPES).map(([k, t]) => `<button type="button" class="chip" data-type="${k}" aria-pressed="${condTypesOn.has(k)}">${esc(t.lib)}</button>`).join('') +
+    '<span class="chip-sep" aria-hidden="true"></span>' +
+    Object.entries(COND_ORIG).map(([k, lib]) => `<button type="button" class="chip" data-orig="${k}" aria-pressed="${condOrigOn.has(k)}">${esc(lib)}</button>`).join('');
+  $('cond-segs').querySelectorAll('.chip[data-orig]').forEach(b => b.onclick = () => {
+    const k = b.dataset.orig;
+    if (!condOrigOn.has(k)) condOrigOn.add(k);
+    else if (condOrigOn.size > 1) condOrigOn.delete(k); // garder au moins une origine
+    renderCond();
+  });
   $('cond-segs').querySelectorAll('.chip[data-type]').forEach(b => b.onclick = () => {
     const k = b.dataset.type;
     if (!condTypesOn.has(k)) condTypesOn.add(k);
@@ -1283,8 +1298,9 @@ function renderCond() {
   const sansCond = conds.get('x');
   const retires = segDispo.filter(s => condSegOff.has(s.k)).map(s => s.label);
   const perLib = S.per ? (S.per.du === S.per.au ? libMois(S.per.du) : `${libMois(S.per.du)} → ${libMois(S.per.au)}`) : `exercice ${S.ex.replace('-', '–')}`;
-  $('cond-note').innerHTML = `${perLib.charAt(0).toUpperCase() + perLib.slice(1)}, ${typesLib}, ${ong ? `onglet ${esc(ong)}` : 'tous canaux (site, pros, revendeurs EBP, marketplaces, MyClear)'}, packs éclatés compris` +
-    (retires.length ? `, <b>sans ${esc(retires.join(', '))}</b>` : '') + `. ` +
+  $('cond-note').innerHTML = `${perLib.charAt(0).toUpperCase() + perLib.slice(1)}, ${typesLib}, ${ong ? `onglet ${esc(ong)}` : 'tous canaux (site, pros, revendeurs EBP, marketplaces, MyClear)'}` +
+    (retires.length ? `, <b>sans ${esc(retires.join(', '))}</b>` : '') +
+    (condOrigOn.size === 1 ? (condOrigOn.has('seul') ? ', <b>hors packs</b> (produits vendus seuls)' : ', <b>uniquement les produits vendus dans des packs</b>') : ', packs éclatés compris') + `. ` +
     `Total : <b>${fmtV(total)}</b>${condUnite === 'unites' ? ' vendues' : condUnite === 'ca' ? ' HT' : ' (aérosols en volume net ; produits au poids et accessoires exclus)'}.` +
     (sansCond && condUnite === 'unites' ? ` ${fmtN(sansCond.tot)} unités sans contenance renseignée (${sansCond.skus.size} produits).` : '');
   $('cond-barres').classList.toggle('hidden', condVue !== 'barres');
