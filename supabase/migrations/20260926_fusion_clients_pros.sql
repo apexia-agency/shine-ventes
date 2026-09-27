@@ -6,7 +6,8 @@
 --   - par e-mail (fusions_clients_email / fusionner_clients_email) : 1 622 fiches.
 -- E-mails : jamais stockés. Table clients_email_empreinte = empreinte SHA-256 de l'e-mail en minuscules, chargée
 -- chaque dimanche par le workflow n8n « ENRICHISSEMENT — Rapprochement des clients pros par e-mail »
--- (charger_emails_clients ; côté ancien site, seuls les comptes classés Pros, via ids_pros_ancien_site).
+-- (charger_emails_clients ; depuis le 27/09, tous les comptes de l'ancien site, particuliers compris ;
+-- n8n ne conserve pas l'historique des passages réussis, pour ne pas garder d'e-mails).
 -- Les deux fusions tournent aussi dans finaliser_collecte() après chaque collecte.
 -- Sauvegardes : bak_clients_sources_20260926, bak_clients_20260926.
 -- Retour arrière : restaurer clients_sources et clients depuis ces deux tables, puis select rafraichir_agregats();
