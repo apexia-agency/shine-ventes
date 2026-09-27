@@ -3,11 +3,13 @@
 -- et une fiche « site pro ». Les rattachements (clients_sources) de la fiche du site pro sont redirigés vers l'ancienne ;
 -- la fiche absorbée reste (actif = false, note « Fusionnée dans … »). Rien n'est supprimé.
 --   - par numéro de TVA valide (fusions_clients_tva / fusionner_clients_tva) : 356 fiches ;
---   - par e-mail (fusions_clients_email / fusionner_clients_email) : 1 622 fiches, puis 57 le 27/09 depuis d'anciennes
---     fiches Particuliers (elles passent en Pros avec la famille du site pro ; revendeurs et autres familles non touchés).
+--   - par e-mail (fusions_clients_email / fusionner_clients_email) : 1 622 fiches.
+-- RÈGLE (Robin, 27/09) : seulement PRO → PRO. Un client revendeur ou particulier sur l'ancien site et pro sur le nouveau
+-- a changé de statut : deux fiches séparées (ancien chiffre dans l'ancienne famille, nouveau dans Pros).
+-- 57 fusions avec d'anciennes fiches Particuliers faites le 27/09 ont été défaites (defaire_fusion_email).
 -- E-mails : jamais stockés. Table clients_email_empreinte = empreinte SHA-256 de l'e-mail en minuscules, chargée
 -- chaque dimanche par le workflow n8n « ENRICHISSEMENT — Rapprochement des clients pros par e-mail »
--- (charger_emails_clients ; depuis le 27/09, tous les comptes de l'ancien site, particuliers compris ;
+-- (charger_emails_clients ; côté ancien site, seuls les comptes classés Pros, via ids_pros_ancien_site ;
 -- n8n ne conserve pas l'historique des passages réussis, pour ne pas garder d'e-mails).
 -- Les deux fusions tournent aussi dans finaliser_collecte() après chaque collecte.
 -- Sauvegardes : bak_clients_sources_20260926, bak_clients_20260926.
