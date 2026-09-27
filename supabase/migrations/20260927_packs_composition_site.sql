@@ -1,11 +1,14 @@
 -- Compositions des packs du site particuliers, relevées sur shine-group.fr le 26/09/2026 (fichier
 -- SHINE_composition_packs_2026-09-26.xlsx), vérifiées le 27/09/2026.
 -- ASPS14 (foam électrique seul ACS47 + mousse active 750), kits chaîne moto ASPS1005 et ASPS1001, pack Vintage ASPS20 :
--- déduits puis validés par Jérémy le 27/09/2026. Total : 22 packs, 184 lignes.
+-- déduits puis validés par Jérémy le 27/09/2026. Total : 24 packs, 191 lignes.
 -- Les variantes HARD / SOFT / avec accessoires ont chacune leur composition (découpage des packs fin juin 2026).
 -- Rénovateur pneus des packs Prestige : AS44-250 (AS04-250 n'est plus vendu depuis avril 2025).
 -- ACS48-2 Pack Foam V2 Standard = foam électrique seul ACS47 + mousse active AS20-750 + Hydrocoat 450 + shampoing 750
--- (Jérémy, 27/09) ; packs Prestige : gant Rasta ACS4 confirmé.
+-- (Jérémy, 27/09) ; packs Prestige : gant Rasta ACS4 et microfibre carbone à l'unité ACS72-1 confirmés.
+-- ACS48 vendu seul = foam électrique ACS47 + mousse active AS20-750 sur toute la période : le déstockage d'août-septembre 2026
+-- (foam sans mousse) est facturé sous ACS47, jamais sous ACS48 (vérifié sur les prix : ACS48 toujours à 54-58 € HT).
+-- ACS48-3 Pack Foam V2 Premium (déjà en base) : ACS48 remplacé par ACS47 + AS20-750, l'éclatement ne se faisant que sur un niveau.
 -- prix_ref = prix de vente HT moyen du produit sur le site particuliers (12 derniers mois), à défaut tous canaux :
 -- il sert à répartir le CA du pack entre ses produits (rafraichir_agregats).
 -- Après application : select rafraichir_agregats();  (sinon, recalcul la nuit suivante)
@@ -48,6 +51,13 @@ with compo(sku_pack, sku_composant, quantite) as (values
   ('ASPS07-H', 'ACS5', 1),
   ('ASPS07-H', 'ACS24', 1),
   ('ASPS07-H', 'ACS25', 1),
+  ('ACS48-3', 'ACS23', 1),
+  ('ACS48-3', 'ACS47', 1),
+  ('ACS48-3', 'AS20-750', 1),
+  ('ACS48-3', 'AS26-750', 1),
+  ('ACS48-3', 'AS29-750', 1),
+  ('ACS48', 'ACS47', 1),
+  ('ACS48', 'AS20-750', 1),
   ('ACS48-2', 'ACS47', 1),
   ('ACS48-2', 'AS20-750', 1),
   ('ACS48-2', 'AS29-450', 1),
@@ -207,3 +217,6 @@ select c.sku_pack, c.sku_composant, c.quantite, round(p.prix, 2), 'Site shine-gr
 from compo c left join prix p on p.sku = c.sku_composant
 on conflict (sku_pack, sku_composant) do update
   set quantite = excluded.quantite, prix_ref = excluded.prix_ref, source = excluded.source, maj_le = excluded.maj_le;
+
+-- ACS48-3 : l'ancien composant ACS48 (foam + mousse) est remplacé par ses deux produits (lignes ci-dessus)
+delete from packs_composition where sku_pack = 'ACS48-3' and sku_composant = 'ACS48';

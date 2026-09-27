@@ -8,7 +8,8 @@
 --   - COL2-DEV : « AS03-750_ » dans EBP = AS03-750.
 --   - Codes coupés sur les captures moto : AS1003-450, AS1008-A650-500, AS1007-A520-400, AS1005-A650-500, AS1010V-A650-500 ;
 --     lubrifiant Road : AS1006-A650-400 dans la box moto, AS1006-A650-500 (« ERREUR VOLUME NET ») dans le présentoir moto.
---   - STARFC82 : références STARFO = produits SHINE (STARFO01-450 = AS01-450…), carton et envoi exclus.
+--   - STARFC82 : références STARFO = produits SHINE (STARFO01-450 = AS01-450…), carton et envoi exclus ;
+--     STARFO17-750 = shampoing station de lavage 450 ml AS17-450 (le 750 ml n'existe plus, Jérémy 27/09).
 -- Non traités : packs MyClear, PACK-HALLOWEEN, PACK-KDO-GBH (2 produits sur 4 connus), PACK-STD.
 -- prix_ref = prix de vente HT moyen du produit sur le site particuliers (12 derniers mois), à défaut tous canaux.
 -- Après application : select rafraichir_agregats();
@@ -544,7 +545,7 @@ with compo(sku_pack, sku_composant, quantite) as (values
   ('PACK-NOEL2025-2', 'ACS5', 1),
   ('PACK-NOEL2025-2', 'CART-KDO', 1),
   ('STARFC82', 'AS01-450', 1),
-  ('STARFC82', 'AS17-750', 1),
+  ('STARFC82', 'AS17-450', 1),
   ('STARFC82', 'AS10-450', 1),
   ('STARFC82', 'AS21-450', 1),
   ('STARFC82', 'ACS77', 1),
