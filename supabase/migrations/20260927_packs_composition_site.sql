@@ -1,9 +1,11 @@
 -- Compositions des packs du site particuliers, relevées sur shine-group.fr le 26/09/2026 (fichier
 -- SHINE_composition_packs_2026-09-26.xlsx), vérifiées le 27/09/2026.
 -- ASPS14 (foam électrique seul ACS47 + mousse active 750), kits chaîne moto ASPS1005 et ASPS1001, pack Vintage ASPS20 :
--- déduits puis validés par Jérémy le 27/09/2026. Total : 22 packs, 183 lignes.
+-- déduits puis validés par Jérémy le 27/09/2026. Total : 22 packs, 184 lignes.
 -- Les variantes HARD / SOFT / avec accessoires ont chacune leur composition (découpage des packs fin juin 2026).
 -- Rénovateur pneus des packs Prestige : AS44-250 (AS04-250 n'est plus vendu depuis avril 2025).
+-- ACS48-2 Pack Foam V2 Standard = foam électrique seul ACS47 + mousse active AS20-750 + Hydrocoat 450 + shampoing 750
+-- (Jérémy, 27/09) ; packs Prestige : gant Rasta ACS4 confirmé.
 -- prix_ref = prix de vente HT moyen du produit sur le site particuliers (12 derniers mois), à défaut tous canaux :
 -- il sert à répartir le CA du pack entre ses produits (rafraichir_agregats).
 -- Après application : select rafraichir_agregats();  (sinon, recalcul la nuit suivante)
@@ -46,7 +48,8 @@ with compo(sku_pack, sku_composant, quantite) as (values
   ('ASPS07-H', 'ACS5', 1),
   ('ASPS07-H', 'ACS24', 1),
   ('ASPS07-H', 'ACS25', 1),
-  ('ACS48-2', 'ACS48', 1),
+  ('ACS48-2', 'ACS47', 1),
+  ('ACS48-2', 'AS20-750', 1),
   ('ACS48-2', 'AS29-450', 1),
   ('ACS48-2', 'AS26-750', 1),
   ('ASPS30-H', 'AS03-450', 1),
