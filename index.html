@@ -163,6 +163,15 @@ h2 { font-size: 15px; font-weight: 680; margin: 0; letter-spacing: -0.01em; }
 .hb .v small { color: var(--muted); margin-left: 6px; }
 .hb .stack { position: absolute; left: 0; top: 0; bottom: 0; display: flex; border-radius: 999px; overflow: hidden; min-width: 4px; }
 .hb .stack i { display: block; height: 100%; }
+.per-zone:not(.hidden) { display: inline-flex; gap: 6px; align-items: center; }
+#per-btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 88%, transparent); color: #fff; }
+.cond-top { margin-top: 14px; border-top: 1px solid var(--grid); padding-top: 10px; }
+.cond-top summary { cursor: pointer; font-weight: 600; font-size: 14px; list-style: none; display: flex; align-items: center; gap: 8px; }
+.cond-top summary::-webkit-details-marker { display: none; }
+.cond-top summary::before { content: "+"; display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid var(--ring); font-size: 14px; }
+.cond-top[open] summary::before { content: "−"; }
+.cond-top summary small { color: var(--muted); font-weight: 400; }
+.cond-top .tbl-wrap { margin-top: 10px; }
 .cond-ctrl { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 .seg-toggle { display: inline-flex; gap: 6px; }
 .seg-toggle .btn[aria-pressed="true"] { background: color-mix(in srgb, var(--accent) 88%, transparent); color: #fff; }
@@ -172,11 +181,12 @@ h2 { font-size: 15px; font-weight: 680; margin: 0; letter-spacing: -0.01em; }
   border: 1px solid var(--ring); background: var(--surface-2); color: var(--ink); }
 .chip[aria-pressed="false"] { opacity: .45; text-decoration: line-through; background: transparent; }
 .chip .sw { margin: 0; }
+.chip-sep { width: 1px; align-self: stretch; background: var(--grid); margin: 2px 4px; }
 .hb .cond-stack { width: 100%; }
 /* Camembert : formats dans un ordre fixe, une couleur par format (palette catégorielle validée) */
-.cond-pie { --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300; --c7: #4a3aa7; --c-autres: #9a9890; }
-[data-theme="dark"] .cond-pie { --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c-autres: #7d7b74; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cond-pie { --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c-autres: #7d7b74; } }
+.cond-pie { --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300; --c7: #4a3aa7; --c8: #e34948; --c-autres: #9a9890; }
+[data-theme="dark"] .cond-pie { --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --c-autres: #7d7b74; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cond-pie { --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --c-autres: #7d7b74; } }
 .pie-wrap { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; justify-content: center; }
 .pie-wrap svg { overflow: visible; max-width: 100%; height: auto; }
 .pie-wrap .part { cursor: pointer; transition: opacity .15s; }
@@ -659,6 +669,11 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     </div>
     <div class="filters">
       <select id="f-ex" aria-label="Exercice"></select>
+      <button class="btn" id="per-btn" title="Limiter à une période de l'exercice">Période</button>
+      <span class="per-zone hidden" id="per-zone">
+        <select id="per-du" aria-label="Premier mois"></select><span class="muted">→</span><select id="per-au" aria-label="Dernier mois"></select>
+        <button class="btn ai-icon-btn" id="per-x" title="Retirer la période (exercice entier)" aria-label="Retirer la période"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+      </span>
       <button class="btn" id="theme" title="Changer de thème" aria-label="Changer de thème">◐</button>
     </div>
   </header>
@@ -742,6 +757,7 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
         <div class="cond-unite seg-toggle" role="group" aria-label="Unité">
           <button class="btn small" data-u="unites" aria-pressed="true">Unités</button>
           <button class="btn small" data-u="litres" aria-pressed="false">Litres</button>
+          <button class="btn small" data-u="ca" aria-pressed="false">CA HT</button>
         </div>
       </div>
     </div>
@@ -753,6 +769,10 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     </div>
     <div class="cond-pie hidden" id="cond-pie"></div>
     <div class="tbl-wrap" id="cond-tbl" style="margin-top:16px"></div>
+    <details class="cond-top" id="cond-top-box">
+      <summary>Top 20 des produits <small id="cond-top-sub"></small></summary>
+      <div class="tbl-wrap" id="cond-top"></div>
+    </details>
   </div>
 
   <div class="card" style="margin-top:14px">
@@ -924,7 +944,8 @@ const canauxAgreges = () => S.meta.canaux_agreges || [];
 const ZONES = { FRANCE: 'France métropolitaine', UE: 'Union européenne', 'DOM-TOM': 'DOM-TOM', HORS_UE: 'Hors UE', INCONNUE: 'Inconnue' };
 const MOIS = ['oct.', 'nov.', 'déc.', 'janv.', 'févr.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.'];
 
-const S = { acces: null, canaux: [], mensuel: [], commandes: [], meta: {}, ex: null, canal: 'SHINE', prod: [], kpi: null, groupes: [], clients: [], compta: [], qual: null, vue: 'general', top: [], nbClients: null };
+// S.per : période optionnelle à l'intérieur de l'exercice, en mois ({ du: 'AAAA-MM-01', au: 'AAAA-MM-01' }), null = exercice entier
+const S = { per: null, acces: null, canaux: [], mensuel: [], commandes: [], meta: {}, ex: null, canal: 'SHINE', prod: [], kpi: null, groupes: [], clients: [], compta: [], qual: null, vue: 'general', top: [], nbClients: null };
 
 // Onglets du menu latéral : la vue générale montre tout, les autres filtrent sur une famille de clients ou un canal.
 // Plus de choix du canal : CA SHINE (hors MyClear) partout, MyClear a son onglet.
@@ -940,6 +961,10 @@ const VUES = {
   charges: { titre: 'Charges', finance: 'CHARGES' }
 };
 const canalDeVue = v => VUES[v]?.canal || 'SHINE';
+// Lignes mensuelles de l'exercice choisi, limitées à la période s'il y en a une
+const dansPer = r => r.exercice === S.ex && (!S.per || (r.mois >= S.per.du && r.mois <= S.per.au));
+const finDeMois = m => { const [y, mo] = m.split('-').map(Number); const d = new Date(y, mo, 0); return `${y}-${String(mo).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const libMois = m => new Date(m.slice(0, 7) + '-15').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 const segVue = () => VUES[S.vue].seg || null;
 const segOk = r => !segVue() || r.segment === segVue();
 const canalOk = c => S.canal === 'TOUS' || (S.canal === 'SHINE' ? canalInShine(c) : c === S.canal);
@@ -1007,12 +1032,14 @@ async function loadBase() {
 async function loadExercice() {
   const b = exerciceBornes(S.ex);
   const der = lastInvoiceDate();
-  const au = der && der < b.au ? der : b.au;
-  const n1du = `${b.y - 1}-10-01`;
+  const fin = S.per ? finDeMois(S.per.au) : b.au;
+  const au = der && der < fin ? der : fin;
+  const du = S.per ? S.per.du : b.du;
+  const n1du = shiftYear(du, -1);
   const n1au = shiftYear(au, -1);
   const [prod, k0, k1, groupes, clients, top] = await Promise.all([
-    fetchAll('agg_produits', q => q.eq('exercice', S.ex)),
-    sb.rpc('kpi_periode', { p_du: b.du, p_au: au }),
+    S.per ? chargerProduitsPeriode() : fetchAll('agg_produits', q => q.eq('exercice', S.ex)),
+    sb.rpc('kpi_periode', { p_du: du, p_au: au }),
     sb.rpc('kpi_periode', { p_du: n1du, p_au: n1au }),
     fetchAll('v_groupes_resume', q => q.eq('exercice', S.ex)),
     loadClients(),
@@ -1021,6 +1048,17 @@ async function loadExercice() {
   S.prod = prod; S.groupes = groupes; S.clients = clients;
   S.top = top?.lignes || []; S.nbClients = top?.nb ?? null;
   S.kpi = { cur: k0.data || [], n1: k1.data || [], au, n1au };
+}
+// Ventes par produit sur la période : table mensuelle, regroupée comme agg_produits (canal, famille de clients, produit)
+async function chargerProduitsPeriode() {
+  const rows = await fetchAll('agg_produits_mensuel', q => q.eq('exercice', S.ex).gte('mois', S.per.du).lte('mois', S.per.au));
+  const m = new Map();
+  for (const r of rows) {
+    const k = r.canal + '|' + r.segment + '|' + r.sku;
+    const o = m.get(k) || { exercice: r.exercice, canal: r.canal, segment: r.segment, sku: r.sku, libelle: r.libelle, famille: r.famille, quantite: 0, ca_ht: 0 };
+    o.quantite += +r.quantite; o.ca_ht += +r.ca_ht; m.set(k, o);
+  }
+  return [...m.values()];
 }
 // Filtre agg_clients sur le canal et la famille de clients de l'onglet
 function filtreClients(q) {
@@ -1062,14 +1100,14 @@ function render() {
   if (!S.ex) return;
   const all = canalFilter(S.mensuel);
   const rows = all.filter(estProduit);
-  const cur = rows.filter(r => r.exercice === S.ex);
+  const cur = rows.filter(dansPer);
   renderFresh();
   renderNotes(cur);
   renderTiles(cur);
   renderTransport();
   renderMonthly(rows);
   renderCanal();
-  renderAutres(all.filter(r => r.exercice === S.ex && !estProduit(r)));
+  renderAutres(all.filter(r => dansPer(r) && !estProduit(r)));
   renderSeg(cur);
   renderSousFam(rows);
   renderFam(cur);
@@ -1176,21 +1214,24 @@ function renderFinance() {
 // Unités de chimie vendues (conditionnée et produit fini) sur l'exercice, tous canaux dont MyClear, packs éclatés compris
 // (agg_produits). Le conditionnement vient de produits.contenance_l ; sans contenance → « Non renseigné ».
 // Tous les aérosols forment une seule ligne, quel que soit leur format ; cire, polish et produits au kilo sont à part.
-const COND_FAM = ['CHIMIE_CONDITIONNEE', 'CHIMIE_PF'];
+// Types de produits comptés (boutons Chimie / Accessoires, l'un, l'autre ou les deux)
+const COND_TYPES = { chimie: { lib: 'Chimie', fam: ['CHIMIE_CONDITIONNEE', 'CHIMIE_PF'] }, acc: { lib: 'Accessoires', fam: ['ACCESSOIRE_PF'] } };
+const condTypesOn = new Set(['chimie']);
+const estAcc = r => COND_TYPES.acc.fam.includes(r.famille);
 let condUnite = 'unites';
 const AEROSOLS = ['SHTC14-650']; // aérosols dont la référence ne suit pas le format -A650
 const estAerosol = r => AEROSOLS.includes(r.sku) || /-A\d{3}/i.test(r.sku) || /a[ée]ro/i.test(r.libelle || '');
 const AU_POIDS = ['AS41', 'ASPOL-250', 'ASPOL-1', 'INOXAL'];
 const estAuPoids = r => AU_POIDS.includes(r.sku) || /\b(cire|wax)\b|\d\s?(g|kg)\b/i.test(r.libelle || '');
-const condCle = r => estAerosol(r) ? 'aero' : estAuPoids(r) ? 'poids' : S.contenance?.[r.sku] == null ? 'x' : String(S.contenance[r.sku]);
-const COND_SPECIAL = { aero: { rang: 1, lib: 'Aérosols (tous formats)' }, poids: { rang: 2, lib: 'Au poids (cire, polish…)' }, x: { rang: 3, lib: 'Non renseigné' } };
+const condCle = r => estAcc(r) ? 'acc' : estAerosol(r) ? 'aero' : estAuPoids(r) ? 'poids' : S.contenance?.[r.sku] == null ? 'x' : String(S.contenance[r.sku]);
+const COND_SPECIAL = { aero: { rang: 1, lib: 'Aérosols (tous formats)' }, poids: { rang: 2, lib: 'Au poids (cire, polish…)' }, acc: { rang: 2.5, lib: 'Accessoires' }, x: { rang: 3, lib: 'Non renseigné' } };
 const condLib = (k, l) => COND_SPECIAL[k] ? COND_SPECIAL[k].lib : l < 1 ? `${fmtN(l * 1000, 0)} ml` : `${fmtN(l, l % 1 ? 1 : 0)} L`;
 // Formats principaux du camembert, dans un ordre fixe : chaque format garde sa couleur quels que soient les filtres.
 // Les autres formats sont regroupés dans « Autres formats ».
 const COND_PART = [
   { k: '0.45', lib: '450 ml', c: '--c1' }, { k: '0.75', lib: '750 ml', c: '--c2' }, { k: 'aero', lib: 'Aérosols', c: '--c3' },
   { k: '5', lib: '5 L', c: '--c4' }, { k: '0.15', lib: '150 ml', c: '--c5' }, { k: '0.25', lib: '250 ml', c: '--c6' },
-  { k: '0.2', lib: '200 ml', c: '--c7' }, { k: 'autres', lib: 'Autres formats', c: '--c-autres' }
+  { k: '0.2', lib: '200 ml', c: '--c7' }, { k: 'acc', lib: 'Accessoires', c: '--c8' }, { k: 'autres', lib: 'Autres formats', c: '--c-autres' }
 ];
 let condVue = 'barres';
 const condSegOff = new Set(); // familles de clients décochées
@@ -1198,23 +1239,32 @@ function renderCond() {
   // Tous les canaux, MyClear compris : tout est conditionné chez nous.
   // Dans le board Ventes, un onglet (Particuliers, Pros, Revendeurs, MyClear) limite à sa famille de clients ou à son canal.
   const fin = !!VUES[S.vue].finance, ong = !fin && S.vue !== 'general' ? VUES[S.vue].titre : null;
-  const toutes = (S.prod || []).filter(r => COND_FAM.includes(r.famille) && +r.quantite &&
+  const famOn = [...condTypesOn].flatMap(t => COND_TYPES[t].fam);
+  const toutes = (S.prod || []).filter(r => famOn.includes(r.famille) && +r.quantite &&
     (fin || (segOk(r) && (S.vue !== 'myclear' || r.canal === 'myclear'))));
   // Filtres par famille de clients (au-dessus du graphique) : on peut en retirer
   const segDispo = SEGMENTS.filter(s => toutes.some(r => (r.segment || 'NON_SEGMENTE') === s.k));
-  $('cond-segs').innerHTML = segDispo.length > 1 ? segDispo.map(s => `<button type="button" class="chip" data-seg="${s.k}" aria-pressed="${!condSegOff.has(s.k)}"><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</button>`).join('') : '';
-  $('cond-segs').querySelectorAll('.chip').forEach(b => b.onclick = () => {
+  $('cond-segs').innerHTML = (segDispo.length > 1 ? segDispo.map(s => `<button type="button" class="chip" data-seg="${s.k}" aria-pressed="${!condSegOff.has(s.k)}"><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</button>`).join('') : '') +
+    '<span class="chip-sep" aria-hidden="true"></span>' +
+    Object.entries(COND_TYPES).map(([k, t]) => `<button type="button" class="chip" data-type="${k}" aria-pressed="${condTypesOn.has(k)}">${esc(t.lib)}</button>`).join('');
+  $('cond-segs').querySelectorAll('.chip[data-type]').forEach(b => b.onclick = () => {
+    const k = b.dataset.type;
+    if (!condTypesOn.has(k)) condTypesOn.add(k);
+    else if (condTypesOn.size > 1) condTypesOn.delete(k); // garder au moins un type
+    renderCond();
+  });
+  $('cond-segs').querySelectorAll('.chip[data-seg]').forEach(b => b.onclick = () => {
     const k = b.dataset.seg;
     if (condSegOff.has(k)) condSegOff.delete(k);
     else if (segDispo.filter(s => !condSegOff.has(s.k)).length > 1) condSegOff.add(k); // garder au moins une famille
     renderCond();
   });
   const lignes = toutes.filter(r => !condSegOff.has(r.segment || 'NON_SEGMENTE'));
-  const val = r => condUnite === 'litres' ? +r.quantite * (S.contenance?.[r.sku] || 0) : +r.quantite;
+  const val = r => condUnite === 'litres' ? +r.quantite * (S.contenance?.[r.sku] || 0) : condUnite === 'ca' ? +r.ca_ht : +r.quantite;
   const conds = new Map(); // conditionnement → { tot, seg: Map, skus: Map(libellé → unités) }
   for (const r of lignes) {
     const k = condCle(r);
-    if (condUnite === 'litres' && k === 'poids') continue;
+    if (condUnite === 'litres' && (k === 'poids' || k === 'acc')) continue;
     const o = conds.get(k) || { k, l: COND_SPECIAL[k] ? null : +k, tot: 0, seg: new Map(), skus: new Map() };
     const v = val(r), seg = r.segment || 'NON_SEGMENTE';
     o.tot += v; o.seg.set(seg, (o.seg.get(seg) || 0) + v);
@@ -1223,17 +1273,19 @@ function renderCond() {
   }
   // Petits formats d'abord, puis aérosols, au poids, « Non renseigné » (masqué en litres : pas de contenance)
   const rang = o => COND_SPECIAL[o.k]?.rang || 0;
-  const liste = [...conds.values()].filter(o => o.tot > 0 && (condUnite === 'unites' || o.k !== 'x'))
+  const liste = [...conds.values()].filter(o => o.tot > 0 && (condUnite !== 'litres' || o.k !== 'x'))
     .sort((a, b) => rang(a) - rang(b) || a.l - b.l);
   const segs = SEGMENTS.filter(s => liste.some(o => o.seg.get(s.k)));
   const total = liste.reduce((a, o) => a + o.tot, 0);
   const u = condUnite === 'litres' ? ' L' : '';
-  const fmtV = v => fmtN(v, condUnite === 'litres' && Math.abs(v) < 100 ? 1 : 0) + u;
+  const fmtV = v => condUnite === 'ca' ? fmtEur(v) : fmtN(v, condUnite === 'litres' && Math.abs(v) < 100 ? 1 : 0) + u;
+  const typesLib = [...condTypesOn].map(t => t === 'chimie' ? 'chimie (conditionnée et produits finis)' : 'accessoires').join(' et ');
   const sansCond = conds.get('x');
   const retires = segDispo.filter(s => condSegOff.has(s.k)).map(s => s.label);
-  $('cond-note').innerHTML = `Exercice ${S.ex.replace('-', '–')}, chimie conditionnée et produits finis, ${ong ? `onglet ${esc(ong)}` : 'tous canaux (site, pros, revendeurs EBP, marketplaces, MyClear)'}, packs éclatés compris` +
+  const perLib = S.per ? (S.per.du === S.per.au ? libMois(S.per.du) : `${libMois(S.per.du)} → ${libMois(S.per.au)}`) : `exercice ${S.ex.replace('-', '–')}`;
+  $('cond-note').innerHTML = `${perLib.charAt(0).toUpperCase() + perLib.slice(1)}, ${typesLib}, ${ong ? `onglet ${esc(ong)}` : 'tous canaux (site, pros, revendeurs EBP, marketplaces, MyClear)'}, packs éclatés compris` +
     (retires.length ? `, <b>sans ${esc(retires.join(', '))}</b>` : '') + `. ` +
-    `Total : <b>${fmtV(total)}</b>${condUnite === 'unites' ? ' vendues' : ' (aérosols en volume net, produits au poids exclus)'}.` +
+    `Total : <b>${fmtV(total)}</b>${condUnite === 'unites' ? ' vendues' : condUnite === 'ca' ? ' HT' : ' (aérosols en volume net ; produits au poids et accessoires exclus)'}.` +
     (sansCond && condUnite === 'unites' ? ` ${fmtN(sansCond.tot)} unités sans contenance renseignée (${sansCond.skus.size} produits).` : '');
   $('cond-barres').classList.toggle('hidden', condVue !== 'barres');
   $('cond-pie').classList.toggle('hidden', condVue !== 'camembert');
@@ -1244,6 +1296,24 @@ function renderCond() {
   $('cond-tbl').innerHTML = liste.length ? `<table><thead><tr><th>Conditionnement</th>${segs.map(s => `<th class="n">${esc(s.label)}</th>`).join('')}<th class="n">Total</th><th class="n">Part</th></tr></thead><tbody>` +
     liste.map(o => `<tr><td>${esc(condLib(o.k, o.l))}</td>${segs.map(s => `<td class="n">${cell(o.seg.get(s.k))}</td>`).join('')}<td class="n"><b>${fmtV(o.tot)}</b></td><td class="n">${total ? fmtN(pct(o.tot, total), 1) + ' %' : ''}</td></tr>`).join('') +
     `<tr><td><b>Total</b></td>${segs.map(s => `<td class="n"><b>${fmtV(liste.reduce((a, o) => a + (o.seg.get(s.k) || 0), 0))}</b></td>`).join('')}<td class="n"><b>${fmtV(total)}</b></td><td></td></tr></tbody></table>` : '';
+  condTop(lignes);
+}
+// Top 20 des produits sur la même sélection (familles de clients, types, période, onglet), trié selon Unités / Litres / CA
+function condTop(lignes) {
+  const m = new Map();
+  for (const r of lignes) {
+    const o = m.get(r.sku) || { sku: r.sku, lib: r.libelle || r.sku, k: condCle(r), q: 0, l: 0, ca: 0 };
+    o.q += +r.quantite; o.l += +r.quantite * (S.contenance?.[r.sku] || 0); o.ca += +r.ca_ht; m.set(r.sku, o);
+  }
+  const cle = condUnite === 'litres' ? 'l' : condUnite === 'ca' ? 'ca' : 'q';
+  const tous = [...m.values()].filter(o => o[cle] > 0).sort((a, b) => b[cle] - a[cle]);
+  const tot = tous.reduce((a, o) => a + o[cle], 0), top = tous.slice(0, 20);
+  $('cond-top-sub').textContent = `· trié par ${condUnite === 'litres' ? 'litres' : condUnite === 'ca' ? "chiffre d'affaires" : 'unités'}, sur la sélection ci-dessus`;
+  const format = o => o.k === 'acc' ? 'Accessoire' : condLib(o.k, S.contenance?.[o.sku]);
+  $('cond-top').innerHTML = top.length ? `<table><thead><tr><th class="n">#</th><th>Produit</th><th>Format</th><th class="n">Unités</th><th class="n">Litres</th><th class="n">CA HT</th><th class="n">Part</th></tr></thead><tbody>` +
+    top.map((o, i) => `<tr><td class="n muted">${i + 1}</td><td>${esc(o.lib)} <span class="muted">${esc(o.sku)}</span></td><td>${esc(format(o))}</td><td class="n">${fmtN(o.q)}</td><td class="n">${o.l ? fmtN(o.l, o.l < 100 ? 1 : 0) : '<span class="muted">–</span>'}</td><td class="n">${fmtEur(o.ca)}</td><td class="n">${tot ? fmtN(pct(o[cle], tot), 1) + ' %' : ''}</td></tr>`).join('') +
+    `</tbody></table>${tous.length > 20 ? `<p class="sub" style="margin-top:6px">Les 20 premiers font ${fmtN(pct(top.reduce((a, o) => a + o[cle], 0), tot), 0)} % du total, sur ${fmtN(tous.length)} produits vendus.</p>` : ''}`
+    : '<div class="muted">Aucun produit sur cette sélection.</div>';
 }
 // Détail au survol d'un conditionnement : familles de clients puis produits les plus vendus
 function condTip(o, segs, fmtV, ev, titre) {
@@ -1293,7 +1363,7 @@ function condCamembert(liste, total, fmtV) {
     if (part >= 0.03) { const [tx, ty] = pt((a0 + a1) / 2, R + 20); svg += `<text x="${tx}" y="${ty + 4}" text-anchor="middle" class="pie-pct">${fmtN(100 * part, part < 0.1 ? 1 : 0)} %</text>`; }
     a0 = a1;
   });
-  svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="pie-tot">${fmtV(total)}</text><text x="${cx}" y="${cy + 16}" text-anchor="middle" class="pie-sub">${condUnite === 'litres' ? 'litres' : 'unités'}</text></svg>`;
+  svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="pie-tot">${fmtV(total)}</text><text x="${cx}" y="${cy + 16}" text-anchor="middle" class="pie-sub">${condUnite === 'litres' ? 'litres' : condUnite === 'ca' ? 'CA HT' : 'unités'}</text></svg>`;
   const legende = vis.map((p, i) => `<div class="pie-row" data-i="${i}"><i class="sw" style="background:var(${p.c})"></i><span>${esc(p.lib)}${p.k === 'autres' ? ` <small class="muted">(${esc(p.formats.join(', '))})</small>` : ''}</span><b>${fmtV(p.tot)}</b><small>${fmtN(pct(p.tot, total), 1)} %</small></div>`).join('');
   el.innerHTML = `<div class="pie-wrap">${svg}<div class="pie-leg">${legende}</div></div>`;
   const segsP = SEGMENTS.filter(s => vis.some(p => p.seg.get(s.k)));
@@ -1395,7 +1465,8 @@ function renderFresh() {
   const m = S.meta.derniere_maj ? new Date(S.meta.derniere_maj) : null;
   const d = lastInvoiceDate();
   $('fresh').textContent = (m ? 'Mis à jour le ' + m.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' }) : '') +
-    (d ? ' · dernière facture le ' + new Date(d).toLocaleDateString('fr-FR') : '');
+    (d ? ' · dernière facture le ' + new Date(d).toLocaleDateString('fr-FR') : '') +
+    (S.per ? ` · période : ${S.per.du === S.per.au ? libMois(S.per.du) : libMois(S.per.du) + ' → ' + libMois(S.per.au)}, comparée aux mêmes mois N-1 (graphique mensuel et clients : exercice entier)` : '');
 }
 
 function renderNotes(cur) {
@@ -1430,7 +1501,7 @@ function renderTiles(cur) {
   const ca0 = k0.reduce((a, r) => a + +r.ca_ht, 0), ca1 = k1.reduce((a, r) => a + +r.ca_ht, 0);
   const p0 = k0.reduce((a, r) => a + +r.port_ht, 0), p1 = k1.reduce((a, r) => a + +r.port_ht, 0);
   const au0 = k0.reduce((a, r) => a + +(r.ca_autres || 0), 0);
-  const cmd = canalFilter(S.commandes).filter(r => r.exercice === S.ex);
+  const cmd = canalFilter(S.commandes).filter(dansPer);
   const nbF = cmd.reduce((a, r) => a + r.nb_factures, 0), nbOff = cmd.reduce((a, r) => a + r.nb_port_offert, 0);
   const au = S.kpi?.au ? new Date(S.kpi.au).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '';
   const delta = (a, b, lbl) => {
@@ -1588,7 +1659,7 @@ function hbars(el, rows, opts = {}) {
 }
 
 function renderCanal() {
-  const rows = S.mensuel.filter(r => r.exercice === S.ex && estProduit(r) && perim(r));
+  const rows = S.mensuel.filter(r => dansPer(r) && estProduit(r) && perim(r));
   const m = new Map(); for (const r of rows) m.set(r.canal, (m.get(r.canal) || 0) + +r.ca_ht);
   const lib = c => S.canaux.find(k => k.code === c)?.libelle || c;
   hbars($('hb-canal'), [...m.entries()].sort((a, b) => b[1] - a[1]).map(([c, v]) => ({ label: lib(c), v })));
@@ -1610,7 +1681,7 @@ let sfSeg = 'B2B_REVENDEUR';
 const SF_VIDE = { B2B_PRO: 'Autres pros', B2C: 'Particuliers', MDD: 'Sans sous-famille', B2B_REVENDEUR: 'Sans sous-famille' };
 function renderSousFam(rows) {
   const y = exerciceBornes(S.ex).y, exN1 = `${y - 1}-${y}`;
-  const cur = rows.filter(r => r.exercice === S.ex);
+  const cur = rows.filter(dansPer);
   const avecSF = SEGMENTS.filter(sg => cur.some(r => r.segment === sg.k && r.sous_segment));
   if (segVue()) sfSeg = segVue(); // onglet Revendeurs ou Pros : sa propre famille, sans choix
   else if (!avecSF.some(sg => sg.k === sfSeg)) sfSeg = avecSF[0]?.k || 'B2B_REVENDEUR';
@@ -1620,7 +1691,9 @@ function renderSousFam(rows) {
   $('sf-choix').classList.toggle('hidden', S.vue !== 'general');
   $('titre-sf').textContent = S.vue === 'general' ? 'Sous-familles' : `Sous-familles · ${VUES[S.vue].titre}`;
   const moisMax = Math.max(-1, ...cur.map(r => monthIndex(r.mois)));
-  const n1 = rows.filter(r => r.exercice === exN1 && monthIndex(r.mois) <= moisMax);
+  // N-1 sur les mêmes mois : ceux de la période, sinon jusqu'au dernier mois de l'exercice en cours
+  const moisMin = S.per ? monthIndex(S.per.du) : 0;
+  const n1 = rows.filter(r => r.exercice === exN1 && monthIndex(r.mois) >= moisMin && monthIndex(r.mois) <= moisMax);
   const lab = r => r.sous_segment || SF_VIDE[sfSeg] || 'Sans sous-famille';
   const m = new Map(), m1 = new Map();
   for (const r of cur) if (r.segment === sfSeg) m.set(lab(r), (m.get(lab(r)) || 0) + +r.ca_ht);
@@ -1640,7 +1713,7 @@ function renderFam(cur) {
 function renderZone(cur) {
   const m = new Map();
   for (const r of cur) { const z = r.zone || 'INCONNUE'; const o = m.get(z) || { ca: 0, seg: new Map() }; o.ca += +r.ca_ht; o.seg.set(r.segment, (o.seg.get(r.segment) || 0) + +r.ca_ht); m.set(z, o); }
-  const cmd = canalFilter(S.commandes).filter(r => r.exercice === S.ex);
+  const cmd = canalFilter(S.commandes).filter(dansPer);
   const nb = new Map(); for (const r of cmd) nb.set(r.zone || 'INCONNUE', (nb.get(r.zone || 'INCONNUE') || 0) + r.nb_factures);
   const tot = [...m.values()].reduce((a, o) => a + o.ca, 0);
   const order = ['FRANCE', 'UE', 'DOM-TOM', 'HORS_UE', 'INCONNUE'];
@@ -2103,7 +2176,30 @@ function rendreFiche(d, nom) {
 aiEmpty();
 
 // ---------- Filtres ----------
-$('f-ex').onchange = async () => { S.ex = $('f-ex').value; aiCtx(); prodLimit = 25; await refreshEx(); };
+// Période : mois de l'exercice jusqu'à la dernière facture ; « Période » l'ajoute, la croix la retire
+function moisExercice() {
+  const y = exerciceBornes(S.ex).y, der = lastInvoiceDate(), out = [];
+  for (let i = 0; i < 12; i++) { const d = new Date(y, 9 + i, 1); const m = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`; if (!der || m <= der) out.push(m); }
+  return out;
+}
+function periodeUI() {
+  const on = !!S.per;
+  $('per-btn').setAttribute('aria-pressed', String(on));
+  $('per-btn').classList.toggle('hidden', on);
+  $('per-zone').classList.toggle('hidden', !on);
+  if (!on) return;
+  const ms = moisExercice(), opt = m => `<option value="${m}">${libMois(m)}</option>`;
+  $('per-du').innerHTML = ms.map(opt).join(''); $('per-au').innerHTML = ms.map(opt).join('');
+  $('per-du').value = S.per.du; $('per-au').value = S.per.au;
+}
+async function changerPeriode(p) {
+  S.per = p; periodeUI(); prodLimit = 25; await refreshEx();
+}
+$('per-btn').onclick = () => { const ms = moisExercice(); changerPeriode({ du: ms[0], au: ms[ms.length - 1] }); };
+$('per-x').onclick = () => changerPeriode(null);
+$('per-du').onchange = () => { const du = $('per-du').value, au = $('per-au').value; changerPeriode({ du, au: au < du ? du : au }); };
+$('per-au').onchange = () => { const du = $('per-du').value, au = $('per-au').value; changerPeriode({ du: du > au ? au : du, au }); };
+$('f-ex').onchange = async () => { S.per = null; periodeUI(); S.ex = $('f-ex').value; aiCtx(); prodLimit = 25; await refreshEx(); };
 $('q-prod').oninput = () => renderProd();
 $('q-fin').oninput = () => { finLimit = 30; renderFinance(); };
 $('q-top').oninput = () => { topLimit = 30; renderTop(); };
