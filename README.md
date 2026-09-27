@@ -36,6 +36,20 @@ L'exercice 2024-2025 est clos : son total ne doit plus bouger. 2025-2026 augment
 Ces totaux ne doivent pas bouger quand on éclate des packs ou qu'on détaille EBP.
 Doublons retirés : bascule du site pro (`supabase/migrations/20260925_doublons_bascule.sql`) et factures PrestaShop en double (`supabase/migrations/20260925_doublons_factures.sql`).
 
+## Compositions des packs et contenances (27/09/2026, Jérémy)
+
+Travail en cours, **à ne pas refaire ni écraser** : les compositions viennent des nomenclatures EBP (captures) et du site, validées par Jérémy.
+
+- `supabase/migrations/20260927_packs_composition_site.sql` : 22 packs du site, dont les variantes HARD / SOFT / accessoires
+  (ASPS07, ASPS03, ASPS02 remplacés fin juin 2026 par ASPS07-H, ASPS07-S…, chaque variante a sa composition).
+- `supabase/migrations/20260927_packs_composition_ebp.sql` : 34 packs EBP (colis Norauto, box et offres d'implantation,
+  offres de réappro, packs cadeaux et Noël, Starfobar). Lignes « Non inclus » (PLV, présentoirs) exclues.
+- `supabase/migrations/20260927_contenances_produits.sql` : contenances manquantes (MDD, MyClear, petits formats, aérosols en volume net).
+- Ignorés exprès : packs MyClear, PACK-HALLOWEEN, PACK-STD (peu ou pas de ventes). Reste PACK-KDO-GBH (2 produits sur 4 connus).
+- Le brouillon `outils/packs/compositions_a_valider.csv` (texte du site) est remplacé par ces scripts ; les écarts sont listés
+  dans le message du commit qui ajoute cette section.
+- Après application : `select rafraichir_agregats();`. Le CA total ne doit pas bouger (voir chiffres de contrôle).
+
 ## Data Center (board particuliers, marketing)
 
 - `data-center.html` : le board Data Center (même connexion que le board Ventes). On passe d'un board à l'autre par le bouton en grille sous les onglets du menu latéral.
