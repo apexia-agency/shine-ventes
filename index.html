@@ -409,6 +409,20 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
   transition: color .25s, transform .35s cubic-bezier(.34,1.56,.64,1); -webkit-tap-highlight-color: transparent;
 }
 .rail-item[hidden] { display: none; }
+/* Alertes : bouton du menu latéral avec pastille, panneau à droite (même style que l'assistant) */
+.rail-alert.a-alertes { color: var(--warn-ink); }
+.rail-badge { position: absolute; top: 3px; right: 2px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px;
+  background: #c2410c; color: #fff; font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center; pointer-events: none; }
+.ai-panel.alert-panel { bottom: auto; max-height: calc(100vh - 32px); width: min(420px, calc(100vw - 32px)); }
+.alert-list { padding: 14px 16px 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.alert-item { background: var(--warn-bg); color: var(--warn-ink); border-radius: 14px; padding: 10px 14px; font-size: 13px; line-height: 1.45; }
+.alert-vide { color: var(--muted); font-size: 13px; text-align: center; padding: 18px 6px; }
+.fin-note { margin: 0 0 12px; font-size: 12.5px; }
+/* Cartes pleine largeur repliables (bouton + / −) */
+.card.plie > :not(.card-head) { display: none !important; }
+.card.plie > .card-head { margin-bottom: 0; }
+.btn.plier { width: 28px; height: 28px; min-height: 28px; padding: 0; display: inline-grid; place-items: center; font-size: 17px; font-weight: 600; line-height: 1; flex: none; }
+.card-head .plier-zone { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-left: auto; }
 .rail-item svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .rail-item:hover { color: var(--ink); }
 .rail-item[aria-current="true"] { color: var(--rail-on); }
@@ -612,6 +626,7 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     <span class="rail-sep rail-sep-ventes" aria-hidden="true"></span>
     <button class="rail-item" id="rail-boards" data-label="Changer de board" aria-label="Changer de board" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></button>
     <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant ventes" aria-label="Assistant ventes" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
+    <button class="rail-item rail-ai rail-alert" id="rail-alert" data-label="Alertes" aria-label="Alertes" aria-expanded="false" aria-controls="alert-panel"><svg viewBox="0 0 24 24"><path d="M10.3 4.6 2.9 17.4A2 2 0 0 0 4.6 20.4h14.8a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4.2M12 16.9v.1"/></svg><span class="rail-badge hidden" id="alert-badge"></span></button>
   </nav>
 
   <header class="top">
@@ -625,11 +640,9 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     </div>
   </header>
 
-  <div id="notes"></div>
-
   <!-- Onglets Achats et Charges : décaissements réels du plan de trésorerie -->
   <div id="vue-finance" class="hidden">
-    <div class="note" id="fin-note"></div>
+    <div class="sub fin-note" id="fin-note"></div>
     <div class="grid tiles" id="fin-tiles"></div>
     <div class="card">
       <div class="card-head">
@@ -640,7 +653,9 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
       <div class="chart" id="fin-ch"></div>
       <div class="tbl-wrap hidden" id="fin-tbl-mois"></div>
     </div>
-    <!-- Achats : volumes vendus par conditionnement (150 ml, 450 ml, 5 L…) et par famille de clients -->
+    <!-- Achats : volumes vendus par conditionnement (150 ml, 450 ml, 5 L…) et par famille de clients.
+         La même carte est déplacée dans le board Ventes (slot-cond-ventes) quand on y est : voir vueUI. -->
+    <div id="slot-cond-fin">
     <div class="card" id="card-cond" style="margin-top:14px">
       <div class="card-head">
         <h2>Volumes vendus par conditionnement</h2>
@@ -653,6 +668,7 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
       <div class="legend" id="cond-leg"></div>
       <div class="hbars" id="cond-hb"></div>
       <div class="tbl-wrap" id="cond-tbl" style="margin-top:16px"></div>
+    </div>
     </div>
     <div class="card" style="margin-top:14px">
       <div class="card-head"><h2 id="fin-titre-rep">Répartition</h2><span class="hint" id="fin-hint-rep"></span></div>
@@ -707,6 +723,8 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
       <div class="hbars" id="hb-autres"></div>
     </div>
   </div>
+
+  <div id="slot-cond-ventes"></div>
 
   <div class="card" style="margin-top:14px">
     <div class="card-head">
@@ -790,6 +808,17 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
     <div id="fiche-corps"><div class="muted">Chargement…</div></div>
   </div>
 </div>
+
+<aside class="ai-panel alert-panel" id="alert-panel" role="dialog" aria-modal="false" aria-labelledby="alert-title" aria-hidden="true">
+  <div class="ai-head">
+    <div class="grow">
+      <h2 id="alert-title">Alertes</h2>
+      <div class="sub" id="alert-sub">Points à surveiller sur les données du board</div>
+    </div>
+    <button class="btn ai-icon-btn" id="alert-close" title="Fermer" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="alert-list" id="alert-list"></div>
+</aside>
 
 <aside class="ai-panel" id="ai-panel" role="dialog" aria-modal="false" aria-labelledby="ai-title" aria-hidden="true">
   <div class="ai-head">
@@ -1023,6 +1052,7 @@ function render() {
   renderGroupes();
   renderClients();
   renderFinance();
+  if (!VUES[S.vue].finance) renderCond();
   vueUI();
 }
 
@@ -1111,7 +1141,6 @@ function renderFinance() {
     `</tbody></table>` + (liste.length > finLimit ? `<p><button class="link" id="more-fin">Afficher ${Math.min(50, liste.length - finLimit)} de plus (${fmtN(liste.length)} lignes)</button></p>` : '')
     : '<div class="muted">Aucune ligne sur cette sélection.</div>';
   const mf = $('more-fin'); if (mf) mf.onclick = () => { finLimit += 50; renderFinance(); };
-  $('card-cond').classList.toggle('hidden', !achats);
   if (achats) renderCond();
 }
 
@@ -1129,8 +1158,11 @@ const condCle = r => estAerosol(r) ? 'aero' : estAuPoids(r) ? 'poids' : S.conten
 const COND_SPECIAL = { aero: { rang: 1, lib: 'Aérosols (tous formats)' }, poids: { rang: 2, lib: 'Au poids (cire, polish…)' }, x: { rang: 3, lib: 'Non renseigné' } };
 const condLib = (k, l) => COND_SPECIAL[k] ? COND_SPECIAL[k].lib : l < 1 ? `${fmtN(l * 1000, 0)} ml` : `${fmtN(l, l % 1 ? 1 : 0)} L`;
 function renderCond() {
-  // Tous les canaux, MyClear compris : tout est conditionné chez nous
-  const lignes = (S.prod || []).filter(r => COND_FAM.includes(r.famille) && +r.quantite);
+  // Tous les canaux, MyClear compris : tout est conditionné chez nous.
+  // Dans le board Ventes, un onglet (Particuliers, Pros, Revendeurs, MyClear) limite à sa famille de clients ou à son canal.
+  const fin = !!VUES[S.vue].finance, ong = !fin && S.vue !== 'general' ? VUES[S.vue].titre : null;
+  const lignes = (S.prod || []).filter(r => COND_FAM.includes(r.famille) && +r.quantite &&
+    (fin || (segOk(r) && (S.vue !== 'myclear' || r.canal === 'myclear'))));
   const val = r => condUnite === 'litres' ? +r.quantite * (S.contenance?.[r.sku] || 0) : +r.quantite;
   const conds = new Map(); // contenance → { tot, seg: Map, skus: Map(libellé → unités) }
   for (const r of lignes) {
@@ -1151,7 +1183,7 @@ function renderCond() {
   const u = condUnite === 'litres' ? ' L' : '';
   const fmtV = v => fmtN(v, condUnite === 'litres' && Math.abs(v) < 100 ? 1 : 0) + u;
   const sansCond = conds.get('x');
-  $('cond-note').innerHTML = `Exercice ${S.ex.replace('-', '–')}, chimie conditionnée et produits finis, tous canaux (site, pros, revendeurs EBP, marketplaces, MyClear), packs éclatés compris. ` +
+  $('cond-note').innerHTML = `Exercice ${S.ex.replace('-', '–')}, chimie conditionnée et produits finis, ${ong ? `onglet ${esc(ong)}` : 'tous canaux (site, pros, revendeurs EBP, marketplaces, MyClear)'}, packs éclatés compris. ` +
     `Total : <b>${fmtV(total)}</b>${condUnite === 'unites' ? ' vendues' : ' (aérosols en volume net, produits au poids exclus)'}.` +
     (sansCond ? ` ${fmtN([...sansCond.skus.values()].reduce((a, v) => a + v, 0))} unités sans contenance renseignée (${sansCond.skus.size} produits)${condUnite === 'litres' ? ', non comptées en litres' : ', détail au survol'}.` : '');
   $('cond-leg').innerHTML = segs.map(s => `<span><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</span>`).join('');
@@ -1247,6 +1279,9 @@ function vueUI() {
   $('card-compta').classList.toggle('hidden', !g);
   $('app').classList.toggle('mode-finance', fin);
   $('vue-finance').classList.toggle('hidden', !fin);
+  // Volumes par conditionnement : dans le board Achats et dans le board Ventes (pas dans Charges)
+  $(fin ? 'slot-cond-fin' : 'slot-cond-ventes').appendChild($('card-cond'));
+  $('card-cond').classList.toggle('hidden', S.vue === 'charges');
   railSync();
 }
 async function setVue(v) {
@@ -1281,7 +1316,13 @@ function renderNotes(cur) {
     notes.push(`EBP (${fmtK(caAgr)}) est importé par client et par mois, détaillé par produit depuis octobre 2024 (export EBP « Historique par articles », chargé via le formulaire d'import). Les petits écarts entre facture et détail restent en « non détaillé ».`);
   }
   if (nonSeg > 0) notes.push(`${fmtEur(nonSeg)} de CA sans segment proposé (groupes « à trancher »).`);
-  $('notes').innerHTML = notes.map(n => `<div class="note">${n}</div>`).join('');
+  // Les alertes ne sont plus en haut du board : elles vont dans le panneau du menu latéral, avec leur nombre en pastille
+  $('alert-list').innerHTML = notes.length ? notes.map(n => `<div class="alert-item">${n}</div>`).join('') : '<div class="alert-vide">Aucune alerte en cours.</div>';
+  $('alert-badge').textContent = notes.length;
+  $('alert-badge').classList.toggle('hidden', !notes.length);
+  $('rail-alert').classList.toggle('a-alertes', notes.length > 0);
+  $('rail-alert').setAttribute('aria-label', notes.length ? `Alertes (${notes.length})` : 'Alertes');
+  $('rail-alert').dataset.label = notes.length ? `Alertes (${notes.length})` : 'Alertes';
 }
 
 function sumK(list, keyf) { const m = new Map(); for (const r of list) { const k = keyf(r); m.set(k, (m.get(k) || 0) + r.v); } return m; }
@@ -1845,11 +1886,41 @@ async function aiAsk() {
   AI.busy = false; aiGrow(); aiInput.focus();
 }
 function aiOpen(open) {
+  if (open) alertOpen(false, true);
   aiPanel.classList.toggle('open', open); aiPanel.setAttribute('aria-hidden', String(!open)); aiBtn.setAttribute('aria-expanded', String(open));
   if (open) { aiCtx(); setTimeout(() => aiInput.focus({ preventScroll: true }), 250); } else aiBtn.focus({ preventScroll: true });
 }
 aiBtn.onclick = () => aiOpen(!aiPanel.classList.contains('open'));
 $('ai-close').onclick = () => aiOpen(false);
+
+// ---------- Panneau des alertes ----------
+function alertOpen(open, sansFocus) {
+  const p = $('alert-panel'), b = $('rail-alert');
+  if (open && aiPanel.classList.contains('open')) aiOpen(false);
+  p.classList.toggle('open', open); p.setAttribute('aria-hidden', String(!open)); b.setAttribute('aria-expanded', String(open));
+  if (open) setTimeout(() => $('alert-close').focus({ preventScroll: true }), 250);
+  else if (!sansFocus) b.focus({ preventScroll: true });
+}
+$('rail-alert').onclick = () => alertOpen(!$('alert-panel').classList.contains('open'));
+$('alert-close').onclick = () => alertOpen(false);
+addEventListener('keydown', e => { if (e.key === 'Escape' && $('alert-panel').classList.contains('open')) alertOpen(false); });
+
+// ---------- Cartes pleine largeur repliables (+ / −), état gardé dans le navigateur ----------
+(function cartesRepliables() {
+  let plies = {}; try { plies = JSON.parse(localStorage.getItem('shine-cartes-pliees') || '{}'); } catch (e) {}
+  const garder = () => { try { localStorage.setItem('shine-cartes-pliees', JSON.stringify(plies)); } catch (e) {} };
+  const cartes = document.querySelectorAll('#app > .card, #vue-finance > .card, #card-cond, #sec-donnees > .card, .grid > .card[style*="grid-column"]');
+  cartes.forEach((card, i) => {
+    const head = card.querySelector(':scope > .card-head'); if (!head) return;
+    const cle = card.id || (head.querySelector('h2')?.textContent || 'carte-' + i).trim();
+    const btn = document.createElement('button');
+    btn.type = 'button'; btn.className = 'btn plier';
+    const maj = () => { const p = card.classList.contains('plie'); btn.textContent = p ? '+' : '−'; btn.title = p ? 'Afficher' : 'Réduire'; btn.setAttribute('aria-label', btn.title); btn.setAttribute('aria-expanded', String(!p)); };
+    if (plies[cle]) card.classList.add('plie');
+    btn.onclick = () => { card.classList.toggle('plie'); if (card.classList.contains('plie')) plies[cle] = 1; else delete plies[cle]; garder(); maj(); if (!card.classList.contains('plie') && S.ex) render(); };
+    maj(); head.appendChild(btn);
+  });
+})();
 $('ai-reset').onclick = () => { if (AI.busy) return; AI.hist = []; aiEmpty(); aiInput.focus(); };
 $('ai-form').onsubmit = (e) => { e.preventDefault(); aiAsk(); };
 aiInput.addEventListener('input', aiGrow);
