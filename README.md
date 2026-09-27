@@ -38,9 +38,12 @@ Doublons retirés : bascule du site pro (`supabase/migrations/20260925_doublons_
 
 ## Compositions des packs et contenances (27/09/2026, Jérémy)
 
-Travail en cours, **à ne pas refaire ni écraser** : les compositions viennent des nomenclatures EBP (captures) et du site, validées par Jérémy.
+**Appliqué dans Supabase le 27/09/2026** (migrations `contenances_produits` et `packs_composition_site_et_ebp`, puis `rafraichir_agregats`) : 76 packs,
+810 lignes. À ne pas refaire ni écraser : les compositions viennent des nomenclatures EBP (captures) et du site, validées par Jérémy.
+Contrôle après application : CA 2024-2025 inchangé (4 122 607 €), CA éclaté = CA facturé sur 2025-2026 ; familles Pack et PLV
+quasi vides (2 k€ et 0,5 k€ restants sur 2025-2026) ; seulement 90 unités de chimie sans contenance.
 
-- `supabase/migrations/20260927_packs_composition_site.sql` : 22 packs du site, dont les variantes HARD / SOFT / accessoires
+- `supabase/migrations/20260927_packs_composition_site.sql` : 24 packs du site (dont ACS48 = foam ACS47 + mousse active 750), dont les variantes HARD / SOFT / accessoires
   (ASPS07, ASPS03, ASPS02 remplacés fin juin 2026 par ASPS07-H, ASPS07-S…, chaque variante a sa composition).
 - `supabase/migrations/20260927_packs_composition_ebp.sql` : 34 packs EBP (colis Norauto, box et offres d'implantation,
   offres de réappro, packs cadeaux et Noël, Starfobar). Lignes « Non inclus » (PLV, présentoirs) exclues.
