@@ -11,8 +11,13 @@
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const MODELE = "claude-opus-4-8";
-const PRIX = { entree: 5 / 1e6, sortie: 25 / 1e6 }; // $ par jeton (Opus 4.8)
+const MODELE = "claude-opus-4-8"; // modèle par défaut
+// $ par jeton ; « comparer » permet d'essayer un autre modèle sans rien écrire en base
+const MODELES: Record<string, { entree: number; sortie: number }> = {
+  "claude-opus-4-8": { entree: 5 / 1e6, sortie: 25 / 1e6 },
+  "claude-sonnet-5": { entree: 2 / 1e6, sortie: 10 / 1e6 },
+  "claude-haiku-4-5": { entree: 1 / 1e6, sortie: 5 / 1e6 },
+};
 const TAILLE_MAX = 15 * 1024 * 1024; // PDF de 15 Mo au plus
 
 const json = (body: unknown, status = 200) =>
@@ -105,21 +110,31 @@ Deno.serve(async (req) => {
   const cle = Deno.env.get("ANTHROPIC_API_KEY");
   if (!cle) return json({ error: "Secret ANTHROPIC_API_KEY absent dans Supabase" }, 500);
 
-  let corps: { fichier?: string; empreinte?: string; pdf?: string };
+  let corps: { fichier?: string; empreinte?: string; pdf?: string; modele?: string; comparer?: boolean };
   try { corps = await req.json(); } catch { return json({ error: "Requête illisible" }, 400); }
   const { fichier, empreinte, pdf } = corps;
+  const modele = corps.modele || MODELE;
+  if (!MODELES[modele]) return json({ error: "Modèle inconnu : " + modele }, 400);
+  const PRIX = MODELES[modele];
+  const comparer = corps.comparer === true; // essai d'un modèle : lecture seule, rien n'est écrit
   if (!fichier || !empreinte || !/^[0-9a-f]{64}$/.test(empreinte) || !pdf) return json({ error: "fichier, empreinte (sha256) et pdf (base64) sont obligatoires" }, 400);
   if (pdf.length * 0.75 > TAILLE_MAX) return json({ error: "PDF trop lourd (plus de 15 Mo)" }, 413);
 
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
-  const { data: existe } = await sb.from("factures_achats").select("id").eq("empreinte", empreinte).maybeSingle();
-  if (existe) return json({ deja: true, id: existe.id });
+  if (!comparer) {
+    const { data: existe } = await sb.from("factures_achats").select("id").eq("empreinte", empreinte).maybeSingle();
+    if (existe) return json({ deja: true, id: existe.id });
+  }
+  // Haiku 4.5 ne prend ni la réflexion adaptative ni le niveau d'effort
+  const reglages = modele.startsWith("claude-haiku")
+    ? { output_config: { format: { type: "json_schema", schema: SCHEMA } } }
+    : { thinking: { type: "adaptive" }, output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } } };
 
   const client = new Anthropic({ apiKey: cle });
   let rep: Anthropic.Message;
   try {
     rep = await client.messages.create({
-      model: MODELE,
+      model: modele,
       max_tokens: 16000,
       system: [{ type: "text", text: SYSTEME, cache_control: { type: "ephemeral" } }],
       messages: [{
@@ -129,8 +144,7 @@ Deno.serve(async (req) => {
           { type: "text", text: `Nom et dossier du fichier : ${fichier}\n(Convention SHINE : TYPE-CATÉGORIE-FOURNISSEUR-AAMMJJ-MONTANT TTC ; HA = achat, AV = avoir, FOUR = marchandises ou transport, FG = frais généraux. C'est un indice : la facture fait foi.)` },
         ],
       }],
-      thinking: { type: "adaptive" },
-      output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
+      ...reglages,
     } as unknown as Anthropic.MessageCreateParamsNonStreaming) as Anthropic.Message;
   } catch (e) {
     if (e instanceof Anthropic.RateLimitError) return json({ error: "Limite de débit Claude, réessayer plus tard" }, 429);
@@ -166,8 +180,9 @@ Deno.serve(async (req) => {
     devise: lu.devise, montant_ht: ht, montant_tva: tva, montant_ttc: ttc,
     bloc: lu.bloc, poste: lu.poste, categorie: lu.categorie, lignes: lu.lignes,
     confiance: Math.max(0, Math.min(1, lu.confiance)), a_verifier: aVerifier, motif: motifs.join(" ; ") || null,
-    modele: MODELE, jetons_entree: entree, jetons_sortie: u.output_tokens, cout_usd: Math.round(cout * 10000) / 10000,
+    modele, jetons_entree: entree, jetons_sortie: u.output_tokens, cout_usd: Math.round(cout * 10000) / 10000,
   };
+  if (comparer) return json({ comparaison: true, ...ligne });
   const { data, error } = await sb.from("factures_achats").upsert(ligne, { onConflict: "empreinte" }).select("id").single();
   if (error) return json({ error: "Écriture impossible : " + error.message, lu: ligne }, 500);
   return json({ id: data.id, ...ligne, lignes: lu.lignes.length });

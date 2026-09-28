@@ -24,6 +24,10 @@ const DOSSIERS = String(opt('dossiers', 'BILAN 2024-2025,BILAN 2025-2026')).spli
 const ESSAI = args.includes('--essai');
 const LIMITE = parseInt(opt('limite', '0'), 10) || Infinity;
 const LISTE = opt('liste', null);
+// Essai d'un autre modèle : --comparer --modele claude-sonnet-5 relit les fichiers sans rien écrire en base
+// ni dans le journal, et range les réponses dans comparer-<modèle>.json
+const MODELE = opt('modele', null);
+const COMPARER = args.includes('--comparer');
 const URL_FONCTION = process.env.FACTURES_URL || 'https://dfolpanugctzebwpfhze.supabase.co/functions/v1/lire-facture';
 const JETON = process.env.FACTURES_TOKEN;
 const EN_PARALLELE = 2;
@@ -57,7 +61,7 @@ for (const p of fichiers) {
   if (aFaire.length >= LIMITE) break;
   let buf; try { buf = readFileSync(p); } catch (e) { console.error('Illisible :', relatif(p), e.message); continue; }
   const empreinte = createHash('sha256').update(buf).digest('hex');
-  if (journal[empreinte]?.statut === 'lu') continue;
+  if (!COMPARER && journal[empreinte]?.statut === 'lu') continue;
   aFaire.push({ p, empreinte, taille: buf.length });
 }
 console.log(`${fichiers.length} PDF trouvés, ${aFaire.length} à lire${ESSAI ? ' (essai : rien n\'est envoyé)' : ''}.`);
@@ -66,7 +70,7 @@ if (!JETON) { console.error('Variable FACTURES_TOKEN absente : rien n\'est envoy
 
 const pause = ms => new Promise(r => setTimeout(r, ms));
 async function envoyer(f) {
-  const corps = JSON.stringify({ fichier: relatif(f.p), empreinte: f.empreinte, pdf: readFileSync(f.p).toString('base64') });
+  const corps = JSON.stringify({ fichier: relatif(f.p), empreinte: f.empreinte, pdf: readFileSync(f.p).toString('base64'), ...(MODELE ? { modele: MODELE } : {}), ...(COMPARER ? { comparer: true } : {}) });
   for (let essai = 1; essai <= 4; essai++) {
     const r = await fetch(URL_FONCTION, { method: 'POST', headers: { 'content-type': 'application/json', 'x-jeton-factures': JETON }, body: corps });
     const rep = await r.json().catch(() => ({ error: 'réponse illisible (' + r.status + ')' }));
@@ -78,22 +82,26 @@ async function envoyer(f) {
 
 let n = 0, cout = 0, aVerifier = 0, erreurs = 0;
 const file = [...aFaire];
+const comparaisons = [];
 async function ouvrier() {
   while (file.length) {
     const f = file.shift();
     try {
       const rep = await envoyer(f);
       n++;
+      if (COMPARER) { comparaisons.push(rep); cout += rep.cout_usd || 0; if (rep.a_verifier) aVerifier++; console.log(`${n}/${aFaire.length} ${rep.a_verifier ? '⚠' : '✓'} ${rep.fournisseur} · TTC ${rep.montant_ttc} ${rep.devise} · ${rep.poste} > ${rep.categorie}`); continue; }
       if (rep.deja) { journal[f.empreinte] = { fichier: relatif(f.p), statut: 'lu', le: new Date().toISOString() }; sauver(); continue; }
       cout += rep.cout_usd || 0; if (rep.a_verifier) aVerifier++;
       journal[f.empreinte] = { fichier: relatif(f.p), statut: 'lu', id: rep.id, le: new Date().toISOString() }; sauver();
       const m = v => v == null ? '—' : v.toFixed(2);
       console.log(`${n}/${aFaire.length} ${rep.a_verifier ? '⚠' : '✓'} ${rep.fournisseur} · ${rep.date_facture || '?'} · HT ${m(rep.montant_ht)} · TTC ${m(rep.montant_ttc)} ${rep.devise} · ${rep.poste} > ${rep.categorie}${rep.motif ? ' · ' + rep.motif : ''}`);
     } catch (e) {
-      erreurs++; journal[f.empreinte] = { fichier: relatif(f.p), statut: 'erreur', erreur: e.message, le: new Date().toISOString() }; sauver();
+      erreurs++;
+      if (!COMPARER) { journal[f.empreinte] = { fichier: relatif(f.p), statut: 'erreur', erreur: e.message, le: new Date().toISOString() }; sauver(); }
       console.error(`✗ ${relatif(f.p)} : ${e.message}`);
     }
   }
 }
 await Promise.all(Array.from({ length: EN_PARALLELE }, ouvrier));
+if (COMPARER) writeFileSync(join(ICI, `comparer-${MODELE || 'defaut'}.json`), JSON.stringify(comparaisons, null, 1));
 console.log(`\nTerminé : ${n} lus, ${aVerifier} à vérifier, ${erreurs} en erreur. Coût Claude : ${cout.toFixed(2)} $.`);
