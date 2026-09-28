@@ -1706,6 +1706,10 @@ function renderNotes(cur) {
   const nonSeg = cur.filter(r => r.segment === 'NON_SEGMENTE').reduce((a, r) => a + +r.ca_ht, 0);
   // Chaque alerte a une clé : masquée une fois, elle reste masquée même si ses chiffres changent (Réglages → Réafficher)
   const notes = [];
+  // Board pas recalculé depuis plus de 26 h : la collecte de nuit n'a sans doute pas tourné (un mail part aussi à 8 h 30).
+  // La clé porte la date : masquer l'alerte d'un jour ne masque pas celle d'un prochain incident.
+  const majD = S.meta.derniere_maj ? new Date(S.meta.derniere_maj) : null;
+  if (majD && Date.now() - majD > 26 * 3600e3) notes.push({ k: 'fraicheur-' + majD.toISOString().slice(0, 10), t: `<b>Données pas à jour</b> : dernier recalcul le ${majD.toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })} (il y a ${Math.round((Date.now() - majD) / 3600e3)} h). La collecte de nuit n'a sans doute pas tourné : les dernières ventes manquent.` });
   if (manquants.length) notes.push({ k: 'canaux', t: `Canaux pas encore branchés : ${esc(manquants.join(', '))}. Les totaux ne couvrent que les canaux présents.` });
   const valides = cur.filter(r => r.segment_valide).reduce((a, r) => a + +r.ca_ht, 0);
   if (tot && valides / tot < 0.999) notes.push({ k: 'segments', t: `Segments : ${fmtN(pct(valides, tot), 1)} % du CA a un segment validé. Le reste est une proposition tirée du groupe client, à valider dans l'onglet À valider.` });
