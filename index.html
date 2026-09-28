@@ -567,6 +567,34 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
 @keyframes fiche-fond { from { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .fiche, .fiche-carte { animation: none; } }
 
+/* ===== Chargement SHINE : barre en haut, puis pastille au logo si le chargement dure ===== */
+.chargement { position: fixed; inset: 0; z-index: 35; pointer-events: none; visibility: hidden; }
+.chargement.actif { visibility: visible; }
+.chg-barre { position: absolute; left: 0; right: 0; top: 0; height: 3px; overflow: hidden; }
+.chg-barre i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(0);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 40%, transparent), var(--accent) 60%, #8cc0ff);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent); }
+.chargement.actif .chg-barre i { transition: transform .35s cubic-bezier(.3,.7,.4,1); }
+.chargement.fini .chg-barre { opacity: 0; transition: opacity .3s .2s; }
+.chg-pastille { position: absolute; left: 50%; top: 50%; display: grid; justify-items: center; gap: 12px; padding: 22px 28px 18px; border-radius: 24px;
+  background: var(--glass-strong); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-edge-2); box-shadow: 0 20px 50px rgba(15,20,40,0.20), inset 0 1px 0 var(--glass-edge);
+  opacity: 0; transform: translate(-50%, -50%) scale(.94); transition: opacity .25s, transform .4s cubic-bezier(.34,1.56,.64,1); }
+@media (min-width: 901px) { .chg-pastille { left: calc(50% + 48px); } }
+.chargement.logo:not(.fini) .chg-pastille { opacity: 1; transform: translate(-50%, -50%); }
+.chg-logo { width: 150px; height: auto; overflow: visible; color: var(--ink); }
+.chg-logo .chg-fond { fill: currentColor; opacity: .82; }
+.chg-logo .chg-reflet { animation: chg-reflet 1.3s cubic-bezier(.45,0,.3,1) infinite; }
+@keyframes chg-reflet { from { transform: translateX(-30px); } to { transform: translateX(125px); } }
+.chg-piste { width: 150px; height: 3px; border-radius: 2px; background: var(--bar-track); overflow: hidden; }
+.chg-piste i { display: block; width: 38%; height: 100%; border-radius: inherit; background: var(--accent); animation: chg-piste 1.1s ease-in-out infinite; }
+@keyframes chg-piste { from { transform: translateX(-100%); } to { transform: translateX(265%); } }
+/* Contenu atténué pendant le chargement (après un court délai pour ne pas clignoter) */
+body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: opacity .25s .3s; }
+#app > :not(.rail):not(header) { transition: opacity .2s; }
+@media (prefers-reduced-motion: reduce) { .chg-logo .chg-reflet, .chg-piste i { animation: none; } .chg-piste i { width: 100%; opacity: .5; } }
+:root[data-motion="reduce"] .chg-logo .chg-reflet { animation: none; opacity: 0; }
+@media (prefers-reduced-transparency: reduce) { .chg-pastille { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
 /* ===== Assistant ventes (panneau de discussion) ===== */
 .rail-ai[aria-expanded="true"] { color: var(--rail-on); background: var(--rail-lens); box-shadow: var(--rail-lens-shadow), inset 0 1px 0 var(--lg-rim-a); }
 .rail-ai[aria-expanded="true"] svg { stroke-width: 2; }
@@ -912,6 +940,25 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
   </div>
 </div>
 
+<!-- Chargement SHINE (voir chargement.debut / chargement.fin) -->
+<div class="chargement" id="chargement" aria-hidden="true">
+  <div class="chg-barre"><i></i></div>
+  <div class="chg-pastille">
+    <svg class="chg-logo" viewBox="-1 -1 111.65 21.08">
+      <defs>
+        <path id="chg-forme" d="M 8.1448219,7.6754597 H 18.194705 c 4.50036,0 6.930002,1.684184 6.930002,5.0525513 0,3.782511 -2.291594,6.046496 -7.923946,6.046496 H 0 L 3.6720729,14.025661 H 17.642514 c 1.352869,0 1.960279,-0.386534 1.960279,-1.352869 0,-0.938725 -0.60741,-1.325259 -1.960279,-1.325259 H 7.5926309 c -4.7488454,0 -6.9300013,-2.1259373 -6.9300013,-5.3010373 0,-3.478806 2.3192038,-5.7427905 7.9239453,-5.7427905 H 24.627735 L 20.955662,5.1077697 H 8.1448219 c -1.325259,0 -1.960279,0.331315 -1.960279,1.270041 0,0.938725 0.63502,1.297649 1.960279,1.297649 z M 50.0807,0.3037052 V 18.774507 H 44.393129 V 11.651238 H 33.404521 v 7.123269 H 27.66173 V 0.3037052 h 5.742791 V 6.8471727 H 44.393129 V 0.3037052 Z m 9.316947,0 V 18.774507 h -5.71518 V 0.3037052 Z M 81.674921,19.078212 c -0.717849,0 -1.408088,-0.165657 -2.291594,-0.993944 L 68.063404,7.9239457 V 18.774507 H 62.872805 V 3.4511957 C 62.872805,0.9939444 64.363721,0 65.992686,0 66.682925,0 67.373164,0.1656574 68.28428,0.9939444 L 79.604203,11.154266 V 0.3037052 h 5.218209 V 15.599406 c 0,2.457252 -1.490917,3.478806 -3.147491,3.478806 z m 12.260416,-5.052551 h 15.710143 l -3.67207,4.748846 H 88.192554 V 0.3037052 h 21.397706 l -3.69968,4.8040645 H 93.935337 v 2.208766 H 108.56871 L 105.28317,11.51319 H 93.935337 Z"/>
+        <clipPath id="chg-clip"><use href="#chg-forme"/></clipPath>
+        <linearGradient id="chg-degrade" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <use href="#chg-forme" class="chg-fond"/>
+      <g clip-path="url(#chg-clip)"><g transform="skewX(-20)"><rect class="chg-reflet" x="0" y="-6" width="18" height="32" fill="url(#chg-degrade)"/></g></g>
+    </svg>
+    <div class="chg-piste"><i></i></div>
+  </div>
+</div>
+<div class="sr-chg" id="chg-statut" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></div>
 <!-- Alertes : en bas à droite, directement visibles -->
 <section class="alertes" id="alertes" aria-label="Alertes" hidden>
   <div class="alertes-tete">
@@ -2187,6 +2234,31 @@ function aiOpen(open) {
 aiBtn.onclick = () => aiOpen(!aiPanel.classList.contains('open'));
 $('ai-close').onclick = () => aiOpen(false);
 
+// ---------- Chargement SHINE ----------
+// Barre fine en haut dès le début ; pastille au logo et contenu atténué si le chargement dépasse 350 ms.
+// Les appels peuvent se chevaucher : on compte les chargements en cours.
+const chargement = (() => {
+  const el = $('chargement'), barre = el.querySelector('.chg-barre i');
+  let n = 0, p = 0, avance, delai, nettoie;
+  const pos = v => { p = v; barre.style.transform = `scaleX(${v})`; };
+  return {
+    debut() {
+      if (n++) return;
+      clearTimeout(nettoie); el.classList.remove('fini', 'logo');
+      el.classList.add('actif'); requestAnimationFrame(() => pos(.12));
+      document.body.classList.add('en-chargement'); $('chg-statut').textContent = 'Chargement…';
+      avance = setInterval(() => pos(p + (.9 - p) * .1), 250);
+      delai = setTimeout(() => el.classList.add('logo'), 350);
+    },
+    fin() {
+      if (!n || --n) return;
+      clearInterval(avance); clearTimeout(delai); pos(1);
+      el.classList.add('fini'); document.body.classList.remove('en-chargement'); $('chg-statut').textContent = '';
+      nettoie = setTimeout(() => { el.classList.remove('actif', 'logo', 'fini'); pos(0); }, 550);
+    },
+  };
+})();
+
 // ---------- Préférences (gardées dans ce navigateur) ----------
 const pref = (k, def) => { try { const v = localStorage.getItem('shine-' + k); return v == null ? def : v; } catch (e) { return def; } };
 const setPref = (k, v) => { try { if (v == null) localStorage.removeItem('shine-' + k); else localStorage.setItem('shine-' + k, v); } catch (e) {} };
@@ -2407,7 +2479,9 @@ let rz; addEventListener('resize', () => { clearTimeout(rz); rz = setTimeout(() 
 
 async function refreshEx() {
   $('fresh').textContent = 'Chargement…';
+  chargement.debut();
   try { await loadExercice(); render(); } catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
+  finally { chargement.fin(); }
 }
 
 // ---------- Auth : e-mail + mot de passe ----------
@@ -2490,8 +2564,10 @@ async function start(session) {
   const h = location.hash.slice(1) || (pref('onglet', 'general') === 'dernier' ? pref('dernier-onglet', '') : '');
   if (VUES[h]) { S.vue = h; S.canal = canalDeVue(h); }
   vueUI();
+  chargement.debut();
   try { await loadBase(); await loadExercice(); render(); }
   catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
+  finally { chargement.fin(); }
 }
 let started = false;
 sb.auth.onAuthStateChange((ev, session) => {
