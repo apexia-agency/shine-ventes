@@ -398,6 +398,68 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
   .btn.primary { background: var(--accent); }
 }
 
+/* Alertes : affichées directement en bas à droite, repliables, chacune masquable (réglages pour les réafficher) */
+.alertes {
+  position: fixed; right: 20px; bottom: 20px; z-index: 30; width: min(380px, calc(100vw - 32px));
+  display: flex; flex-direction: column; border-radius: 22px; overflow: hidden;
+  background: var(--glass-strong); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-edge-2); box-shadow: 0 16px 44px rgba(15,20,40,0.20), inset 0 1px 0 var(--glass-edge);
+  animation: alertes-in .45s cubic-bezier(.3,1.2,.5,1);
+}
+.alertes[hidden], body.panneau-ouvert .alertes { display: none; }
+@keyframes alertes-in { from { opacity: 0; transform: translateY(16px) scale(.98); } }
+.alertes-tete { display: flex; align-items: center; gap: 4px; padding: 6px 6px 6px 4px; }
+.alertes-toggle { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; border: 0; background: none; color: var(--ink); font: inherit;
+  font-size: 13.5px; font-weight: 650; padding: 6px 8px 6px 10px; border-radius: 14px; cursor: pointer; text-align: left; }
+.alertes-toggle:hover { background: var(--bar-track); }
+.alertes-toggle:focus-visible, .alertes-x:focus-visible { outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
+.alertes-toggle .ico { width: 18px; height: 18px; color: var(--warn-ink); flex: none; }
+.alertes-toggle .chev { width: 14px; height: 14px; margin-left: auto; color: var(--muted); transition: transform .3s; flex: none; }
+.alertes.replie .alertes-toggle .chev { transform: rotate(180deg); }
+.alertes svg { fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.alertes-nb { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: #c2410c; color: #fff; font-size: 11px; font-weight: 700; line-height: 20px; text-align: center; }
+.alertes-x { width: 30px; height: 30px; flex: none; border: 0; border-radius: 50%; background: none; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+.alertes-x:hover { background: var(--bar-track); color: var(--ink); }
+.alertes-x svg { width: 14px; height: 14px; }
+.alertes-liste { display: flex; flex-direction: column; gap: 8px; padding: 0 10px 10px; max-height: min(52vh, 420px); overflow-y: auto; overscroll-behavior: contain; }
+.alertes.replie .alertes-liste { display: none; }
+.alerte { display: flex; align-items: flex-start; gap: 6px; background: var(--warn-bg); color: var(--warn-ink); border-radius: 14px; padding: 9px 6px 9px 13px; font-size: 12.5px; line-height: 1.45; }
+.alerte > div { flex: 1; min-width: 0; padding-top: 2px; }
+.alerte .alertes-x { width: 26px; height: 26px; color: inherit; opacity: .7; }
+.alerte .alertes-x:hover { opacity: 1; background: color-mix(in srgb, currentColor 12%, transparent); }
+@media (max-width: 900px) { .alertes { right: 16px; bottom: calc(84px + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-transparency: reduce) { .alertes { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+
+/* Réglages : panneau à droite, même verre que l'assistant */
+.rail-reglages[aria-expanded="true"] svg { transform: rotate(60deg); }
+.rail-reglages svg { transition: transform .5s cubic-bezier(.34,1.56,.64,1); }
+.reg-corps { flex: 1; overflow-y: auto; padding: 6px 16px 18px; overscroll-behavior: contain; }
+.reg-groupe { margin-top: 14px; }
+.reg-groupe > h3 { margin: 0 0 6px 4px; font-size: 11.5px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.reg-carte { background: var(--surface-2); border: 1px solid var(--grid); border-radius: 16px; overflow: hidden; }
+.reg-ligne { display: flex; align-items: center; gap: 12px; padding: 11px 14px; min-height: 48px; }
+.reg-ligne + .reg-ligne { border-top: 1px solid var(--grid); }
+.reg-ligne .grow { flex: 1; min-width: 0; }
+.reg-ligne .lib { font-size: 13.5px; font-weight: 560; }
+.reg-ligne .aide { font-size: 12px; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+.reg-ligne select { min-width: 150px; }
+.reg-seg { display: inline-flex; padding: 2px; border-radius: 11px; background: var(--bar-track); flex: none; }
+.reg-seg button { border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 560; color: var(--ink-2); padding: 5px 11px; border-radius: 9px; cursor: pointer; }
+.reg-seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(15,20,40,0.14); }
+.reg-seg button:focus-visible { outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
+.reg-switch { position: relative; width: 44px; height: 26px; flex: none; border: 0; border-radius: 13px; padding: 0; cursor: pointer; background: var(--bar-track); transition: background .2s; }
+.reg-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .25s cubic-bezier(.34,1.56,.64,1); }
+.reg-switch[aria-checked="true"] { background: #34c759; }
+.reg-switch[aria-checked="true"]::after { transform: translateX(18px); }
+.reg-switch:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); }
+.reg-ligne .link { font-size: 13.5px; }
+.reg-ligne .link:disabled { opacity: .4; cursor: default; text-decoration: none; }
+.reg-danger { color: #c2410c; }
+.reg-pied { margin: 16px 4px 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+/* Réglage « Réduire les animations » */
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+/* Réglage « Taille du texte » */
+:root[data-texte="grand"] body { zoom: 1.1; }
 /* ===== Assistant ventes (panneau de discussion) ===== */
 .rail-ai[aria-expanded="true"] { color: var(--rail-on); background: var(--rail-lens); box-shadow: var(--rail-lens-shadow), inset 0 1px 0 var(--lg-rim-a); }
 .rail-ai[aria-expanded="true"] svg { stroke-width: 2; }
@@ -542,6 +604,7 @@ th.sort:hover { color: var(--ink); }
     <span class="rail-sep" aria-hidden="true"></span>
     <button class="rail-item" id="rail-boards" data-label="Changer de board" aria-label="Changer de board" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></button>
     <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant" aria-label="Assistant" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
+    <button class="rail-item rail-ai rail-reglages" id="rail-reglages" data-label="Réglages" aria-label="Réglages" aria-expanded="false" aria-controls="reg-panel"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1h-.2a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h.1a1.7 1.7 0 0 0 1-1.5v-.2a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v.1a1.7 1.7 0 0 0 1.5 1h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
   </nav>
 
   <header class="top">
@@ -659,6 +722,76 @@ th.sort:hover { color: var(--ink); }
 
   <footer><span id="who"></span><button class="link" id="logout">Se déconnecter</button></footer>
 </div>
+
+<!-- Alertes : en bas à droite, directement visibles -->
+<section class="alertes" id="alertes" aria-label="Alertes" hidden>
+  <div class="alertes-tete">
+    <button class="alertes-toggle" id="alertes-toggle" aria-expanded="true" aria-controls="alertes-liste">
+      <svg class="ico" viewBox="0 0 24 24"><path d="M10.3 4.6 2.9 17.4A2 2 0 0 0 4.6 20.4h14.8a2 2 0 0 0 1.7-3L13.7 4.6a2 2 0 0 0-3.4 0z"/><path d="M12 9.5v4.2M12 16.9v.1"/></svg>
+      <span>Alertes</span><span class="alertes-nb" id="alertes-nb"></span>
+      <svg class="chev" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></svg>
+    </button>
+    <button class="alertes-x" id="alertes-tout" title="Masquer toutes les alertes" aria-label="Masquer toutes les alertes"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="alertes-liste" id="alertes-liste"></div>
+</section>
+
+<!-- Réglages : préférences gardées dans ce navigateur -->
+<aside class="ai-panel" id="reg-panel" role="dialog" aria-modal="false" aria-labelledby="reg-title" aria-hidden="true">
+  <div class="ai-head">
+    <div class="grow">
+      <h2 id="reg-title">Réglages</h2>
+      <div class="sub">Gardés sur cet appareil</div>
+    </div>
+    <button class="btn ai-icon-btn" id="reg-close" title="Fermer" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="reg-corps">
+    <div class="reg-groupe">
+      <h3>Apparence</h3>
+      <div class="reg-carte">
+        <div class="reg-ligne"><div class="grow"><div class="lib">Thème</div></div>
+          <div class="reg-seg" id="reg-theme" role="group" aria-label="Thème"><button data-v="auto">Système</button><button data-v="light">Clair</button><button data-v="dark">Sombre</button></div></div>
+        <div class="reg-ligne"><div class="grow"><div class="lib">Taille du texte</div></div>
+          <div class="reg-seg" id="reg-texte" role="group" aria-label="Taille du texte"><button data-v="normal">Standard</button><button data-v="grand">Grande</button></div></div>
+        <div class="reg-ligne"><div class="grow"><div class="lib" id="reg-motion-lib">Réduire les animations</div><div class="aide">Transitions et effets coupés</div></div>
+          <button class="reg-switch" id="reg-motion" role="switch" aria-checked="false" aria-labelledby="reg-motion-lib"></button></div>
+        <div class="reg-ligne"><div class="grow"><div class="lib" id="reg-intro-lib">Animation de connexion</div><div class="aide">Le logo SHINE à chaque connexion</div></div>
+          <button class="reg-switch" id="reg-intro" role="switch" aria-checked="true" aria-labelledby="reg-intro-lib"></button></div>
+      </div>
+    </div>
+    <div class="reg-groupe">
+      <h3>Au démarrage</h3>
+      <div class="reg-carte">
+        <div class="reg-ligne"><div class="grow"><div class="lib"><label for="reg-onglet">Onglet d'ouverture</label></div></div>
+          <select id="reg-onglet"><option value="dernier">Dernier onglet ouvert</option><option value="apercu">Vue d'ensemble</option><option value="acquisition">Publicité payante</option><option value="trafic">Canaux et trafic</option><option value="organique">Réseaux organiques</option><option value="email">E-mail</option><option value="seo">Référencement naturel</option><option value="reco">Préconisations</option><option value="fiabilite">Fiabilité des données</option></select></div>
+      </div>
+    </div>
+    <div class="reg-groupe">
+      <h3>Alertes</h3>
+      <div class="reg-carte">
+        <div class="reg-ligne"><div class="grow"><div class="lib" id="reg-alertes-lib">Afficher les alertes</div><div class="aide">En bas à droite de l'écran</div></div>
+          <button class="reg-switch" id="reg-alertes" role="switch" aria-checked="true" aria-labelledby="reg-alertes-lib"></button></div>
+        <div class="reg-ligne"><div class="grow"><div class="lib">Alertes masquées</div><div class="aide" id="reg-masquees-aide">Aucune</div></div>
+          <button class="link" id="reg-reafficher">Réafficher</button></div>
+      </div>
+    </div>
+    <div class="reg-groupe">
+      <h3>Compte</h3>
+      <div class="reg-carte">
+        <div class="reg-ligne"><div class="grow"><div class="lib" id="reg-email">–</div><div class="aide" id="reg-role"></div></div></div>
+        <div class="reg-ligne"><a class="link" href="./">Changer mon mot de passe (board Ventes)</a></div>
+        <div class="reg-ligne"><button class="link reg-danger" id="reg-logout">Se déconnecter</button></div>
+      </div>
+    </div>
+    <div class="reg-groupe">
+      <div class="reg-carte">
+        <div class="reg-ligne"><div class="grow"><div class="lib">Réinitialiser les réglages</div><div class="aide">Thème, cartes repliées, alertes masquées…</div></div>
+          <button class="link reg-danger" id="reg-reset">Réinitialiser</button></div>
+      </div>
+    </div>
+    <p class="reg-pied" id="reg-pied"></p>
+  </div>
+</aside>
 
 <aside class="ai-panel" id="ai-panel" role="dialog" aria-modal="false" aria-labelledby="ai-title" aria-hidden="true">
   <div class="ai-head">
@@ -850,6 +983,16 @@ function renderFiab() {
   const ko = d.controles_ko || [];
   if (ko.length) parts.push(`<span class="pill warn" title="${esc(ko.map(k => `${fmtD(k.jour)} ${k.controle} : ${fmtN(k.ecart_pct, 1)}`).join('\n'))}">${ko.length} contrôle${ko.length > 1 ? 's' : ''} en échec</span>`);
   $('fiab').innerHTML = parts.join('');
+  // Mêmes points, en alertes en bas à droite (masquables, comme sur le board Ventes)
+  const notes = [];
+  for (const [m, lib] of grp) {
+    const f = fiabDe(m).filter(x => ['non_fiable', 'anomalie'].includes(x.fiabilite));
+    if (f.length) notes.push({ k: 'dc-fiab-' + m, t: `<b>${lib}</b> : ${f.map(x => `${esc(x.plateforme ? PLAT[x.plateforme] || x.plateforme : 'toutes sources')} ${FIAB_LIB[x.fiabilite]} — ${esc(x.raison)}`).join(' · ')}` });
+  }
+  if (ko.length) notes.push({ k: 'dc-controles', t: `<b>${ko.length} contrôle${ko.length > 1 ? 's' : ''} en échec</b> sur la période : ${ko.slice(0, 3).map(k => `${fmtD(k.jour)} ${esc(k.controle)} (${fmtN(k.ecart_pct, 1)})`).join(', ')}${ko.length > 3 ? '…' : ''}. Détail dans Fiabilité des données.` });
+  const vieilles = Object.entries(d.fraicheur || {}).filter(([, t]) => t && Date.now() - new Date(t) > 48 * 3600e3);
+  if (vieilles.length) notes.push({ k: 'dc-fraicheur', t: `Données pas mises à jour depuis plus de 48 h : ${vieilles.map(([s, t]) => `${esc(PLAT[s] || s)} (${new Date(t).toLocaleDateString('fr-FR')})`).join(', ')}.` });
+  afficherAlertes(notes);
 }
 
 // ---------- Tuiles ----------
@@ -1187,7 +1330,7 @@ addEventListener('scroll', () => lgClose(false), { passive: true });
 const BOARDS = [{ k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' }, { k: 'achats', t: 'Achats', href: './#achats', small: 'matières premières, par fournisseur' }, { k: 'charges', t: 'Charges', href: './#charges', small: 'salaires, transport, frais généraux…' }, { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }];
 const railItems = [...document.querySelectorAll('.rail-item[data-vue]')];
 function railSync() { const a = railItems.find(b => b.dataset.vue === S.vue) || railItems[0]; railItems.forEach(b => b.setAttribute('aria-current', String(b === a))); $('rail-pill').style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`; }
-function setVue(v) { S.vue = v; history.replaceState(null, '', '#' + v); railSync(); assurerCmp(); }
+function setVue(v) { S.vue = v; setPref('dernier-dc-onglet', v); history.replaceState(null, '', '#' + v); railSync(); assurerCmp(); }
 railItems.forEach(b => b.addEventListener('click', () => setVue(b.dataset.vue)));
 addEventListener('resize', railSync);
 $('rail-boards').addEventListener('click', () => {
@@ -1300,7 +1443,8 @@ async function aiAsk() {
   AI.busy = false; aiGrow(); aiInput.focus();
 }
 function aiOpen(open) {
-  aiPanel.classList.toggle('open', open); aiPanel.setAttribute('aria-hidden', String(!open)); aiBtn.setAttribute('aria-expanded', String(open));
+  if (open) regOpen(false, true);
+  aiPanel.classList.toggle('open', open); panneauxSync(); aiPanel.setAttribute('aria-hidden', String(!open)); aiBtn.setAttribute('aria-expanded', String(open));
   if (open) { aiCtx(); setTimeout(() => aiInput.focus({ preventScroll: true }), 250); } else aiBtn.focus({ preventScroll: true });
 }
 aiBtn.onclick = () => aiOpen(!aiPanel.classList.contains('open'));
@@ -1311,6 +1455,92 @@ aiInput.addEventListener('input', aiGrow);
 aiInput.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); aiAsk(); } });
 addEventListener('keydown', e => { if (e.key === 'Escape' && aiPanel.classList.contains('open') && !lgOpen) aiOpen(false); });
 aiEmpty();
+
+// ---------- Préférences (gardées dans ce navigateur) ----------
+const pref = (k, def) => { try { const v = localStorage.getItem('shine-' + k); return v == null ? def : v; } catch (e) { return def; } };
+const setPref = (k, v) => { try { if (v == null) localStorage.removeItem('shine-' + k); else localStorage.setItem('shine-' + k, v); } catch (e) {} };
+// Les alertes se cachent quand un panneau (assistant, réglages) occupe la droite de l'écran
+function panneauxSync() { document.body.classList.toggle('panneau-ouvert', aiPanel.classList.contains('open') || $('reg-panel').classList.contains('open')); }
+
+// ---------- Alertes en bas à droite ----------
+let alertesCourantes = [];
+const masquees = () => { try { return JSON.parse(pref('alertes-masquees', '[]')); } catch (e) { return []; } };
+function afficherAlertes(notes) {
+  if (notes) alertesCourantes = notes;
+  const m = masquees();
+  const vis = pref('alertes', 'oui') === 'oui' ? alertesCourantes.filter(n => !m.includes(n.k)) : [];
+  const box = $('alertes');
+  box.hidden = !vis.length;
+  $('alertes-nb').textContent = vis.length;
+  $('alertes-liste').innerHTML = vis.map(n => `<div class="alerte"><div>${n.t}</div><button class="alertes-x" data-masquer="${n.k}" title="Masquer cette alerte" aria-label="Masquer cette alerte"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>`).join('');
+  // Repliée par défaut sur téléphone pour ne pas couvrir le board
+  const rep = pref('alertes-repliees', matchMedia('(max-width: 900px)').matches ? 'oui' : 'non') === 'oui';
+  box.classList.toggle('replie', rep);
+  $('alertes-toggle').setAttribute('aria-expanded', String(!rep));
+  regMasqueesSync();
+}
+function masquer(cles) { setPref('alertes-masquees', JSON.stringify([...new Set([...masquees(), ...cles])])); afficherAlertes(); }
+$('alertes-toggle').onclick = () => { setPref('alertes-repliees', $('alertes').classList.contains('replie') ? 'non' : 'oui'); afficherAlertes(); };
+$('alertes-tout').onclick = () => masquer(alertesCourantes.map(n => n.k));
+$('alertes-liste').addEventListener('click', e => { const b = e.target.closest('[data-masquer]'); if (b) masquer([b.dataset.masquer]); });
+
+// ---------- Réglages ----------
+const regPanel = $('reg-panel'), regBtn = $('rail-reglages');
+function regOpen(open, sansFocus) {
+  if (open && aiPanel.classList.contains('open')) aiOpen(false);
+  if (open) regRemplir();
+  regPanel.classList.toggle('open', open); regPanel.setAttribute('aria-hidden', String(!open)); regBtn.setAttribute('aria-expanded', String(open));
+  panneauxSync();
+  if (open) setTimeout(() => $('reg-close').focus({ preventScroll: true }), 250);
+  else if (!sansFocus) regBtn.focus({ preventScroll: true });
+}
+regBtn.onclick = () => regOpen(!regPanel.classList.contains('open'));
+$('reg-close').onclick = () => regOpen(false);
+addEventListener('keydown', e => { if (e.key === 'Escape' && regPanel.classList.contains('open') && !lgOpen) regOpen(false); });
+
+const segSync = (id, v) => $(id).querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+const switchSync = (id, on) => $(id).setAttribute('aria-checked', String(on));
+function regMasqueesSync() {
+  const n = masquees().length;
+  $('reg-masquees-aide').textContent = n ? `${n} alerte${n > 1 ? 's' : ''} masquée${n > 1 ? 's' : ''}` : 'Aucune';
+  $('reg-reafficher').disabled = !n;
+}
+function regRemplir() {
+  segSync('reg-theme', pref('theme', 'auto'));
+  segSync('reg-texte', pref('texte', 'normal'));
+  switchSync('reg-motion', pref('animations', 'oui') === 'non');
+  switchSync('reg-intro', pref('intro', 'oui') === 'oui');
+  switchSync('reg-alertes', pref('alertes', 'oui') === 'oui');
+  $('reg-onglet').value = pref('dc-onglet', 'apercu');
+  regMasqueesSync();
+  const a = S.acces || {};
+  $('reg-email').textContent = a.email || '–';
+  $('reg-role').textContent = a.role === 'admin' ? 'Administrateur' : a.role === 'lecture' ? 'Lecture' : a.role ? 'Validation des segments' : '';
+  const fr = Object.values(S.d?.fraicheur || {}).sort().pop();
+  $('reg-pied').textContent = fr ? `Données mises à jour le ${new Date(fr).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })}.` : '';
+}
+// Applique les réglages d'affichage (appelé au chargement et à chaque changement)
+function appliquerReglages() {
+  const r = document.documentElement, t = pref('theme', 'auto');
+  if (t === 'auto') r.removeAttribute('data-theme'); else r.setAttribute('data-theme', t);
+  if (pref('texte', 'normal') === 'grand') r.setAttribute('data-texte', 'grand'); else r.removeAttribute('data-texte');
+  if (pref('animations', 'oui') === 'non') r.setAttribute('data-motion', 'reduce'); else r.removeAttribute('data-motion');
+}
+$('reg-theme').onclick = e => { const b = e.target.closest('button'); if (!b) return; setPref('theme', b.dataset.v === 'auto' ? null : b.dataset.v); appliquerReglages(); regRemplir(); if (S.d) render(); };
+$('reg-texte').onclick = e => { const b = e.target.closest('button'); if (!b) return; setPref('texte', b.dataset.v === 'normal' ? null : b.dataset.v); appliquerReglages(); regRemplir(); railSync(); if (S.d) render(); };
+$('reg-motion').onclick = () => { setPref('animations', pref('animations', 'oui') === 'non' ? null : 'non'); appliquerReglages(); regRemplir(); };
+$('reg-intro').onclick = () => { setPref('intro', pref('intro', 'oui') === 'oui' ? 'non' : null); regRemplir(); };
+$('reg-alertes').onclick = () => { setPref('alertes', pref('alertes', 'oui') === 'oui' ? 'non' : null); regRemplir(); afficherAlertes(); };
+$('reg-onglet').onchange = () => setPref('dc-onglet', $('reg-onglet').value === 'apercu' ? null : $('reg-onglet').value);
+$('reg-reafficher').onclick = () => { setPref('alertes-masquees', null); setPref('alertes-repliees', null); afficherAlertes(); };
+$('reg-logout').onclick = () => $('logout').click();
+$('reg-reset').onclick = () => {
+  if (!confirm('Remettre tous les réglages par défaut sur cet appareil ?')) return;
+  try { Object.keys(localStorage).filter(k => k.startsWith('shine-')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  location.reload();
+};
+appliquerReglages();
+
 
 // ---------- Filtres ----------
 function remplirPeriodes() {
@@ -1350,7 +1580,8 @@ async function start(session) {
   $('app').classList.remove('hidden');
   const { data: ops } = await sb.rpc('dc_operations'); S.ops = ops || [];
   remplirPeriodes(); glassSelect($('f-per')); glassSelect($('f-cmp'));
-  const h = location.hash.slice(1); if (VUES[h]) S.vue = h;
+  const po = pref('dc-onglet', 'apercu');
+  const h = location.hash.slice(1) || (po === 'dernier' ? pref('dernier-dc-onglet', '') : po); if (VUES[h]) S.vue = h;
   railSync(); await charger();
 }
 let started = false;
