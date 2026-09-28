@@ -498,6 +498,14 @@ select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-r
 .reg-switch:focus-visible { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 45%, transparent); }
 .reg-ligne .link { font-size: 13.5px; }
 .reg-ligne .link:disabled { opacity: .4; cursor: default; text-decoration: none; }
+/* Fusions de clients à valider */
+.fus-barre { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.fus-onglets { display: inline-flex; gap: 6px; flex-wrap: wrap; }
+.fus-onglets .btn[aria-pressed="true"] { background: var(--accent); color: #fff; }
+.fus-seg { font-size: 11.5px; margin-top: 2px; }
+#tbl-fusions td > .link { text-align: left; }
+.pill.warn { color: var(--warn-ink); background: var(--warn-bg); border-color: transparent; }
+tr.fus-doute td { background: color-mix(in srgb, var(--warn-bg) 45%, transparent); }
 .reg-danger { color: #c2410c; }
 .reg-pied { margin: 16px 4px 0; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
 /* Réglage « Réduire les animations » */
@@ -905,6 +913,15 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
       <span class="hint">les 60 plus gros CA de l'exercice dont le segment n'est pas encore validé</span>
     </div>
     <div class="tbl-wrap" id="tbl-clients"></div>
+  </div>
+
+  <div class="card" id="card-fusions" style="margin-top:14px">
+    <div class="card-head">
+      <h2>Fusions de clients à valider</h2>
+      <span class="hint">même client dans EBP et sur le site sous un autre nom · la fiche EBP est gardée, le CA ne change pas</span>
+    </div>
+    <div class="fus-barre" id="fus-barre"></div>
+    <div class="tbl-wrap" id="tbl-fusions"><div class="muted">Chargement…</div></div>
   </div>
 
   <div class="card" style="margin-top:14px">
@@ -1991,6 +2008,58 @@ function renderClients() {
   });
 }
 
+// ---------- Fusions de clients à valider ----------
+// Propositions préparées en base (propositions_fusion) : fiche EBP gardée, fiche du site rattachée.
+// Fusionner / Pas le même / Annuler passent par decider_fusion (valideur ou admin), réversible.
+const FUS = { rows: [], filtre: 'a_valider', charge: false };
+async function chargerFusions() {
+  const { data, error } = await sb.rpc('propositions_fusion_liste');
+  if (error) { $('tbl-fusions').innerHTML = `<div class="muted">Liste indisponible : ${esc(error.message)}</div>`; return; }
+  FUS.rows = data || []; FUS.charge = true; renderFusions();
+}
+function renderFusions() {
+  const rows = FUS.rows, nb = s => rows.filter(r => r.statut === s).length;
+  const ouvertes = rows.filter(r => r.statut === 'proposee'), sures = ouvertes.filter(r => r.niveau === 'sur');
+  $('card-fusions').classList.toggle('hidden', FUS.charge && !rows.length);
+  const vis = FUS.filtre === 'a_valider' ? ouvertes : FUS.filtre === 'faites' ? rows.filter(r => r.statut !== 'proposee') : rows;
+  $('fus-barre').innerHTML = `<div class="fus-onglets" role="group" aria-label="Filtre">
+      <button class="btn small" data-f="a_valider" aria-pressed="${FUS.filtre === 'a_valider'}">À valider (${ouvertes.length})</button>
+      <button class="btn small" data-f="faites" aria-pressed="${FUS.filtre === 'faites'}">Décidées (${nb('validee') + nb('refusee')})</button>
+      <button class="btn small" data-f="toutes" aria-pressed="${FUS.filtre === 'toutes'}">Toutes (${rows.length})</button></div>
+    ${canEdit() && sures.length ? `<button class="btn small primary" id="fus-toutes">${sures.length > 1 ? `Fusionner les ${sures.length} paires sûres` : 'Fusionner la paire sûre'}</button>` : ''}`;
+  $('fus-barre').querySelectorAll('[data-f]').forEach(b => b.onclick = () => { FUS.filtre = b.dataset.f; renderFusions(); });
+  const lib = s => SEG[s]?.label || s || '–';
+  const etat = r => r.statut === 'validee' ? `<span class="pill ok">✓ Fusionnée</span>` : r.statut === 'refusee' ? `<span class="pill">Pas le même</span>` : '';
+  const actions = (r, i) => !canEdit() ? (etat(r) || '<span class="muted">à valider</span>')
+    : r.statut === 'proposee' ? `<div class="row-actions"><button class="btn small primary" data-d="valider" data-i="${i}">Fusionner</button><button class="btn small" data-d="refuser" data-i="${i}">Pas le même</button></div>`
+    : `<div class="row-actions">${etat(r)}<button class="link" data-d="annuler" data-i="${i}">Annuler</button></div>`;
+  const ecart = r => r.maitre_segment !== r.absorbe_segment ? `<span class="pill warn" title="Statut différent des deux côtés">${esc(lib(r.absorbe_segment))}</span>` : '';
+  $('tbl-fusions').innerHTML = vis.length ? `<table><thead><tr><th>Fiche EBP (gardée)</th><th class="n">CA HT</th><th>Fiche du site (rattachée)</th><th class="n">CA HT</th><th>Pourquoi</th><th class="n"></th></tr></thead><tbody>` +
+    vis.map((r, i) => `<tr${r.niveau === 'a_confirmer' ? ' class="fus-doute"' : ''}>
+      <td><button class="link" data-client="${esc(r.maitre)}">${esc(r.maitre_nom)}</button><div class="muted fus-seg">${esc(lib(r.maitre_segment))}</div></td>
+      <td class="n">${fmtEur(r.maitre_ca)}</td>
+      <td>${esc(r.absorbe_nom)}<div class="muted fus-seg">${ecart(r) || esc(lib(r.absorbe_segment))}</div></td>
+      <td class="n">${fmtEur(r.absorbe_ca)}</td>
+      <td>${r.niveau === 'a_confirmer' ? '<span class="pill warn">à confirmer</span> ' : ''}${esc(r.raison || '')}${r.decide_par ? `<div class="muted fus-seg">${esc(r.decide_par)}</div>` : ''}</td>
+      <td class="n">${actions(r, i)}</td></tr>`).join('') + `</tbody></table>`
+    : `<div class="muted">${FUS.filtre === 'a_valider' ? 'Aucune fusion en attente.' : 'Rien ici pour l\'instant.'}</div>`;
+  $('tbl-fusions').querySelectorAll('[data-d]').forEach(b => b.onclick = () => deciderFusion(vis[+b.dataset.i], b.dataset.d, b));
+  const tout = $('fus-toutes');
+  if (tout) tout.onclick = async () => {
+    if (!confirm(`Fusionner les ${sures.length} paires sûres (même n° de magasin Leclerc, même société) ? Chaque fusion reste annulable.`)) return;
+    tout.disabled = true;
+    let n = 0; for (const r of sures) { tout.textContent = `… ${++n}/${sures.length}`; const { error } = await sb.rpc('decider_fusion', { p_id: r.id, p_decision: 'valider' }); if (error) { tout.textContent = 'Erreur : ' + error.message; break; } }
+    await chargerFusions();
+  };
+}
+async function deciderFusion(r, d, b) {
+  if (d === 'valider' && r.niveau === 'a_confirmer' && !confirm(`${r.raison}\n\nFusionner quand même « ${r.absorbe_nom} » dans « ${r.maitre_nom} » ?`)) return;
+  b.disabled = true; b.textContent = '…';
+  const { error } = await sb.rpc('decider_fusion', { p_id: r.id, p_decision: d });
+  if (error) { b.textContent = 'Erreur'; b.title = error.message; return; }
+  await chargerFusions();
+}
+
 // ---------- Export CSV ----------
 $('btn-export').onclick = async () => {
   const btn = $('btn-export'), msg = $('export-msg');
@@ -2568,6 +2637,7 @@ async function start(session) {
   try { await loadBase(); await loadExercice(); render(); }
   catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
   finally { chargement.fin(); }
+  chargerFusions();
 }
 let started = false;
 sb.auth.onAuthStateChange((ev, session) => {
