@@ -2100,7 +2100,7 @@ async function deciderFusion(r, d, b) {
 // ---------- Questions sur les données (onglet À valider) ----------
 // Chaque hésitation sur les données est posée dans questions_donnees ; repondre_question applique la réponse (annulable).
 const QST = { rows: [], filtre: 'ouvertes', charge: false };
-const Q_TYPES = { commande_double: 'Même commande passée deux fois', commande_test: 'Commandes de test possibles' };
+const Q_TYPES = { segment_client: 'Classement du client à vérifier (groupe, segment)', commande_test: 'Commandes de test possibles', commande_double: 'Même commande passée deux fois' };
 async function chargerQuestions() {
   const { data, error } = await sb.rpc('questions_liste');
   if (error) { $('q-liste').innerHTML = `<div class="muted">Liste indisponible : ${esc(error.message)}</div>`; return; }
@@ -2115,7 +2115,9 @@ function renderQuestions() {
       <button class="btn small" data-f="toutes" aria-pressed="${QST.filtre === 'toutes'}">Toutes (${QST.rows.length})</button></div>`;
   $('q-barre').querySelectorAll('[data-f]').forEach(b => b.onclick = () => { QST.filtre = b.dataset.f; renderQuestions(); });
   if (!vis.length) { $('q-liste').innerHTML = `<div class="muted">${QST.filtre === 'ouvertes' ? 'Aucune question en attente.' : 'Rien ici pour l\'instant.'}</div>`; return; }
-  const types = [...new Set(vis.map(q => q.type))];
+  // Ordre d'affichage : celui de Q_TYPES (classement des clients d'abord), puis les types inconnus
+  const ordre = Object.keys(Q_TYPES);
+  const types = [...new Set(vis.map(q => q.type))].sort((a, b) => (ordre.indexOf(a) + 1 || 99) - (ordre.indexOf(b) + 1 || 99));
   $('q-liste').innerHTML = types.map(t => {
     const lot = vis.filter(q => q.type === t), enjeu = lot.reduce((a, q) => a + (+q.montant || 0), 0);
     return `<div class="q-groupe"><h3>${esc(Q_TYPES[t] || t)} · ${lot.length} · ${fmtEur(enjeu)} en jeu</h3>` + lot.map(q => {
