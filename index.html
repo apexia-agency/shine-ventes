@@ -264,6 +264,20 @@ input[type=password] {
 .hidden { display: none !important; }
 /* Boards Achats et Charges : on masque les blocs et les onglets de ventes */
 #app.mode-finance > :not(nav):not(header):not(#vue-finance):not(footer) { display: none; }
+#app.mode-validation > :not(nav):not(header):not(#vue-validation):not(footer) { display: none; }
+#app.mode-validation #per-btn, #app.mode-validation #per-zone { display: none; }
+.rail-nb { position: absolute; top: 3px; right: 2px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: #c2410c; color: #fff; font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center; pointer-events: none; }
+.rail-nb.hidden { display: none; }
+.q-groupe { margin: 4px 0 16px; }
+.q-groupe > h3 { font-size: 13px; font-weight: 650; margin: 0 0 8px; color: var(--ink-2); }
+.q-item { display: flex; gap: 14px; align-items: flex-start; justify-content: space-between; padding: 11px 0; border-top: 1px solid var(--grid); }
+.q-groupe > h3 + .q-item { border-top: 0; }
+.q-item .grow { flex: 1; min-width: 0; }
+.q-titre { font-size: 13.5px; font-weight: 600; }
+.q-detail { font-size: 12.5px; color: var(--ink-2); margin-top: 3px; line-height: 1.45; }
+.q-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; align-items: center; flex: none; max-width: 46%; }
+.q-actions .btn.conseil { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
+@media (max-width: 700px) { .q-item { flex-direction: column; } .q-actions { max-width: none; justify-content: flex-start; } }
 #app.mode-finance .rail-item[data-vue], #app.mode-finance .rail-sep-ventes, #app.mode-finance .rail-pill { display: none; }
 .row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
 .row-actions select { min-height: 30px; padding: 3px 10px; font-size: 12.5px; }
@@ -746,6 +760,7 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
     <button class="rail-item" data-vue="pros" data-label="Pros" aria-label="Pros"><svg viewBox="0 0 24 24"><path d="M3.5 8.5h17v10.5h-17zM9 8.5V6.2A1.2 1.2 0 0 1 10.2 5h3.6A1.2 1.2 0 0 1 15 6.2v2.3M3.5 13h17M11 13v1.8h2V13"/></svg></button>
     <button class="rail-item" data-vue="revendeurs" data-label="Revendeurs" aria-label="Revendeurs"><svg viewBox="0 0 24 24"><path d="M4 9.5 5.6 4.5h12.8L20 9.5M4 9.5h16M4 9.5c0 1.5 1.2 2.5 2.7 2.5s2.6-1 2.6-2.5c0 1.5 1.2 2.5 2.7 2.5s2.7-1 2.7-2.5c0 1.5 1.1 2.5 2.6 2.5S20 11 20 9.5M5.5 12v7.5h13V12M10 19.5v-4.5h4v4.5"/></svg></button>
     <button class="rail-item" data-vue="myclear" data-label="MyClear" aria-label="MyClear"><svg viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12h-11zM9 10.5V7a3 3 0 0 1 6 0v3.5"/></svg></button>
+    <button class="rail-item" data-vue="validation" data-label="À valider" aria-label="À valider"><svg viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 4.5V3.5h6v1M8.5 12.3l2.2 2.2 4.8-5"/></svg><span class="rail-nb hidden" id="val-nb"></span></button>
     <span class="rail-sep rail-sep-ventes" aria-hidden="true"></span>
     <button class="rail-item" id="rail-boards" data-label="Changer de board" aria-label="Changer de board" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></button>
     <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant ventes" aria-label="Assistant ventes" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
@@ -767,6 +782,45 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
       <button class="btn" id="theme" title="Changer de thème" aria-label="Changer de thème">◐</button>
     </div>
   </header>
+
+  <!-- Onglet À valider : toutes les décisions en attente sur les données (questions, fusions, segments) -->
+  <div id="vue-validation" class="hidden">
+    <div class="sub fin-note">Tout ce qui attend une décision humaine sur les données du board. Chaque réponse s'applique tout de suite et reste annulable.</div>
+    <div class="grid tiles" id="val-tiles"></div>
+    <div class="card" id="card-questions">
+      <div class="card-head">
+        <h2>Questions sur les données</h2>
+        <span class="hint">doublons possibles, commandes de test, classements douteux…</span>
+      </div>
+      <div class="fus-barre" id="q-barre"></div>
+      <div id="q-liste"><div class="muted">Chargement…</div></div>
+    </div>
+  <div class="card" id="card-fusions" style="margin-top:14px">
+    <div class="card-head">
+      <h2>Fusions de clients à valider</h2>
+      <span class="hint">même client dans EBP et sur le site sous un autre nom · la fiche EBP est gardée, le CA ne change pas</span>
+    </div>
+    <div class="fus-barre" id="fus-barre"></div>
+    <div class="tbl-wrap" id="tbl-fusions"><div class="muted">Chargement…</div></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <h2>Clients à valider</h2>
+      <span class="hint">les 60 plus gros CA de l'exercice dont le segment n'est pas encore validé</span>
+    </div>
+    <div class="tbl-wrap" id="tbl-clients"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <div class="card-head">
+      <h2>Groupes clients → segment</h2>
+      <span class="hint">un changement ici s'applique à tous les clients non validés du groupe</span>
+    </div>
+    <div class="tbl-wrap" id="tbl-groupes"></div>
+  </div>
+
+  </div>
 
   <!-- Onglets Achats et Charges : décaissements réels du plan de trésorerie -->
   <div id="vue-finance" class="hidden">
@@ -886,7 +940,8 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
   </div>
 
   <details class="tech" id="sec-donnees" data-sec>
-  <summary class="section-title">Données, validation et export</summary>
+  <summary class="section-title">Données et export</summary>
+  <p class="sub" style="margin:0 0 12px">Les segments à valider, les fusions de clients et les questions sur les données sont dans l'onglet <button class="link" data-aller="validation">À valider</button> du menu latéral.</p>
 
   <div class="grid two" style="margin-top:0">
     <div class="card">
@@ -897,31 +952,6 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
       <div class="card-head"><h2>Rapprochement comptable</h2><span class="hint">produits + port + loyers, hors MyClear et cessions, vs comptes 70 · écart toléré 1 %</span></div>
       <div id="compta"></div>
     </div>
-  </div>
-
-  <div class="card" style="margin-top:14px">
-    <div class="card-head">
-      <h2>Groupes clients → segment</h2>
-      <span class="hint">un changement ici s'applique à tous les clients non validés du groupe</span>
-    </div>
-    <div class="tbl-wrap" id="tbl-groupes"></div>
-  </div>
-
-  <div class="card" style="margin-top:14px">
-    <div class="card-head">
-      <h2>Clients à valider</h2>
-      <span class="hint">les 60 plus gros CA de l'exercice dont le segment n'est pas encore validé</span>
-    </div>
-    <div class="tbl-wrap" id="tbl-clients"></div>
-  </div>
-
-  <div class="card" id="card-fusions" style="margin-top:14px">
-    <div class="card-head">
-      <h2>Fusions de clients à valider</h2>
-      <span class="hint">même client dans EBP et sur le site sous un autre nom · la fiche EBP est gardée, le CA ne change pas</span>
-    </div>
-    <div class="fus-barre" id="fus-barre"></div>
-    <div class="tbl-wrap" id="tbl-fusions"><div class="muted">Chargement…</div></div>
   </div>
 
   <div class="card" style="margin-top:14px">
@@ -1133,6 +1163,8 @@ const VUES = {
   pros: { titre: 'Pros', seg: 'B2B_PRO' },
   revendeurs: { titre: 'Revendeurs', seg: 'B2B_REVENDEUR' },
   myclear: { titre: 'MyClear', canal: 'myclear' },
+  // Décisions en attente sur les données (questions, fusions, segments)
+  validation: { titre: 'À valider', validation: true },
   // Boards Achats et Charges (plan de trésorerie) : même page, ouverts par le bouton « Changer de board »
   achats: { titre: 'Achats', finance: 'ACHATS' },
   charges: { titre: 'Charges', finance: 'CHARGES' }
@@ -1220,7 +1252,7 @@ async function loadExercice() {
     sb.rpc('kpi_periode', { p_du: n1du, p_au: n1au }),
     fetchAll('v_groupes_resume', q => q.eq('exercice', S.ex)),
     loadClients(),
-    S.vue === 'general' || VUES[S.vue].finance ? null : loadTop()
+    S.vue === 'general' || VUES[S.vue].finance || VUES[S.vue].validation ? null : loadTop()
   ]);
   S.prod = prod.prod; S.prodOrig = prod.orig; S.groupes = groupes; S.clients = clients;
   S.top = top?.lignes || []; S.nbClients = top?.nb ?? null;
@@ -1299,6 +1331,7 @@ function render() {
   renderCompta();
   renderGroupes();
   renderClients();
+  if (QST.charge) majValidation();
   renderFinance();
   if (!VUES[S.vue].finance) renderCond();
   vueUI();
@@ -1639,6 +1672,10 @@ function vueUI() {
   $('card-top').classList.toggle('hidden', g);
   $('card-compta').classList.toggle('hidden', !g);
   $('app').classList.toggle('mode-finance', fin);
+  const val = !!VUES[S.vue].validation;
+  $('app').classList.toggle('mode-validation', val);
+  $('vue-validation').classList.toggle('hidden', !val);
+  if (val) { $('board-nom').textContent = 'À valider'; $('vue-titre').textContent = ''; document.title = 'À valider · Ventes SHINE'; }
   $('vue-finance').classList.toggle('hidden', !fin);
   // Volumes par conditionnement : ce sont des ventes, la carte n'est que dans le board Ventes
   $('card-cond').classList.toggle('hidden', fin);
@@ -1671,7 +1708,7 @@ function renderNotes(cur) {
   const notes = [];
   if (manquants.length) notes.push({ k: 'canaux', t: `Canaux pas encore branchés : ${esc(manquants.join(', '))}. Les totaux ne couvrent que les canaux présents.` });
   const valides = cur.filter(r => r.segment_valide).reduce((a, r) => a + +r.ca_ht, 0);
-  if (tot && valides / tot < 0.999) notes.push({ k: 'segments', t: `Segments : ${fmtN(pct(valides, tot), 1)} % du CA a un segment validé. Le reste est une proposition tirée du groupe client, à valider plus bas.` });
+  if (tot && valides / tot < 0.999) notes.push({ k: 'segments', t: `Segments : ${fmtN(pct(valides, tot), 1)} % du CA a un segment validé. Le reste est une proposition tirée du groupe client, à valider dans l'onglet À valider.` });
   const agr = canauxAgreges().filter(c => cur.some(r => r.canal === c));
   if (agr.length) {
     const caAgr = cur.filter(r => agr.includes(r.canal)).reduce((a, r) => a + +r.ca_ht, 0);
@@ -2015,7 +2052,7 @@ const FUS = { rows: [], filtre: 'a_valider', charge: false };
 async function chargerFusions() {
   const { data, error } = await sb.rpc('propositions_fusion_liste');
   if (error) { $('tbl-fusions').innerHTML = `<div class="muted">Liste indisponible : ${esc(error.message)}</div>`; return; }
-  FUS.rows = data || []; FUS.charge = true; renderFusions();
+  FUS.rows = data || []; FUS.charge = true; renderFusions(); majValidation();
 }
 function renderFusions() {
   const rows = FUS.rows, nb = s => rows.filter(r => r.statut === s).length;
@@ -2059,6 +2096,58 @@ async function deciderFusion(r, d, b) {
   if (error) { b.textContent = 'Erreur'; b.title = error.message; return; }
   await chargerFusions();
 }
+
+// ---------- Questions sur les données (onglet À valider) ----------
+// Chaque hésitation sur les données est posée dans questions_donnees ; repondre_question applique la réponse (annulable).
+const QST = { rows: [], filtre: 'ouvertes', charge: false };
+const Q_TYPES = { commande_double: 'Même commande passée deux fois', commande_test: 'Commandes de test possibles' };
+async function chargerQuestions() {
+  const { data, error } = await sb.rpc('questions_liste');
+  if (error) { $('q-liste').innerHTML = `<div class="muted">Liste indisponible : ${esc(error.message)}</div>`; return; }
+  QST.rows = data || []; QST.charge = true; renderQuestions(); majValidation();
+}
+function renderQuestions() {
+  const ouvertes = QST.rows.filter(q => q.statut === 'ouverte');
+  const vis = QST.filtre === 'ouvertes' ? ouvertes : QST.filtre === 'repondues' ? QST.rows.filter(q => q.statut !== 'ouverte') : QST.rows;
+  $('q-barre').innerHTML = `<div class="fus-onglets" role="group" aria-label="Filtre">
+      <button class="btn small" data-f="ouvertes" aria-pressed="${QST.filtre === 'ouvertes'}">À traiter (${ouvertes.length})</button>
+      <button class="btn small" data-f="repondues" aria-pressed="${QST.filtre === 'repondues'}">Répondues (${QST.rows.length - ouvertes.length})</button>
+      <button class="btn small" data-f="toutes" aria-pressed="${QST.filtre === 'toutes'}">Toutes (${QST.rows.length})</button></div>`;
+  $('q-barre').querySelectorAll('[data-f]').forEach(b => b.onclick = () => { QST.filtre = b.dataset.f; renderQuestions(); });
+  if (!vis.length) { $('q-liste').innerHTML = `<div class="muted">${QST.filtre === 'ouvertes' ? 'Aucune question en attente.' : 'Rien ici pour l\'instant.'}</div>`; return; }
+  const types = [...new Set(vis.map(q => q.type))];
+  $('q-liste').innerHTML = types.map(t => {
+    const lot = vis.filter(q => q.type === t), enjeu = lot.reduce((a, q) => a + (+q.montant || 0), 0);
+    return `<div class="q-groupe"><h3>${esc(Q_TYPES[t] || t)} · ${lot.length} · ${fmtEur(enjeu)} en jeu</h3>` + lot.map(q => {
+      const choix = q.choix || [], libRep = choix.find(c => c.v === q.reponse)?.label || q.reponse;
+      const conseil = choix.find(c => c.v === q.proposition)?.label;
+      const act = q.statut === 'repondue'
+        ? `<span class="pill ok">✓ ${esc(libRep)}</span>${canEdit() ? `<button class="link" data-q="${q.id}" data-r="annuler">Annuler</button>` : ''}`
+        : canEdit() ? choix.map(c => `<button class="btn small${c.v === q.proposition ? ' conseil' : ''}" data-q="${q.id}" data-r="${esc(c.v)}"${c.v === q.proposition ? ' title="Choix conseillé"' : ''}>${esc(c.label)}</button>`).join('')
+        : '<span class="muted">en attente</span>';
+      return `<div class="q-item"><div class="grow"><div class="q-titre">${esc(q.titre)}</div><div class="q-detail">${esc(q.detail || '')}${conseil ? ` <b>Conseil : ${esc(conseil)}.</b>` : ''}${q.decide_par ? ` <span class="muted">— ${esc(q.decide_par)}</span>` : ''}</div></div><div class="q-actions">${act}</div></div>`;
+    }).join('') + '</div>';
+  }).join('');
+  $('q-liste').querySelectorAll('[data-q]').forEach(b => b.onclick = async () => {
+    b.disabled = true; const t = b.textContent; b.textContent = '…';
+    const { error } = await sb.rpc('repondre_question', { p_id: +b.dataset.q, p_reponse: b.dataset.r });
+    if (error) { b.textContent = 'Erreur'; b.title = error.message; setTimeout(() => { b.textContent = t; b.disabled = false; }, 2000); return; }
+    await chargerQuestions();
+  });
+}
+// Compteur du menu latéral et tuiles de l'onglet
+function majValidation() {
+  const q = QST.rows.filter(x => x.statut === 'ouverte'), f = FUS.rows.filter(x => x.statut === 'proposee');
+  const n = q.length + f.length;
+  $('val-nb').textContent = n > 99 ? '99+' : n; $('val-nb').classList.toggle('hidden', !n);
+  const b = document.querySelector('.rail-item[data-vue="validation"]');
+  b.dataset.label = n ? `À valider (${n})` : 'À valider'; b.setAttribute('aria-label', b.dataset.label);
+  const t = (label, v, hint) => `<div class="card tile"><div class="label">${label}</div><div class="value">${v}</div><div class="cmp">${hint}</div></div>`;
+  $('val-tiles').innerHTML = t('Questions à trancher', fmtN(q.length), `${fmtEur(q.reduce((a, x) => a + (+x.montant || 0), 0))} en jeu`)
+    + t('Fusions de clients', fmtN(f.length), `dont ${f.filter(x => x.niveau === 'a_confirmer').length} à confirmer`)
+    + t('Clients sans segment validé', fmtN((S.clients || []).length), `parmi les plus gros CA de l'exercice ${S.ex ? S.ex.replace('-', '–') : ''}`);
+}
+document.addEventListener('click', e => { const a = e.target.closest('[data-aller]'); if (a) setVue(a.dataset.aller); });
 
 // ---------- Export CSV ----------
 $('btn-export').onclick = async () => {
@@ -2418,7 +2507,7 @@ appliquerReglages();
 (function cartesRepliables() {
   let plies = {}; try { plies = JSON.parse(localStorage.getItem('shine-cartes-pliees') || '{}'); } catch (e) {}
   const garder = () => { try { localStorage.setItem('shine-cartes-pliees', JSON.stringify(plies)); } catch (e) {} };
-  const cartes = document.querySelectorAll('#app > .card, #vue-finance > .card, #card-cond, #sec-donnees > .card, .grid > .card[style*="grid-column"]');
+  const cartes = document.querySelectorAll('#app > .card, #vue-finance > .card, #card-cond, #sec-donnees > .card, #vue-validation > .card, .grid > .card[style*="grid-column"]');
   cartes.forEach((card, i) => {
     const head = card.querySelector(':scope > .card-head'); if (!head) return;
     const cle = card.id || (head.querySelector('h2')?.textContent || 'carte-' + i).trim();
@@ -2637,7 +2726,7 @@ async function start(session) {
   try { await loadBase(); await loadExercice(); render(); }
   catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
   finally { chargement.fin(); }
-  chargerFusions();
+  chargerFusions(); chargerQuestions();
 }
 let started = false;
 sb.auth.onAuthStateChange((ev, session) => {
