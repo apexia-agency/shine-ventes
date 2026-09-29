@@ -76,7 +76,7 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
 ## Board Transport (coûts des colis DPD et Colissimo)
 
 - `transport.html` : le board (même connexion que les autres, ouvert à tous les associés), par le bouton « Changer de board ».
-  Onglets : tableau de bord, régions, profil de fret (comparaison à poids égal, barème constaté, économies possibles), frais annexes, fichiers et couverture, comptes rendus mensuels.
+  Onglets : tableau de bord (camembert comparatif DPD / Colissimo : découpage par transporteur, livraison, mode ou poids ; pastilles pour retirer des données), régions (carte de France par région), profil de fret (comparaison à poids égal, barème constaté, économies possibles), frais annexes, fichiers et couverture, comptes rendus mensuels.
 - Sources : exports Excel DPD (un par mois et par service : Relais, Predict, Classic + multi-colis) et factures PDF Colissimo, déposés dans l'onglet Fichiers.
   Le même fichier (ou la même facture Colissimo sous un autre nom) n'est jamais compté deux fois. Les factures DPD en PDF ne sont pas lues (pas de détail par colis).
 - Lecture des fichiers : `transport-lecteurs.js` (dans le navigateur au dépôt, et `outils/transport/charger.mjs` pour charger un dossier entier).
@@ -84,7 +84,7 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
   Le board lit `transport_donnees(du, au)` (agrégats). Migrations `20260929_board_transport.sql` et `20260929_transport_tranche_multicolis.sql`.
 - Règles de coût : coût HT = transport + gasoil + taxes + annexes.
   - DPD : « Prix cumulé » ne contient que le transport ; on ajoute l'indexation gasoil, la participation sûreté et la contribution logistique (taxes), et les colonnes « Fact. … » (annexes).
-    Une ligne à 0 colis = frais ajoutés après coup sur un colis déjà facturé (retour, SMS, relais non retiré…). Plusieurs colis sur une ligne = multi-colis (depuis juillet 2025).
+    Une ligne à 0 colis = frais ajoutés après coup sur un colis déjà facturé (retour, SMS, relais non retiré…) : ce n'est pas un colis (l'ancien board les comptait en 0 à 1 kg, d'où plus de colis légers et un coût moyen plus bas, ex. DPD Relais 0-1 kg oct.–déc. 2025 : 3,56 € ancien, 5,08 € réel). Plusieurs colis sur une ligne = multi-colis (depuis juillet 2025), rangé dans la tranche du poids moyen d'un colis.
   - Colissimo : transport = port net, gasoil = CAE, taxes = décarbonation + SMIC, annexes = suppléments. Ce que le détail par colis n'explique pas (suppléments non rattachés, arrondis)
     devient une ligne « ajustement de facture » : chaque facture retombe au centime sur son récapitulatif. Avoirs, indemnisations et prestations complémentaires restent au niveau de la facture.
   - Colissimo nouveau format (depuis août 2026) : récapitulatif par service et par tarif, sans poids ni code postal (région « inconnue », poids « inconnu »).
