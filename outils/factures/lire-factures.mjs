@@ -70,7 +70,7 @@ if (!JETON) { console.error('Variable FACTURES_TOKEN absente : rien n\'est envoy
 
 const pause = ms => new Promise(r => setTimeout(r, ms));
 async function envoyer(f) {
-  const corps = JSON.stringify({ fichier: relatif(f.p), empreinte: f.empreinte, pdf: readFileSync(f.p).toString('base64'), ...(MODELE ? { modele: MODELE } : {}), ...(COMPARER ? { comparer: true } : {}) });
+  const corps = JSON.stringify({ fichier: relatif(f.p), empreinte: f.empreinte, pdf: readFileSync(f.p).toString('base64'), source: 'serveur', ...(MODELE ? { modele: MODELE } : {}), ...(COMPARER ? { comparer: true } : {}) });
   for (let essai = 1; essai <= 4; essai++) {
     const r = await fetch(URL_FONCTION, { method: 'POST', headers: { 'content-type': 'application/json', 'x-jeton-factures': JETON }, body: corps });
     const rep = await r.json().catch(() => ({ error: 'réponse illisible (' + r.status + ')' }));
@@ -79,6 +79,9 @@ async function envoyer(f) {
     throw new Error(rep.error || ('HTTP ' + r.status));
   }
 }
+
+// Une ligne par facture : ✓ classée (comptes) ou ⚠ à vérifier (motif)
+const ligneAffichee = rep => `${rep.statut === 'classee' ? '✓' : '⚠'} ${rep.fournisseur || '« ' + rep.fournisseur_lu + ' » ?'} · TTC ${rep.montant_ttc ?? '—'} · ${(rep.ventilation || []).map(v => `${v.compte} ${v.montant_ht}`).join(' + ') || '—'}${rep.motif ? ' · ' + rep.motif : ''}`;
 
 let n = 0, cout = 0, aVerifier = 0, erreurs = 0;
 const file = [...aFaire];
@@ -89,12 +92,11 @@ async function ouvrier() {
     try {
       const rep = await envoyer(f);
       n++;
-      if (COMPARER) { comparaisons.push(rep); cout += rep.cout_usd || 0; if (rep.a_verifier) aVerifier++; console.log(`${n}/${aFaire.length} ${rep.a_verifier ? '⚠' : '✓'} ${rep.fournisseur} · TTC ${rep.montant_ttc} ${rep.devise} · ${rep.poste} > ${rep.categorie}`); continue; }
+      if (COMPARER) { comparaisons.push(rep); cout += rep.cout_usd || 0; if (rep.statut === 'a_verifier') aVerifier++; console.log(`${n}/${aFaire.length} ${ligneAffichee(rep)}`); continue; }
       if (rep.deja) { journal[f.empreinte] = { fichier: relatif(f.p), statut: 'lu', le: new Date().toISOString() }; sauver(); continue; }
-      cout += rep.cout_usd || 0; if (rep.a_verifier) aVerifier++;
+      cout += rep.cout_usd || 0; if (rep.statut === 'a_verifier') aVerifier++;
       journal[f.empreinte] = { fichier: relatif(f.p), statut: 'lu', id: rep.id, le: new Date().toISOString() }; sauver();
-      const m = v => v == null ? '—' : v.toFixed(2);
-      console.log(`${n}/${aFaire.length} ${rep.a_verifier ? '⚠' : '✓'} ${rep.fournisseur} · ${rep.date_facture || '?'} · HT ${m(rep.montant_ht)} · TTC ${m(rep.montant_ttc)} ${rep.devise} · ${rep.poste} > ${rep.categorie}${rep.motif ? ' · ' + rep.motif : ''}`);
+      console.log(`${n}/${aFaire.length} ${ligneAffichee(rep)}`);
     } catch (e) {
       erreurs++;
       if (!COMPARER) { journal[f.empreinte] = { fichier: relatif(f.p), statut: 'erreur', erreur: e.message, le: new Date().toISOString() }; sauver(); }

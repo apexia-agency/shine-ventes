@@ -1,105 +1,91 @@
-// Lecture d'une facture d'achat PDF par Claude, puis rangement dans la table factures_achats.
+// Rangeur de factures V5 : lecture d'une facture d'achat PDF par Claude, classement par les RÈGLES (moteur.ts).
+// Claude ne fait que lire (fournisseur, montants, lignes) ; le compte vient de factures_fournisseurs et du
+// dictionnaire produit ; les 12 contrôles de Jérémy décident si la facture est « classée » ou « à vérifier ».
 //
-// Appel (programme du serveur SHINE, outils/factures/lire-factures.mjs) :
+// Appel (flux n8n du dossier Drive « Factures SHINE », ou programme du serveur outils/factures/lire-factures.mjs) :
 //   POST /functions/v1/lire-facture   en-tête  x-jeton-factures: <FACTURES_TOKEN>
-//   corps JSON { fichier: 'BILAN 2025-2026/26-08 (AOUT)/…/HA-FOUR-CREE-260814-39120.00 €TTC.pdf', empreinte: '<sha256>', pdf: '<base64>' }
-// Réponse : { deja: true } si le fichier a déjà été lu, sinon la facture lue + le coût.
+//   { fichier, pdf (base64), empreinte? (sha256, calculée si absente), source?: 'drive'|'serveur', drive_id?, drive_url? }
+//   { reclasser: <id> }  rejoue les règles sur une facture déjà lue, sans rappeler Claude (après un changement de règle)
+//   { comparer: true, ... } lit et classe sans rien écrire (essai)
+// Réponse : { statut: 'classee'|'a_verifier', nom_range, dossier, compte, ventilation, motif, ... } ; { deja: true } si déjà lue.
 //
-// Secrets Supabase : ANTHROPIC_API_KEY (déjà là) et FACTURES_TOKEN (jeton partagé avec le programme du serveur).
-// La fonction écrit avec la clé service (fournie par Supabase) : le programme du serveur n'a aucun accès direct à la base.
+// Secrets Supabase : ANTHROPIC_API_KEY et FACTURES_TOKEN. Écriture avec la clé service fournie par Supabase.
 
 import Anthropic from "npm:@anthropic-ai/sdk";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { extractText, getDocumentProxy } from "npm:unpdf";
+import { classer, type Contexte, type Lecture } from "./moteur.ts";
 
-const MODELE = "claude-opus-4-8"; // modèle par défaut
-// $ par jeton ; « comparer » permet d'essayer un autre modèle sans rien écrire en base
-const MODELES: Record<string, { entree: number; sortie: number }> = {
-  "claude-opus-4-8": { entree: 5 / 1e6, sortie: 25 / 1e6 },
-  "claude-sonnet-5": { entree: 2 / 1e6, sortie: 10 / 1e6 },
-  "claude-haiku-4-5": { entree: 1 / 1e6, sortie: 5 / 1e6 },
+// Modèle choisi dans regles.xlsx (paramètre « Modèle Claude » = Sonnet) ; l'essai du 26/09 : Sonnet lit aussi bien qu'Opus
+const MODELE = "claude-sonnet-5-5";
+const PRIX: Record<string, { entree: number; sortie: number }> = { // $ par jeton
+  "claude-sonnet-5-5": { entree: 2 / 1e6, sortie: 10 / 1e6 },
+  "claude-opus-5-5": { entree: 4 / 1e6, sortie: 20 / 1e6 },
 };
-const TAILLE_MAX = 15 * 1024 * 1024; // PDF de 15 Mo au plus
+const TAILLE_MAX = 15 * 1024 * 1024;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-const SYSTEME = `Tu lis des factures d'achat de SHINE (marque française de produits de detailing auto, fabrication et vente).
-Tu extrais les montants EXACTEMENT comme écrits sur la facture, et tu classes la dépense comme dans le plan de trésorerie de SHINE.
+const SYSTEME = `Tu lis des factures d'achat reçues par SHINE (SAS SHINE, SIREN 888920071, TVA FR44888920071), marque française de produits de detailing automobile.
+Ton seul rôle est de RECOPIER fidèlement ce qui est écrit : tu ne classes pas la dépense, tu ne choisis aucun compte comptable.
 
-# Extraction
-- type_doc : « facture », « avoir » (avoir, note de crédit, remboursement du fournisseur) ou « autre » (devis, bon de livraison, relevé, échéancier, document illisible…).
-- fournisseur : la raison sociale de l'émetteur (pas SHINE), courte et lisible (ex. « CREE », « Prodhynet », « DPD France »).
+- type_doc : « facture », « avoir » (note de crédit, remboursement), « proforma », « devis » (devis, quotation, confirmation de commande), « acompte » (facture d'acompte, deposit, prepayment, demande de 30 %…) ou « autre » (bon de livraison, relevé, échéancier, document illisible).
+- fournisseur_nom : la raison sociale de l'ÉMETTEUR telle qu'écrite (jamais SHINE). fournisseur_tva et fournisseur_siren : ceux de l'émetteur s'ils sont écrits, sinon null.
+- destinataire_nom : à qui la facture est adressée, recopié tel quel, fautes comprises (« Facturé à », « Client », « Bill to »). destinataire_tva : son n° de TVA s'il est écrit.
 - num_facture et date_facture (AAAA-MM-JJ) : ceux de la facture, pas de la commande ni de l'échéance.
-- montant_ht, montant_tva, montant_ttc : les TOTAUX de la facture, en positif même pour un avoir. Pas de TVA (étranger, autoliquidation) : montant_tva = 0 et TTC = HT.
-  Montant absent ou illisible : null (n'invente jamais, ne calcule pas un montant qui n'est pas écrit, sauf TTC = HT quand il n'y a clairement pas de TVA).
-- devise : code ISO (EUR, USD, CNY…).
-- lignes : les lignes d'articles quand elles existent (désignation, quantité, prix unitaire HT, montant HT), 60 au plus ; sinon [].
-
-# Classement (bloc / poste / catégorie du plan de trésorerie)
-ACHATS (matières et marchandises revendues), poste « ACHATS », catégorie :
-- Chimie : produits chimiques finis ou matières premières (CREE, Prodhynet, Aérochem, Aérolub, Ambrosol, Bio-Sorelia, OQEMA, VéraChimie, Green&Safe, Scholl polish, Azelis, BASF, Brenntag, Univar, Stockmeier, Interchimie, CHT, Spiess, Vidara, Nexus…).
-- Accessoires : microfibres, brosses, pads, gants, sacoches, vêtements, stickers (4B, De Witte / Lautus, TonyIn, Deyuan, Kasi Teng, Amio, Billat, Seko, Lamatex, Rubberex, AliExpress / Alibaba…).
-- Flacons : flacons, bidons, bouchons, têtes de pulvérisation (CPMO / Caps Packaging / Cosline, Guala, Fidel Fillaud, Saccof, Berlin Packaging…).
-- Emballage : cartons, films, sachets, palettes (Plast'Embal, Découpe Stéphanoise, VPK / TNM, Astic, Sequoia…).
-- Étiquettes : étiquettes produits (Napack, GMJ…).
-CHARGES, poste et catégorie :
-- TRANSPORT > Transport : transporteurs et envois (Colissimo / La Poste, DPD, DHL, Dachser, XPO, Fatton, Somaudex, douane à l'import).
-- FRAIS GÉNÉRAUX > Logiciels (abonnements, SaaS, hébergement, IA, ERP, leasing informatique) | Déplacements (salons, repas, péages, hôtels, cadeaux clients)
-  | Matériel (machines, leasing de machines et de manutention, racks, EPI) | Électricité + Eau + Déchets (EDF, Engie, eau, Citeo, Sermaco, Sarpi)
-  | Essence (carburant) | Avocat Comptable (comptable, avocat, huissier, greffe, INPI) | Assurances (locaux, RC pro, bris de machine)
-  | Sécurité (extincteurs, APAVE, caméras, plombier, électricien, santé au travail, R&D chimie conseil) | Bureautique (fournitures, informatique, imprimante)
-  | Internet + Tél (Orange, Free, SFR) | Frais bancaires (commissions, frais postaux).
-- MARKETING > PUB - Réseaux & Comm : publicité, agences, influenceurs, photo et vidéo, goodies, PLV, royalties.
-- LOYERS > Loyer + Charges + IF : loyers, charges locatives, taxe foncière, ménage des bureaux, travaux des locaux.
-- VÉHICULES > Véhicules (location longue durée, leasing, entretien, réparations) | Assurances VL (assurance des véhicules).
-- SPACE UP > Space Up : factures de la holding Space Up (prestations de gestion).
-- IMPÔTS ET TAXES > Impôts (CFE, CVAE, douanes, IS, taxes) | TVA.
-- AUTRES > Remboursement CLTS : remboursements de clients, litiges.
-HORS (poste « HORS ») : ce n'est pas une dépense (facture de vente de SHINE, document interne, relevé sans montant…).
-Si tu hésites entre deux classements, choisis le plus probable et baisse la confiance.
-
-- confiance : 0 à 1, ta certitude globale sur les montants ET le classement (moins de 0,8 si un montant est douteux ou si le classement est incertain).
-- remarque : une phrase si quelque chose mérite l'attention d'un humain (acompte, facture partielle, devise étrangère, montant manuscrit…), sinon null.`;
+- montant_ht, montant_tva, montant_ttc : les TOTAUX écrits, en positif même pour un avoir. Sans TVA (étranger, autoliquidation) : montant_tva = 0 et TTC = HT.
+  Montant absent ou illisible : null. N'invente jamais un montant et ne le recalcule pas.
+- devise : code ISO de la facture (EUR, USD, CNY…), d'après les symboles et mentions.
+- lignes : chaque ligne d'article ou de frais (port, transport, remise…) avec sa désignation complète et son montant HT (négatif pour une remise), 80 au plus ; [] s'il n'y a pas de détail.
+- confiance : de 0 à 1, ta certitude sur les montants et les identités lus. Moins de 0,8 si un chiffre est douteux (scan flou, manuscrit, tableau coupé).
+- suggestion : en quelques mots, la nature de la dépense pour aider la personne qui vérifiera (ex. « abonnement logiciel », « fret maritime », « bidons plastique ») ; ce n'est qu'une aide, jamais utilisée pour classer.
+- remarque : une phrase si quelque chose mérite l'attention d'un humain (acompte, facture partielle, devise étrangère, montant manuscrit, TVA surprenante…), sinon null.`;
 
 const nombre = { type: ["number", "null"] };
+const texteOuNull = { type: ["string", "null"] };
 const SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  required: ["type_doc", "fournisseur", "num_facture", "date_facture", "devise", "montant_ht", "montant_tva", "montant_ttc", "bloc", "poste", "categorie", "lignes", "confiance", "remarque"],
+  type: "object", additionalProperties: false,
+  required: ["type_doc", "fournisseur_nom", "fournisseur_tva", "fournisseur_siren", "destinataire_nom", "destinataire_tva", "num_facture",
+    "date_facture", "devise", "montant_ht", "montant_tva", "montant_ttc", "lignes", "confiance", "suggestion", "remarque"],
   properties: {
-    type_doc: { type: "string", enum: ["facture", "avoir", "autre"] },
-    fournisseur: { type: "string" },
-    num_facture: { type: ["string", "null"] },
-    date_facture: { type: ["string", "null"], description: "AAAA-MM-JJ" },
-    devise: { type: "string" },
+    type_doc: { type: "string", enum: ["facture", "avoir", "proforma", "devis", "acompte", "autre"] },
+    fournisseur_nom: { type: "string" }, fournisseur_tva: texteOuNull, fournisseur_siren: texteOuNull,
+    destinataire_nom: texteOuNull, destinataire_tva: texteOuNull,
+    num_facture: texteOuNull, date_facture: { ...texteOuNull, description: "AAAA-MM-JJ" }, devise: { type: "string" },
     montant_ht: nombre, montant_tva: nombre, montant_ttc: nombre,
-    bloc: { type: "string", enum: ["ACHATS", "CHARGES", "HORS"] },
-    poste: { type: "string", enum: ["ACHATS", "TRANSPORT", "FRAIS GÉNÉRAUX", "MARKETING", "LOYERS", "VÉHICULES", "SPACE UP", "IMPÔTS ET TAXES", "AUTRES", "HORS"] },
-    categorie: { type: "string" },
-    lignes: {
-      type: "array",
-      items: {
-        type: "object", additionalProperties: false,
-        required: ["designation", "quantite", "prix_unitaire_ht", "montant_ht"],
-        properties: { designation: { type: "string" }, quantite: nombre, prix_unitaire_ht: nombre, montant_ht: nombre },
-      },
-    },
-    confiance: { type: "number" },
-    remarque: { type: ["string", "null"] },
+    lignes: { type: "array", items: { type: "object", additionalProperties: false, required: ["designation", "montant_ht"], properties: { designation: { type: "string" }, montant_ht: nombre } } },
+    confiance: { type: "number" }, suggestion: texteOuNull, remarque: texteOuNull,
   },
 };
 
-type Lu = {
-  type_doc: "facture" | "avoir" | "autre"; fournisseur: string; num_facture: string | null; date_facture: string | null; devise: string;
-  montant_ht: number | null; montant_tva: number | null; montant_ttc: number | null; bloc: string; poste: string; categorie: string;
-  lignes: { designation: string; quantite: number | null; prix_unitaire_ht: number | null; montant_ht: number | null }[];
-  confiance: number; remarque: string | null;
-};
+async function texteDuPdf(octets: Uint8Array): Promise<string | null> {
+  try {
+    const doc = await getDocumentProxy(octets);
+    const { text } = await extractText(doc, { mergePages: true });
+    return Array.isArray(text) ? text.join("\n") : text;
+  } catch { return null; }
+}
 
-// Montant TTC écrit dans le nom du fichier (convention SHINE « …-39120.00 €TTC.pdf ») : sert de contrôle
-function ttcDuNom(fichier: string): number | null {
-  const m = /(\d+(?:[.,]\d+)?)\s*€?\s*TTC/i.exec(fichier.split("/").pop() || "");
-  return m ? parseFloat(m[1].replace(",", ".")) : null;
+// Règles et historique, chargés à chaque appel (petites tables) : une règle modifiée s'applique tout de suite
+async function contexte(sb: ReturnType<typeof createClient>, fichier: string, texte: string | null, ignorerId?: number): Promise<Contexte> {
+  const [{ data: fournisseurs, error: e1 }, { data: dictionnaire, error: e2 }, { data: rangees, error: e3 }] = await Promise.all([
+    sb.from("factures_fournisseurs").select("id, nom, alias, tva_intracom, siren, compte, regime_tva, territoire, nature, mode, eclatement, statut, motifs"),
+    sb.from("factures_dictionnaire").select("nature, ordre, mots, compte_fr, compte_intra, compte_import"),
+    sb.from("factures_achats").select("id, fournisseur_id, num_facture, montant_ttc, date_facture").in("statut", ["classee", "validee"]),
+  ]);
+  if (e1 || e2 || e3) throw new Error((e1 || e2 || e3)!.message);
+  return {
+    fichier, texte, fournisseurs: fournisseurs as Contexte["fournisseurs"], dictionnaire: dictionnaire as Contexte["dictionnaire"],
+    historique: (f) => (rangees || []).filter((r) => r.fournisseur_id === f.id && r.id !== ignorerId),
+  };
+}
+
+function ligneDeBase(r: ReturnType<typeof classer>) {
+  return {
+    statut: r.statut, fournisseur_id: r.fournisseur?.id ?? null, compte: r.compte, territoire: r.territoire, regime_tva: r.regime_tva,
+    ventilation: r.ventilation, controles: r.controles, a_verifier: r.statut === "a_verifier", motif: r.motif,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -107,83 +93,90 @@ Deno.serve(async (req) => {
   const jeton = Deno.env.get("FACTURES_TOKEN");
   if (!jeton) return json({ error: "Secret FACTURES_TOKEN absent dans Supabase" }, 500);
   if (req.headers.get("x-jeton-factures") !== jeton) return json({ error: "Jeton refusé" }, 401);
+
+  let corps: { fichier?: string; empreinte?: string; pdf?: string; source?: string; drive_id?: string; drive_url?: string; comparer?: boolean; reclasser?: number; modele?: string };
+  try { corps = await req.json(); } catch { return json({ error: "Requête illisible" }, 400); }
+  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
+
+  // Rejouer les règles sur une facture déjà lue (aucun appel à Claude)
+  if (corps.reclasser) {
+    const { data: fa, error } = await sb.from("factures_achats").select("id, fichier, lecture, texte").eq("id", corps.reclasser).single();
+    if (error || !fa?.lecture) return json({ error: "Facture inconnue ou lue avant le rangeur V5 (pas de lecture gardée)" }, 404);
+    const ctx = await contexte(sb, fa.fichier, fa.texte, fa.id);
+    const r = classer(fa.lecture as Lecture, ctx);
+    const { error: e } = await sb.from("factures_achats").update(ligneDeBase(r)).eq("id", fa.id);
+    if (e) return json({ error: "Écriture impossible : " + e.message }, 500);
+    return json({ id: fa.id, ...r, fournisseur: r.fournisseur?.nom ?? null });
+  }
+
+  const { fichier, pdf } = corps;
+  const comparer = corps.comparer === true;
+  const modele = corps.modele || MODELE;
+  if (!PRIX[modele]) return json({ error: "Modèle inconnu : " + modele }, 400);
+  if (!fichier || !pdf) return json({ error: "fichier et pdf (base64) sont obligatoires" }, 400);
+  if (pdf.length * 0.75 > TAILLE_MAX) return json({ error: "PDF trop lourd (plus de 15 Mo)" }, 413);
+  const octets = Uint8Array.from(atob(pdf), (c) => c.charCodeAt(0));
+  // Empreinte SHA-256 : envoyée par le programme du serveur, calculée ici pour le flux n8n du Drive
+  const empreinte = corps.empreinte || [...new Uint8Array(await crypto.subtle.digest("SHA-256", octets))].map((x) => x.toString(16).padStart(2, "0")).join("");
+  if (!/^[0-9a-f]{64}$/.test(empreinte)) return json({ error: "empreinte invalide (sha256 attendu)" }, 400);
   const cle = Deno.env.get("ANTHROPIC_API_KEY");
   if (!cle) return json({ error: "Secret ANTHROPIC_API_KEY absent dans Supabase" }, 500);
 
-  let corps: { fichier?: string; empreinte?: string; pdf?: string; modele?: string; comparer?: boolean };
-  try { corps = await req.json(); } catch { return json({ error: "Requête illisible" }, 400); }
-  const { fichier, empreinte, pdf } = corps;
-  const modele = corps.modele || MODELE;
-  if (!MODELES[modele]) return json({ error: "Modèle inconnu : " + modele }, 400);
-  const PRIX = MODELES[modele];
-  const comparer = corps.comparer === true; // essai d'un modèle : lecture seule, rien n'est écrit
-  if (!fichier || !empreinte || !/^[0-9a-f]{64}$/.test(empreinte) || !pdf) return json({ error: "fichier, empreinte (sha256) et pdf (base64) sont obligatoires" }, 400);
-  if (pdf.length * 0.75 > TAILLE_MAX) return json({ error: "PDF trop lourd (plus de 15 Mo)" }, 413);
-
-  const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
   if (!comparer) {
-    const { data: existe } = await sb.from("factures_achats").select("id").eq("empreinte", empreinte).maybeSingle();
-    if (existe) return json({ deja: true, id: existe.id });
+    const { data: existe } = await sb.from("factures_achats").select("id, statut").eq("empreinte", empreinte).maybeSingle();
+    if (existe) return json({ deja: true, id: existe.id, statut: existe.statut });
   }
-  // Haiku 4.5 ne prend ni la réflexion adaptative ni le niveau d'effort
-  const reglages = modele.startsWith("claude-haiku")
-    ? { output_config: { format: { type: "json_schema", schema: SCHEMA } } }
-    : { thinking: { type: "adaptive" }, output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } } };
+  const texte = await texteDuPdf(octets);
 
   const client = new Anthropic({ apiKey: cle });
-  let rep: Anthropic.Message;
+  let rep: Anthropic.Beta.BetaMessage;
   try {
-    rep = await client.messages.create({
+    rep = await client.beta.messages.create({
       model: modele,
       max_tokens: 16000,
+      betas: ["server-side-fallback-2026-07-01"],
+      fallbacks: "default", // refus du modèle : bascule automatique côté serveur
       system: [{ type: "text", text: SYSTEME, cache_control: { type: "ephemeral" } }],
+      thinking: { type: "adaptive" },
+      output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
       messages: [{
         role: "user",
         content: [
           { type: "document", source: { type: "base64", media_type: "application/pdf", data: pdf } },
-          { type: "text", text: `Nom et dossier du fichier : ${fichier}\n(Convention SHINE : TYPE-CATÉGORIE-FOURNISSEUR-AAMMJJ-MONTANT TTC ; HA = achat, AV = avoir, FOUR = marchandises ou transport, FG = frais généraux. C'est un indice : la facture fait foi.)` },
+          { type: "text", text: `Nom du fichier déposé : ${fichier}` },
         ],
       }],
-      ...reglages,
-    } as unknown as Anthropic.MessageCreateParamsNonStreaming) as Anthropic.Message;
+    } as unknown as Anthropic.Beta.MessageCreateParamsNonStreaming) as Anthropic.Beta.BetaMessage;
   } catch (e) {
     if (e instanceof Anthropic.RateLimitError) return json({ error: "Limite de débit Claude, réessayer plus tard" }, 429);
     if (e instanceof Anthropic.APIError) return json({ error: `Erreur Claude (${e.status ?? "?"}) : ${e.message}` }, 502);
     return json({ error: `Erreur : ${(e as Error).message}` }, 500);
   }
   if (rep.stop_reason === "refusal") return json({ error: "Lecture refusée par le modèle" }, 422);
-  const texte = rep.content.filter((b): b is Anthropic.TextBlock => b.type === "text").map((b) => b.text).join("");
-  let lu: Lu;
-  try { lu = JSON.parse(texte); } catch { return json({ error: "Réponse illisible du modèle", stop: rep.stop_reason }, 502); }
+  const brut = rep.content.filter((b) => b.type === "text").map((b) => (b as { text: string }).text).join("");
+  let lu: Lecture;
+  try { lu = JSON.parse(brut); } catch { return json({ error: "Réponse illisible du modèle", stop: rep.stop_reason }, 502); }
+  lu.confiance = Math.max(0, Math.min(1, lu.confiance));
 
-  // Contrôles : tout ce qui est douteux est mis de côté pour un associé
-  const motifs: string[] = [];
-  const { montant_ht: ht, montant_tva: tva, montant_ttc: ttc } = lu;
-  if (lu.type_doc === "autre") motifs.push("pas une facture");
-  if (ttc == null) motifs.push("TTC illisible");
-  if (!lu.date_facture || !/^\d{4}-\d{2}-\d{2}$/.test(lu.date_facture)) motifs.push("date illisible");
-  if (ht != null && tva != null && ttc != null && Math.abs(ht + tva - ttc) > 0.05) motifs.push(`HT + TVA ≠ TTC (${(ht + tva).toFixed(2)} / ${ttc.toFixed(2)})`);
-  const ttcNom = ttcDuNom(fichier);
-  if (ttcNom != null && ttc != null && lu.devise === "EUR" && Math.abs(ttcNom - ttc) > Math.max(1, ttc * 0.01)) motifs.push(`TTC différent du nom du fichier (${ttcNom})`);
-  if (lu.confiance < 0.8) motifs.push("confiance " + lu.confiance);
-  if (lu.devise !== "EUR") motifs.push("devise " + lu.devise);
-  // La remarque du modèle est gardée pour information (autoliquidation, gaz…) mais ne bloque pas à elle seule
-  const aVerifier = motifs.length > 0;
-  if (lu.remarque) motifs.push(lu.remarque);
+  let r: ReturnType<typeof classer>;
+  try { r = classer(lu, await contexte(sb, fichier, texte)); } catch (e) { return json({ error: "Règles illisibles : " + (e as Error).message }, 500); }
 
   const u = rep.usage;
-  const entree = u.input_tokens + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0);
-  const cout = u.input_tokens * PRIX.entree + (u.cache_creation_input_tokens || 0) * PRIX.entree * 1.25 + (u.cache_read_input_tokens || 0) * PRIX.entree * 0.1 + u.output_tokens * PRIX.sortie;
+  const p = PRIX[rep.model] || PRIX[modele];
+  const cout = u.input_tokens * p.entree + (u.cache_creation_input_tokens || 0) * p.entree * 1.25 + (u.cache_read_input_tokens || 0) * p.entree * 0.1 + u.output_tokens * p.sortie;
   const ligne = {
-    empreinte, fichier, type_doc: lu.type_doc, fournisseur: lu.fournisseur, num_facture: lu.num_facture,
-    date_facture: lu.date_facture && /^\d{4}-\d{2}-\d{2}$/.test(lu.date_facture) ? lu.date_facture : null,
-    devise: lu.devise, montant_ht: ht, montant_tva: tva, montant_ttc: ttc,
-    bloc: lu.bloc, poste: lu.poste, categorie: lu.categorie, lignes: lu.lignes,
-    confiance: Math.max(0, Math.min(1, lu.confiance)), a_verifier: aVerifier, motif: motifs.join(" ; ") || null,
-    modele, jetons_entree: entree, jetons_sortie: u.output_tokens, cout_usd: Math.round(cout * 10000) / 10000,
+    empreinte, fichier, source: corps.source || null, drive_id: corps.drive_id || null, drive_url: corps.drive_url || null,
+    type_doc: lu.type_doc, fournisseur: r.fournisseur?.nom ?? lu.fournisseur_nom, fournisseur_tva: lu.fournisseur_tva, destinataire: lu.destinataire_nom,
+    num_facture: lu.num_facture, date_facture: lu.date_facture && /^\d{4}-\d{2}-\d{2}$/.test(lu.date_facture) ? lu.date_facture : null,
+    devise: lu.devise, montant_ht: lu.montant_ht, montant_tva: lu.montant_tva, montant_ttc: lu.montant_ttc,
+    lignes: lu.lignes, confiance: lu.confiance, categorie: lu.suggestion, texte_pdf: (texte ?? "").trim().length > 50, texte: texte ? texte.slice(0, 20000) : null,
+    lecture: lu, ...ligneDeBase(r),
+    modele: rep.model, jetons_entree: u.input_tokens + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0),
+    jetons_sortie: u.output_tokens, cout_usd: Math.round(cout * 10000) / 10000, traite_le: new Date().toISOString(),
   };
-  if (comparer) return json({ comparaison: true, ...ligne });
+  const reponse = { ...r, fournisseur: r.fournisseur?.nom ?? null, fournisseur_lu: lu.fournisseur_nom, montant_ttc: lu.montant_ttc, suggestion: lu.suggestion, cout_usd: ligne.cout_usd };
+  if (comparer) return json({ comparaison: true, ...reponse, lecture: lu });
   const { data, error } = await sb.from("factures_achats").upsert(ligne, { onConflict: "empreinte" }).select("id").single();
-  if (error) return json({ error: "Écriture impossible : " + error.message, lu: ligne }, 500);
-  return json({ id: data.id, ...ligne, lignes: lu.lignes.length });
+  if (error) return json({ error: "Écriture impossible : " + error.message, ...reponse }, 500);
+  return json({ id: data.id, ...reponse });
 });
