@@ -50,7 +50,7 @@ const ident = (s: string | null | undefined) => String(s ?? "").toUpperCase().re
 const contientMot = (texte: string, mot: string) => {
   const m = norm(mot);
   if (!m.trim()) return false;
-  if (texte.includes(m)) return true;
+  if (texte.includes(m) || texte.includes(m.trimEnd() + "S ")) return true; // pluriel : « étiquettes », « flacons »
   return /\d/.test(m) && texte.replace(/(\d) (?=[A-Z])/g, "$1").includes(m.replace(/(\d) (?=[A-Z])/g, "$1"));
 };
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -152,7 +152,9 @@ export function classer(l: Lecture, ctx: Contexte): Resultat {
       else { compte = f.compte; if (ht != null) ventilation.push({ compte, libelle: f.nature || f.nom, montant_ht: r2(ht), lignes: [] }); }
     } else {
       // 3-4. Éclatement ligne par ligne (8 : ligne non reconnue)
-      const lignes = l.lignes.filter((x) => x.montant_ht != null && Math.abs(x.montant_ht) > 0.004);
+      let lignes = l.lignes.filter((x) => x.montant_ht != null && Math.abs(x.montant_ht) > 0.004);
+      // Avoir : les totaux sont lus en positif, les lignes souvent en négatif → même sens que le total (Prodhynet, 29/09)
+      if (l.type_doc === "avoir" && lignes.reduce((s, x) => s + x.montant_ht!, 0) < 0) lignes = lignes.map((x) => ({ ...x, montant_ht: -x.montant_ht! }));
       if (!lignes.length) bloque(4, "Somme des lignes ≠ total facture", "facture à éclater mais aucune ligne lue");
       for (const x of lignes) {
         const n = naturerLigne(x.designation, f, ctx);
