@@ -278,12 +278,6 @@ input[type=password] {
 .q-actions { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; align-items: center; flex: none; max-width: 46%; }
 .q-actions .btn.conseil { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
 @media (max-width: 700px) { .q-item { flex-direction: column; } .q-actions { max-width: none; justify-content: flex-start; } }
-/* Factures à vérifier : fournisseur, compte, « Retenir », boutons */
-.fa-form { display: grid; grid-template-columns: minmax(150px, 1fr) 130px; gap: 6px; width: 340px; max-width: 100%; }
-.fa-form input:not([type="checkbox"]) { min-height: 30px; padding: 4px 9px; font-size: 13px; border-radius: 8px; border: 1px solid var(--ring); background: var(--surface); color: var(--ink); min-width: 0; }
-.fa-retenir { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
-.fa-boutons { grid-column: 1 / -1; display: flex; gap: 6px; justify-content: flex-end; }
-@media (max-width: 700px) { .fa-form { width: 100%; } .fa-boutons { justify-content: flex-start; } }
 #app.mode-finance .rail-item[data-vue], #app.mode-finance .rail-sep-ventes, #app.mode-finance .rail-pill { display: none; }
 .row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
 .row-actions select { min-height: 30px; padding: 3px 10px; font-size: 12.5px; }
@@ -793,17 +787,7 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
   <div id="vue-validation" class="hidden">
     <div class="sub fin-note">Tout ce qui attend une décision humaine sur les données du board. Chaque réponse s'applique tout de suite et reste annulable.</div>
     <div class="grid tiles" id="val-tiles"></div>
-    <!-- Rangeur de factures : ce que les règles n'ont pas pu classer seules (dossier Drive « 3 - A VERIFIER ») -->
-    <div class="card" id="card-factures">
-      <div class="card-head">
-        <h2>Factures à vérifier</h2>
-        <span class="hint">factures d'achat déposées sur le Drive que les règles n'ont pas classées seules · « Retenir » apprend la règle pour la prochaine fois</span>
-      </div>
-      <div class="fus-barre" id="fa-barre"></div>
-      <div id="fa-liste"><div class="muted">Chargement…</div></div>
-      <datalist id="fa-fournisseurs"></datalist>
-    </div>
-    <div class="card" id="card-questions" style="margin-top:14px">
+    <div class="card" id="card-questions">
       <div class="card-head">
         <h2>Questions sur les données</h2>
         <span class="hint">doublons possibles, commandes de test, classements douteux…</span>
@@ -1409,7 +1393,7 @@ function renderFinance() {
       ['TVA reversée (hors charges)', fmtK(tv0), delta(tv0, tv1)]
     ].map(([l, v, d]) => `<div class="card tile"><div class="label">${l}</div><div class="value">${v}</div>${d}</div>`).join('');
   }
-  // Graphique mensuel empilé par famille d'achats ou par poste de charges
+  // Graphique mensuel empilé par famille d\x27achats ou par poste de charges
   const series = tri.map(([k], i) => ({ k, label: k, v: PALETTE[i % PALETTE.length] }));
   const data = MOIS.map(() => ({})), n1t = MOIS.map(() => 0);
   for (const r of cur) { const i = monthIndex(r.mois), k = groupe(r); data[i][k] = (data[i][k] || 0) + +r.montant; }
@@ -1795,7 +1779,7 @@ function renderTransport() {
   h += `<tr><td><b>Coût transport des ventes</b></td><td>colis + messagerie</td><td class="n"><b>${fmtEur(cT)}</b></td><td class="n"><b>${fmtEur(cT / TVA_TRANSPORT)}</b>${var1(cT, nT)}</td>${hasN1 ? `<td class="n">${fmtEur(nT / TVA_TRANSPORT)}</td>` : ''}</tr>`;
   h += `<tr><td>Port facturé aux clients</td><td>sites internet</td><td class="n"></td><td class="n">${fmtEur(p0)}${var1(p0, p1)}</td>${hasN1 ? `<td class="n">${fmtEur(p1)}</td>` : ''}</tr>`;
   h += `<tr><td><b>Reste à charge SHINE</b></td><td>coût − port facturé</td><td class="n"></td><td class="n"><b>${fmtEur(cT / TVA_TRANSPORT - p0)}</b></td>${hasN1 ? `<td class="n">${fmtEur(nT / TVA_TRANSPORT - p1)}</td>` : ''}</tr>`;
-  h += `</tbody></table><div class="sub" style="margin-top:8px">Montants payés en banque (plan de trésorerie), au mois du règlement et non de l'envoi. HT estimé = TTC ÷ 1,2. Pour EBP (revendeurs), le port facturé vient des lignes « transport » des factures, quand il y en a. L'import est un transport d'achats, affiché pour info et exclu du calcul.</div>`;
+  h += `</tbody></table><div class="sub" style="margin-top:8px">Montants payés en banque (plan de trésorerie), au mois du règlement et non de l'envoi. HT estimé = TTC ÷ 1,2. Pour EBP (revendeurs), le port facturé vient des lignes « transport » des factures, quand il y en a. L'import est un transport d\x27achats, affiché pour info et exclu du calcul.</div>`;
   $('tbl-transport').innerHTML = h;
   $('tr-hint').textContent = `exercice ${S.ex.replace('-', '–')}${hasN1 ? ' · comparé à ' + exN1.replace('-', '–') : ''}`;
 }
@@ -2157,84 +2141,15 @@ function renderQuestions() {
     await chargerQuestions();
   });
 }
-// ---------- Factures à vérifier (rangeur de factures, onglet À valider) ----------
-// La fonction lire-facture classe par les règles ; ce qui n'est pas sûr arrive ici avec son motif.
-// traiter_facture : valider (compte saisi ou ventilation du moteur), écarter, annuler ; « Retenir » ajoute la règle au fournisseur.
-const FACT = { rows: [], fournisseurs: [], filtre: 'a_verifier', charge: false };
-async function chargerFactures() {
-  const [l, f] = await Promise.all([sb.rpc('factures_a_verifier_liste'), FACT.fournisseurs.length ? { data: FACT.fournisseurs } : sb.rpc('factures_fournisseurs_liste')]);
-  if (l.error) { $('fa-liste').innerHTML = `<div class="muted">Liste indisponible : ${esc(l.error.message)}</div>`; return; }
-  FACT.rows = l.data || []; FACT.fournisseurs = f.data || []; FACT.charge = true;
-  $('fa-fournisseurs').innerHTML = FACT.fournisseurs.map(x => `<option value="${esc(x.nom)}">`).join('');
-  renderFactures(); majValidation();
-}
-const faDate = d => d ? new Date(d + 'T00:00:00').toLocaleDateString('fr-FR') : 'sans date';
-const faMontant = r => r.montant_ttc == null ? '—' : r.devise && r.devise !== 'EUR' ? `${fmtN(+r.montant_ttc, 2)} ${esc(r.devise)}` : fmtEur(+r.montant_ttc);
-function renderFactures() {
-  const ouvertes = FACT.rows.filter(r => r.statut === 'a_verifier');
-  const vis = FACT.filtre === 'a_verifier' ? ouvertes : FACT.rows.filter(r => r.statut !== 'a_verifier');
-  $('fa-barre').innerHTML = `<div class="fus-onglets" role="group" aria-label="Filtre">
-      <button class="btn small" data-f="a_verifier" aria-pressed="${FACT.filtre === 'a_verifier'}">À vérifier (${ouvertes.length})</button>
-      <button class="btn small" data-f="traitees" aria-pressed="${FACT.filtre === 'traitees'}">Traitées ces 60 jours (${FACT.rows.length - ouvertes.length})</button></div>`;
-  $('fa-barre').querySelectorAll('[data-f]').forEach(b => b.onclick = () => { FACT.filtre = b.dataset.f; renderFactures(); });
-  if (!vis.length) { $('fa-liste').innerHTML = `<div class="muted">${FACT.filtre === 'a_verifier' ? 'Aucune facture en attente : tout ce qui a été déposé est classé.' : 'Rien de traité ces 60 derniers jours.'}</div>`; return; }
-  $('fa-liste').innerHTML = vis.map(r => {
-    const bloq = (r.controles || []).filter(c => c.effet === 'bloquant'), signaux = (r.controles || []).filter(c => c.effet !== 'bloquant');
-    const vent = (r.ventilation || []).map(v => `${esc(v.compte)} ${fmtEur(+v.montant_ht || 0)}`).join(' + ');
-    const pdf = r.drive_url ? ` · <a href="${esc(r.drive_url)}" target="_blank" rel="noopener">Voir le PDF</a>` : '';
-    const titre = `${esc(r.fournisseur || r.fournisseur_lu || 'Fournisseur inconnu')} · ${faMontant(r)} · ${faDate(r.date_facture)}${r.num_facture ? ' · n° ' + esc(r.num_facture) : ''}`;
-    const detail = bloq.map(c => `<b>${esc(c.controle)}</b> : ${esc(c.detail)}`).join('<br>')
-      + (signaux.length ? `<br><span class="muted">${signaux.map(c => esc(c.detail)).join(' · ')}</span>` : '')
-      + `<br><span class="muted">${r.suggestion ? 'Nature lue : ' + esc(r.suggestion) + ' · ' : ''}${vent ? 'Proposé : ' + vent : 'Aucun compte proposé'}${r.fournisseur_lu && r.fournisseur_lu !== r.fournisseur ? ' · nom sur la facture : « ' + esc(r.fournisseur_lu) + ' »' : ''}${pdf}</span>`;
-    let act;
-    if (r.statut !== 'a_verifier') {
-      act = `<span class="pill ${r.statut === 'validee' ? 'ok' : ''}">${r.statut === 'validee' ? '✓ Validée' + (r.ventilation?.length === 1 ? ' · ' + esc(r.ventilation[0].compte) : '') : 'Écartée'}</span>`
-        + (r.regle_apprise ? `<span class="muted" style="font-size:12px">${esc(r.regle_apprise)}</span>` : '')
-        + (canEdit() ? `<button class="link" data-fa="${r.id}" data-a="annuler">Annuler</button>` : '');
-    } else if (canEdit()) {
-      const compte = r.ventilation?.length === 1 ? r.ventilation[0].compte : '';
-      act = `<div class="fa-form">
-        <input list="fa-fournisseurs" data-fo="${r.id}" value="${esc(r.fournisseur_id ? r.fournisseur : '')}" placeholder="Fournisseur (ou nouveau nom)" aria-label="Fournisseur">
-        <input data-co="${r.id}" value="${esc(compte)}" placeholder="${r.ventilation?.length > 1 ? 'garder la ventilation' : 'Compte (ex. 60110000)'}" inputmode="numeric" aria-label="Compte">
-        <label class="fa-retenir"><input type="checkbox" data-re="${r.id}"> Retenir pour ce fournisseur</label>
-        <div class="fa-boutons"><button class="btn small primary" data-fa="${r.id}" data-a="valider">Valider</button><button class="btn small" data-fa="${r.id}" data-a="ecarter" title="Pas une facture à comptabiliser (proforma, doublon, facture d'une autre société…)">Écarter</button></div>
-      </div>`;
-    } else act = '<span class="muted">en attente</span>';
-    return `<div class="q-item"><div class="grow"><div class="q-titre">${titre}</div><div class="q-detail">${detail}${r.valide_par ? ` <span class="muted">— ${esc(r.valide_par)}</span>` : ''}</div></div><div class="q-actions">${act}</div></div>`;
-  }).join('');
-  // Choisir un fournisseur connu pré-remplit son compte
-  $('fa-liste').querySelectorAll('[data-fo]').forEach(i => i.onchange = () => {
-    const f = FACT.fournisseurs.find(x => x.nom === i.value.trim()), c = $('fa-liste').querySelector(`[data-co="${i.dataset.fo}"]`);
-    if (f?.compte && c && !c.value) c.value = f.compte;
-  });
-  $('fa-liste').querySelectorAll('[data-fa]').forEach(b => b.onclick = async () => {
-    const id = +b.dataset.fa, a = b.dataset.a, p = { p_id: id, p_action: a };
-    if (a === 'valider') {
-      const nom = $('fa-liste').querySelector(`[data-fo="${id}"]`).value.trim(), f = FACT.fournisseurs.find(x => x.nom === nom);
-      p.p_compte = $('fa-liste').querySelector(`[data-co="${id}"]`).value.trim() || null;
-      p.p_retenir = $('fa-liste').querySelector(`[data-re="${id}"]`).checked;
-      if (f) p.p_fournisseur_id = f.id; else if (nom) p.p_nouveau = nom;
-      if (p.p_nouveau && !confirm(`Créer le fournisseur « ${nom} » ?`)) return;
-    }
-    b.disabled = true; const t = b.textContent; b.textContent = '…';
-    const { error } = await sb.rpc('traiter_facture', p);
-    if (error) { b.textContent = 'Erreur'; b.title = error.message; alert(error.message); setTimeout(() => { b.textContent = t; b.disabled = false; }, 1500); return; }
-    if (p.p_nouveau || p.p_retenir) FACT.fournisseurs = [];
-    await chargerFactures();
-  });
-}
-
 // Compteur du menu latéral et tuiles de l'onglet
 function majValidation() {
   const q = QST.rows.filter(x => x.statut === 'ouverte'), f = FUS.rows.filter(x => x.statut === 'proposee');
-  const fa = FACT.rows.filter(x => x.statut === 'a_verifier');
-  const n = q.length + f.length + fa.length;
+  const n = q.length + f.length;
   $('val-nb').textContent = n > 99 ? '99+' : n; $('val-nb').classList.toggle('hidden', !n);
   const b = document.querySelector('.rail-item[data-vue="validation"]');
   b.dataset.label = n ? `À valider (${n})` : 'À valider'; b.setAttribute('aria-label', b.dataset.label);
   const t = (label, v, hint) => `<div class="card tile"><div class="label">${label}</div><div class="value">${v}</div><div class="cmp">${hint}</div></div>`;
-  $('val-tiles').innerHTML = t('Factures à vérifier', fmtN(fa.length), `${fmtEur(fa.reduce((a, x) => a + (x.devise === 'EUR' ? +x.montant_ttc || 0 : 0), 0))} TTC en attente`)
-    + t('Questions à trancher', fmtN(q.length), `${fmtEur(q.reduce((a, x) => a + (+x.montant || 0), 0))} en jeu`)
+  $('val-tiles').innerHTML = t('Questions à trancher', fmtN(q.length), `${fmtEur(q.reduce((a, x) => a + (+x.montant || 0), 0))} en jeu`)
     + t('Fusions de clients', fmtN(f.length), `dont ${f.filter(x => x.niveau === 'a_confirmer').length} à confirmer`)
     + t('Clients sans segment validé', fmtN((S.clients || []).length), `parmi les plus gros CA de l'exercice ${S.ex ? S.ex.replace('-', '–') : ''}`);
 }
@@ -2345,6 +2260,7 @@ const BOARDS = [
   { k: 'achats', t: 'Achats', href: './#achats', small: 'matières premières, par fournisseur', vue: 'achats' },
   { k: 'charges', t: 'Charges', href: './#charges', small: 'salaires, transport, frais généraux…', vue: 'charges' },
   { k: 'transport', t: 'Transport', href: './transport.html', small: 'coûts DPD et Colissimo par colis' },
+  { k: 'factures', t: 'Factures', href: './factures.html', small: 'factures d\'achat à vérifier' },
   { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }
 ];
 const boardCourant = () => VUES[S.vue].finance ? S.vue : 'ventes';
@@ -2818,7 +2734,7 @@ async function start(session) {
   try { await loadBase(); await loadExercice(); render(); }
   catch (e) { $('fresh').textContent = 'Erreur de chargement : ' + (e.message || e); }
   finally { chargement.fin(); }
-  chargerFusions(); chargerQuestions(); chargerFactures();
+  chargerFusions(); chargerQuestions();
 }
 let started = false;
 sb.auth.onAuthStateChange((ev, session) => {

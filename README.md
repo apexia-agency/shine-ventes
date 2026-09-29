@@ -91,3 +91,19 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
 - Chargement initial (29/09/2026) : 83 exports DPD (janv. 2024 → mai 2026, 58 191 colis, 481 124 € HT) et 20 factures Colissimo (févr. 2025 → août 2026, 55 643 colis, 456 309 € HT).
   Doublons écartés : « 2025-08 DPD RELAI.xlsx » (copie de juillet 2025), « 2026-01 DPD RELAI BIS », et 4 factures Colissimo en double.
   Fichiers manquants : DPD Relais août 2025 et mars 2026, DPD Predict mars 2026, tout DPD depuis juin 2026.
+
+## Board Factures (rangeur de factures d'achat V5)
+
+- `factures.html` : board **réservé** (pas ouvert à tous les associés). Accès : rôle admin, ou `acces_board.boards.factures` = `lecture` / `valideur` / `admin`.
+  Ajouter quelqu'un : `update acces_board set boards = coalesce(boards, '{}') || '{"factures": "valideur"}' where email = '…';`
+  Onglets : à vérifier (la file que Robin vide chaque semaine), factures traitées (60 jours), règles fournisseurs.
+- Chaîne : dépôt d'un PDF dans le dossier Drive « Factures SHINE / 1 - A DEPOSER » (Drive de robin.l@shine-group.fr, partagé avec Jérémy)
+  → flux n8n « Rangeur de factures SHINE » (toutes les 10 min) → fonction `lire-facture` → renommé et rangé dans « 2 - CLASSEES » ou « 3 - A VERIFIER ».
+- Principe (spécification de Jérémy du 28/09/2026) : Claude (Sonnet 5.5) **lit** la facture, les **règles décident** du compte
+  (fournisseur → territoire FR / INTRA / IMPORT → nature → compte) ; 12 contrôles d'anomalie (devise, TVA sur import/intra, proforma, acompte,
+  destinataire ≠ SHINE, doublon, scan…). Rien de douteux n'est tranché : « à vérifier » avec le motif. Environ 3 centimes par facture.
+- Base : `factures_fournisseurs` (181 fournisseurs issus des 349 clés du grand livre, `outils/factures/fournisseurs-regroupement.mjs`),
+  `factures_dictionnaire` (natures des lignes pour les 7 fournisseurs éclatés), `factures_cles_ecartees`, `factures_achats` (lecture, ventilation, contrôles).
+  Fonctions : `factures_a_verifier_liste`, `factures_fournisseurs_liste`, `traiter_facture` (valider / écarter / annuler ; « Retenir » ajoute la règle au fournisseur), `acces_factures`.
+- Code : `supabase/functions/lire-facture/` (`index.ts` lecture, `moteur.ts` règles, testable hors ligne) ; `{ reclasser: id }` rejoue les règles sans rappeler Claude.
+- Questions ouvertes : comptes 61324000 / 61327000 de SCI CMD, polish Scholl (produit fini chimique ?), 13 comptes « à créer » par le comptable.

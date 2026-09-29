@@ -1378,7 +1378,7 @@ function glassSelect(sel) {
 addEventListener('scroll', () => lgClose(false), { passive: true });
 
 // ---------- Menu latéral et changement de board ----------
-const BOARDS = [{ k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' }, { k: 'achats', t: 'Achats', href: './#achats', small: 'matières premières, par fournisseur' }, { k: 'charges', t: 'Charges', href: './#charges', small: 'salaires, transport, frais généraux…' }, { k: 'transport', t: 'Transport', href: './transport.html', small: 'coûts DPD et Colissimo par colis' }, { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }];
+const BOARDS = [{ k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' }, { k: 'achats', t: 'Achats', href: './#achats', small: 'matières premières, par fournisseur' }, { k: 'charges', t: 'Charges', href: './#charges', small: 'salaires, transport, frais généraux…' }, { k: 'transport', t: 'Transport', href: './transport.html', small: 'coûts DPD et Colissimo par colis' }, { k: 'factures', t: 'Factures', href: './factures.html', small: 'factures d\'achat à vérifier' },, { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }];
 const railItems = [...document.querySelectorAll('.rail-item[data-vue]')];
 function railSync() { const a = railItems.find(b => b.dataset.vue === S.vue) || railItems[0]; railItems.forEach(b => b.setAttribute('aria-current', String(b === a))); $('rail-pill').style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`; }
 function setVue(v) { S.vue = v; setPref('dernier-dc-onglet', v); history.replaceState(null, '', '#' + v); railSync(); assurerCmp(); }

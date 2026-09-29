@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factures SHINE</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M10 6h9l5 5v15H10z' fill='white'/%3E%3Cpath d='M13 16h8M13 20h8M13 12h4' stroke='%232a78d6' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+/* Style commun des boards SHINE (repris du Data Center) */
+:root {
+  color-scheme: light;
+  --page: #eef1f6;
+  --surface: #fbfcfe;
+  --surface-2: rgba(255,255,255,0.55);
+  --glass: rgba(255,255,255,0.52);
+  --glass-strong: rgba(255,255,255,0.72);
+  --glass-edge: rgba(255,255,255,0.85);
+  --glass-edge-2: rgba(255,255,255,0.25);
+  --glass-shadow: 0 8px 32px rgba(31,41,74,0.10), 0 1px 2px rgba(31,41,74,0.06);
+  --ink: #0b0b0b;
+  --ink-2: #45454a;
+  --muted: #66666d;
+  --grid: rgba(60,60,67,0.12);
+  --axis: rgba(60,60,67,0.30);
+  --ring: rgba(60,60,67,0.14);
+  --accent: #2a78d6;
+  --good: #006300;
+  --bad: #b42828;
+  --warn-bg: rgba(255,214,120,0.30);
+  --warn-ink: #5c4000;
+  --s-b2c: #2a78d6; --s-pro: #eb6834; --s-rev: #1baf7a; --s-mkt: #eda100; --s-intra: #4a3aa7; --s-none: #b9b8b0; --s-mdd: #e87ba4; --s-autre: #008300; --s-hors: #8a8983;
+  --n1: #7d7c78; --bar: #2a78d6; --bar-track: rgba(60,60,67,0.08);
+  --blob-1: #b8d4ff; --blob-2: #ffd3bd; --blob-3: #c6f0de; --blob-4: #e3d9ff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --page: #0b0c10; --surface: #1c1d22; --surface-2: rgba(255,255,255,0.06);
+    --glass: rgba(34,35,42,0.50); --glass-strong: rgba(40,41,48,0.72);
+    --glass-edge: rgba(255,255,255,0.22); --glass-edge-2: rgba(255,255,255,0.04);
+    --glass-shadow: 0 10px 40px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+    --ink: #ffffff; --ink-2: #d0d0d6; --muted: #9c9ca5;
+    --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
+    --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
+    --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
+    --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974;
+    --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
+    --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0b0c10; --surface: #1c1d22; --surface-2: rgba(255,255,255,0.06);
+  --glass: rgba(34,35,42,0.50); --glass-strong: rgba(40,41,48,0.72);
+  --glass-edge: rgba(255,255,255,0.22); --glass-edge-2: rgba(255,255,255,0.04);
+  --glass-shadow: 0 10px 40px rgba(0,0,0,0.45), 0 1px 2px rgba(0,0,0,0.3);
+  --ink: #ffffff; --ink-2: #d0d0d6; --muted: #9c9ca5;
+  --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
+  --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
+  --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
+  --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974;
+  --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
+  --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page); color: var(--ink); min-height: 100vh;
+  font: 14px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* Fond : taches de couleur floues, fixes, sous le verre */
+body::before {
+  content: ""; position: fixed; inset: -10vmax; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38vmax 32vmax at 12% 8%, var(--blob-1), transparent 70%),
+    radial-gradient(34vmax 30vmax at 92% 14%, var(--blob-2), transparent 70%),
+    radial-gradient(40vmax 34vmax at 78% 88%, var(--blob-3), transparent 70%),
+    radial-gradient(36vmax 30vmax at 8% 82%, var(--blob-4), transparent 70%),
+    var(--page);
+  filter: saturate(115%);
+}
+button, select, input { font: inherit; color: inherit; }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 20px 16px 64px; }
+
+/* Verre : surface translucide, flou d'arrière-plan, liseré lumineux, ombre douce */
+.glass, .card, header.top, .tip, .note, select, input[type=email], input[type=search], .btn {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-edge-2);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-edge), inset 0 -1px 0 var(--glass-edge-2);
+}
+.card { border-radius: 22px; padding: 18px 20px; position: relative; overflow: hidden; }
+.card::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0) 38%);
+  opacity: .55; mix-blend-mode: soft-light;
+}
+.card > * { position: relative; z-index: 1; }
+
+header.top {
+  position: sticky; top: 10px; z-index: 10;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px;
+  margin-bottom: 18px; padding: 12px 14px 12px 20px; border-radius: 26px;
+  background: var(--glass-strong);
+}
+h1 { font-size: 22px; font-weight: 700; margin: 0; letter-spacing: -0.02em; }
+.sub { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+select, input[type=email], input[type=search] {
+  border-radius: 999px; padding: 8px 14px; min-height: 38px; outline: none; background: var(--glass-strong);
+}
+select:focus, input:focus { box-shadow: var(--glass-shadow), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.btn { border-radius: 999px; padding: 8px 16px; min-height: 38px; cursor: pointer; transition: transform .15s, background .15s; }
+.btn:hover { background: var(--glass-strong); }
+.btn:active { transform: scale(0.97); }
+.btn.primary { background: color-mix(in srgb, var(--accent) 88%, transparent); border-color: rgba(255,255,255,0.35); color: #fff; }
+.btn.primary:hover { background: var(--accent); }
+.btn.small { min-height: 30px; padding: 4px 12px; font-size: 13px; }
+.btn[disabled] { opacity: .55; cursor: default; }
+#theme { width: 38px; padding: 0; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font-weight: 550; }
+.grid { display: grid; gap: 14px; }
+.tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 14px; }
+details.tech > summary { cursor: pointer; list-style: none; }
+details.tech > summary::-webkit-details-marker { display: none; }
+details.tech > summary::before { content: '▸ '; }
+details.tech[open] > summary::before { content: '▾ '; }
+.two { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+@media (max-width: 900px) { .tiles { grid-template-columns: 1fr; } .two { grid-template-columns: 1fr; } header.top { position: static; } }
+.tile .label { color: var(--ink-2); font-size: 13px; font-weight: 500; }
+.tile .value { font-size: 30px; font-weight: 700; margin-top: 4px; letter-spacing: -0.02em; white-space: nowrap; }
+@media (max-width: 520px) { .tile .value { font-size: 24px; } .card { padding: 16px; border-radius: 20px; } }
+.tile .delta { font-size: 13px; margin-top: 2px; color: var(--ink-2); }
+.delta .up { color: var(--good); font-weight: 650; }
+.delta .down { color: var(--bad); font-weight: 650; }
+h2 { font-size: 15px; font-weight: 680; margin: 0; letter-spacing: -0.01em; }
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.card-head .hint { color: var(--muted); font-size: 12.5px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--ink-2); margin: 2px 0 8px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.sw.line { height: 2px; width: 14px; border-radius: 1px; }
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.axis text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tip {
+  position: fixed; pointer-events: none; z-index: 30; color: var(--ink); background: var(--glass-strong);
+  border-radius: 14px; padding: 10px 12px; font-size: 12.5px; min-width: 180px; display: none;
+}
+.tip .t { font-weight: 680; margin-bottom: 4px; }
+.tip .r { display: flex; justify-content: space-between; gap: 14px; }
+.tip .r span:first-child { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-2); }
+.tip .r b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.tip hr { border: 0; border-top: 1px solid var(--grid); margin: 5px 0; }
+.hbars { display: grid; gap: 8px; }
+.hb { display: grid; grid-template-columns: minmax(120px, 34%) 1fr auto; align-items: center; gap: 10px; font-size: 13px; }
+.hb .l { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hb .track { height: 16px; position: relative; background: var(--bar-track); border-radius: 999px; }
+.hb .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--bar); border-radius: 999px; min-width: 4px; }
+.hb .v { font-variant-numeric: tabular-nums; min-width: 92px; text-align: right; }
+.hb .v small { color: var(--muted); margin-left: 6px; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { padding: 8px 8px; border-bottom: 1px solid var(--grid); text-align: left; vertical-align: middle; }
+th { color: var(--muted); font-weight: 550; font-size: 12px; white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+tbody tr:hover td { background: var(--surface-2); }
+tbody tr:last-child td { border-bottom: 0; }
+.tbl-wrap { overflow-x: auto; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; border: 1px solid var(--ring); }
+.pill.ok { color: var(--good); }
+.note { color: var(--warn-ink); border-radius: 16px; padding: 11px 16px; font-size: 13px; margin-bottom: 12px; background: var(--warn-bg); }
+.section-title { font-size: 12.5px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin: 30px 4px 10px; }
+.kv { display: grid; grid-template-columns: 1fr auto; gap: 7px 16px; font-size: 13px; }
+.kv div:nth-child(odd) { color: var(--ink-2); }
+.kv div:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+#login { max-width: 440px; margin: 14vh auto 0; }
+#login h1 { margin-bottom: 6px; }
+#login form { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+#login input { flex: 1; min-width: 200px; }
+.muted { color: var(--muted); }
+.hidden { display: none !important; }
+.row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
+.row-actions select { min-height: 30px; padding: 3px 10px; font-size: 12.5px; }
+.progress { font-size: 12.5px; color: var(--ink-2); }
+footer { margin-top: 36px; color: var(--muted); font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 0 4px; }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .card, header.top, .tip, .note, select, input, .btn { background: var(--surface); }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .card, header.top, .tip, select, input, .btn { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+
+/* ===== Liquid Glass (boutons, sélecteurs, champs) =====
+   Verre clair peu dépoli, liseré spéculaire (haut-gauche vif, bas-droit plus doux),
+   reflet bombé, ombre portée légère, enfoncement élastique au clic. */
+:root {
+  --lg-fill: rgba(255,255,255,0.30);
+  --lg-fill-hover: rgba(255,255,255,0.46);
+  --lg-rim-a: rgba(255,255,255,0.98);
+  --lg-rim-b: rgba(255,255,255,0.10);
+  --lg-rim-c: rgba(255,255,255,0.70);
+  --lg-sheen: rgba(255,255,255,0.65);
+  --lg-drop: 0 6px 18px rgba(20,30,60,0.12), 0 1px 3px rgba(20,30,60,0.10);
+  --lg-inner: inset 0 -1px 1px rgba(20,30,60,0.06), inset 0 1px 0 rgba(255,255,255,0.55);
+  --lg-menu: rgba(250,251,255,0.62);
+  --lg-hl: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --lg-fill: rgba(255,255,255,0.07);
+    --lg-fill-hover: rgba(255,255,255,0.13);
+    --lg-rim-a: rgba(255,255,255,0.55);
+    --lg-rim-b: rgba(255,255,255,0.04);
+    --lg-rim-c: rgba(255,255,255,0.28);
+    --lg-sheen: rgba(255,255,255,0.16);
+    --lg-drop: 0 8px 22px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.35);
+    --lg-inner: inset 0 -1px 1px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.14);
+    --lg-menu: rgba(38,40,48,0.62);
+    --lg-hl: color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+}
+:root[data-theme="dark"] {
+  --lg-fill: rgba(255,255,255,0.07);
+  --lg-fill-hover: rgba(255,255,255,0.13);
+  --lg-rim-a: rgba(255,255,255,0.55);
+  --lg-rim-b: rgba(255,255,255,0.04);
+  --lg-rim-c: rgba(255,255,255,0.28);
+  --lg-sheen: rgba(255,255,255,0.16);
+  --lg-drop: 0 8px 22px rgba(0,0,0,0.45), 0 1px 3px rgba(0,0,0,0.35);
+  --lg-inner: inset 0 -1px 1px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.14);
+  --lg-menu: rgba(38,40,48,0.62);
+  --lg-hl: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.btn {
+  position: relative; isolation: isolate; border: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 9px 18px; min-height: 40px; font-weight: 560; letter-spacing: -0.01em;
+  background: var(--lg-fill);
+  -webkit-backdrop-filter: blur(8px) saturate(190%) brightness(1.04);
+  backdrop-filter: blur(8px) saturate(190%) brightness(1.04);
+  box-shadow: var(--lg-drop), var(--lg-inner);
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1), background .2s, box-shadow .2s;
+  -webkit-tap-highlight-color: transparent;
+}
+/* liseré spéculaire : dégradé détouré en anneau de 1 px */
+.btn::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1; pointer-events: none;
+  background: linear-gradient(140deg, var(--lg-rim-a) 0%, var(--lg-rim-b) 38%, var(--lg-rim-b) 62%, var(--lg-rim-c) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* reflet bombé en haut du verre */
+.btn::after {
+  content: ""; position: absolute; inset: 1px; border-radius: inherit; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 28% -10%, var(--lg-sheen), transparent 55%),
+    radial-gradient(80% 60% at 85% 120%, color-mix(in srgb, var(--lg-sheen) 45%, transparent), transparent 60%);
+  opacity: .85; transition: opacity .2s;
+}
+.btn:hover { background: var(--lg-fill-hover); }
+.btn:hover::after { opacity: 1; }
+.btn:active { transform: scale(0.955); transition-duration: .12s; }
+.btn:active::after { opacity: 1; filter: brightness(1.25); }
+.btn:focus-visible { outline: none; box-shadow: var(--lg-drop), var(--lg-inner), 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
+.btn.primary {
+  color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.18);
+  background: color-mix(in srgb, var(--accent) 78%, transparent);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 35%, transparent), var(--lg-inner);
+}
+.btn.primary:hover { background: color-mix(in srgb, var(--accent) 90%, transparent); }
+.btn.primary::after { background: radial-gradient(120% 90% at 28% -10%, rgba(255,255,255,0.55), transparent 55%); }
+.btn.small { min-height: 30px; padding: 4px 13px; font-size: 13px; }
+.btn[disabled] { opacity: .5; cursor: default; transform: none; }
+#theme { width: 40px; height: 40px; min-height: 40px; padding: 0; border-radius: 50%; font-size: 16px; }
+
+/* Sélecteur Liquid Glass (remplace l'affichage des <select> du haut) */
+.lg-native { position: absolute !important; opacity: 0; pointer-events: none; width: 1px; height: 1px; overflow: hidden; }
+.lg-select { justify-content: space-between; padding-right: 12px; max-width: 100%; }
+.filters { min-width: 0; max-width: 100%; }
+.filters .lg-select { flex: 0 1 auto; min-width: 0; }
+.lg-select .lg-val { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-select .lg-chev { width: 12px; height: 12px; flex: none; opacity: .7; transition: transform .3s cubic-bezier(.34,1.56,.64,1); }
+.lg-select[aria-expanded="true"] .lg-chev { transform: rotate(180deg); }
+.lg-menu {
+  position: fixed; z-index: 50; min-width: 200px; max-width: calc(100vw - 32px); max-height: 60vh; overflow: auto;
+  padding: 6px; border-radius: 20px;
+  background: var(--lg-menu);
+  -webkit-backdrop-filter: blur(30px) saturate(200%); backdrop-filter: blur(30px) saturate(200%);
+  box-shadow: 0 18px 50px rgba(15,20,40,0.22), 0 2px 6px rgba(15,20,40,0.12), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c);
+  transform-origin: top center; animation: lg-pop .32s cubic-bezier(.34,1.56,.64,1);
+}
+.lg-menu.up { transform-origin: bottom center; }
+@keyframes lg-pop { from { opacity: 0; transform: scale(.92) translateY(-4px); } to { opacity: 1; transform: none; } }
+.lg-opt {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  padding: 9px 12px 9px 10px; border: 0; border-radius: 13px; background: transparent; cursor: pointer;
+  font-size: 14px; color: var(--ink);
+}
+.lg-opt .ck { width: 16px; flex: none; color: var(--accent); visibility: hidden; font-weight: 700; }
+.lg-opt[aria-selected="true"] .ck { visibility: visible; }
+.lg-opt[aria-selected="true"] { font-weight: 600; }
+.lg-opt:hover, .lg-opt:focus-visible { outline: none; background: var(--lg-hl); }
+
+/* <select> natifs restants (tableaux) et champs texte : même verre, sans pseudo-éléments */
+select, input[type=email], input[type=search] {
+  border: 0; background-color: var(--lg-fill);
+  -webkit-backdrop-filter: blur(8px) saturate(190%); backdrop-filter: blur(8px) saturate(190%);
+  box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), inset 0 -1px 1px rgba(20,30,60,0.06);
+  transition: background-color .2s, box-shadow .2s;
+}
+select {
+  -webkit-appearance: none; appearance: none; padding-right: 32px; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5l3 3 3-3' fill='none' stroke='%238a8a93' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center; background-size: 12px;
+}
+select:hover, input[type=email]:hover, input[type=search]:hover { background-color: var(--lg-fill-hover); }
+select:focus, input:focus { box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), 0 0 0 3px color-mix(in srgb, var(--accent) 35%, transparent); }
+.row-actions select { padding-right: 28px; background-position: right 10px center; }
+
+/* ===== Menu latéral Liquid Glass (capsule de verre clair, lentille active qui glisse) ===== */
+:root {
+  --rail-ink: #55555c;
+  --rail-on: var(--accent);
+  --rail-lens: rgba(255,255,255,0.72);
+  --rail-lens-shadow: 0 6px 16px rgba(20,30,60,0.16), 0 1px 3px rgba(20,30,60,0.10);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --rail-ink: #a9a9b2; --rail-lens: rgba(255,255,255,0.16); --rail-lens-shadow: 0 6px 16px rgba(0,0,0,0.45); }
+}
+:root[data-theme="dark"] { --rail-ink: #a9a9b2; --rail-lens: rgba(255,255,255,0.16); --rail-lens-shadow: 0 6px 16px rgba(0,0,0,0.45); }
+.rail {
+  position: fixed; left: 20px; top: 50%; transform: translateY(-50%); z-index: 20;
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px; border-radius: 999px;
+  background: var(--lg-fill); isolation: isolate;
+  -webkit-backdrop-filter: blur(14px) saturate(190%) brightness(1.05); backdrop-filter: blur(14px) saturate(190%) brightness(1.05);
+  box-shadow: var(--lg-drop), var(--lg-inner);
+}
+/* liseré spéculaire */
+.rail::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; z-index: -1; pointer-events: none;
+  background: linear-gradient(160deg, var(--lg-rim-a) 0%, var(--lg-rim-b) 35%, var(--lg-rim-b) 65%, var(--lg-rim-c) 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+}
+/* reflet bombé */
+.rail::after {
+  content: ""; position: absolute; inset: 1px; border-radius: inherit; z-index: -1; pointer-events: none;
+  background: radial-gradient(140% 40% at 30% 0%, var(--lg-sheen), transparent 70%), radial-gradient(120% 30% at 70% 100%, color-mix(in srgb, var(--lg-sheen) 40%, transparent), transparent 70%);
+  opacity: .8;
+}
+.rail-sep { width: 22px; height: 1px; background: var(--grid); margin: 4px 0; flex: none; }
+.rail-item {
+  position: relative; z-index: 1; width: 44px; height: 44px; flex: none; border: 0; border-radius: 50%; padding: 0;
+  display: grid; place-items: center; background: transparent; color: var(--rail-ink); cursor: pointer;
+  transition: color .25s, transform .35s cubic-bezier(.34,1.56,.64,1); -webkit-tap-highlight-color: transparent;
+}
+.rail-item[hidden] { display: none; }
+.rail-item svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.rail-item:hover { color: var(--ink); }
+.rail-item[aria-current="true"] { color: var(--rail-on); }
+.rail-item[aria-current="true"] svg { stroke-width: 2; }
+.rail-item:active { transform: scale(0.9); }
+.rail-item:focus-visible { outline: none; box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 60%, transparent); }
+/* lentille de verre sous l'icône active */
+.rail-pill {
+  position: absolute; left: 0; top: 0; width: 44px; height: 44px; border-radius: 50%; z-index: 0; pointer-events: none;
+  background: radial-gradient(120% 90% at 30% -10%, var(--lg-sheen), transparent 60%), var(--rail-lens);
+  -webkit-backdrop-filter: blur(4px) saturate(160%); backdrop-filter: blur(4px) saturate(160%);
+  box-shadow: var(--rail-lens-shadow), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c), inset 0 -1px 1px rgba(20,30,60,0.08);
+  transition: transform .5s cubic-bezier(.34,1.45,.64,1), opacity .2s;
+}
+/* étiquette au survol, en verre, à droite de la capsule */
+.rail-item::after {
+  content: attr(data-label); position: absolute; left: calc(100% + 18px); top: 50%; white-space: nowrap;
+  padding: 6px 12px; border-radius: 12px; font-size: 13px; font-weight: 560; color: var(--ink);
+  background: var(--lg-menu); -webkit-backdrop-filter: blur(24px) saturate(190%); backdrop-filter: blur(24px) saturate(190%);
+  box-shadow: 0 8px 24px rgba(15,20,40,0.18), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c);
+  opacity: 0; transform: translate(-6px, -50%) scale(.96); transition: opacity .18s, transform .3s cubic-bezier(.34,1.56,.64,1); pointer-events: none;
+}
+.rail-item:hover::after, .rail-item:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
+[data-sec] { scroll-margin-top: 104px; }
+@media (min-width: 901px) { #app { padding-left: 96px; } }
+@media (min-width: 901px) and (max-height: 520px) { .rail { top: 16px; transform: none; } }
+@media (max-width: 900px) {
+  .rail { left: 50%; top: auto; bottom: calc(14px + env(safe-area-inset-bottom)); transform: translateX(-50%); flex-direction: row; padding: 6px; }
+  .rail-sep { width: 1px; height: 22px; margin: 0 2px; }
+  .rail-item::after { display: none; }
+  #app { padding-bottom: 110px; }
+  [data-sec] { scroll-margin-top: 16px; }
+}
+
+@media (prefers-reduced-motion: reduce) { .btn, .lg-menu, .lg-select .lg-chev, .rail-pill, .rail-item, .rail-item::after { transition: none; animation: none; } }
+@media (prefers-reduced-transparency: reduce) {
+  .btn, select, input, .lg-menu { background-color: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .btn.primary { background: var(--accent); }
+}
+/* Réglage « Réduire les animations » */
+:root[data-motion="reduce"] *, :root[data-motion="reduce"] *::before, :root[data-motion="reduce"] *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+/* Réglage « Taille du texte » */
+:root[data-texte="grand"] body { zoom: 1.1; }
+/* ===== Chargement SHINE : barre en haut, puis pastille au logo si le chargement dure ===== */
+.chargement { position: fixed; inset: 0; z-index: 35; pointer-events: none; visibility: hidden; }
+.chargement.actif { visibility: visible; }
+.chg-barre { position: absolute; left: 0; right: 0; top: 0; height: 3px; overflow: hidden; }
+.chg-barre i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(0);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 40%, transparent), var(--accent) 60%, #8cc0ff);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 70%, transparent); }
+.chargement.actif .chg-barre i { transition: transform .35s cubic-bezier(.3,.7,.4,1); }
+.chargement.fini .chg-barre { opacity: 0; transition: opacity .3s .2s; }
+.chg-pastille { position: absolute; left: 50%; top: 50%; display: grid; justify-items: center; gap: 12px; padding: 22px 28px 18px; border-radius: 24px;
+  background: var(--glass-strong); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--glass-edge-2); box-shadow: 0 20px 50px rgba(15,20,40,0.20), inset 0 1px 0 var(--glass-edge);
+  opacity: 0; transform: translate(-50%, -50%) scale(.94); transition: opacity .25s, transform .4s cubic-bezier(.34,1.56,.64,1); }
+@media (min-width: 901px) { .chg-pastille { left: calc(50% + 48px); } }
+.chargement.logo:not(.fini) .chg-pastille { opacity: 1; transform: translate(-50%, -50%); }
+.chg-logo { width: 150px; height: auto; overflow: visible; color: var(--ink); }
+.chg-logo .chg-fond { fill: currentColor; opacity: .82; }
+.chg-logo .chg-reflet { animation: chg-reflet 1.3s cubic-bezier(.45,0,.3,1) infinite; }
+@keyframes chg-reflet { from { transform: translateX(-30px); } to { transform: translateX(125px); } }
+.chg-piste { width: 150px; height: 3px; border-radius: 2px; background: var(--bar-track); overflow: hidden; }
+.chg-piste i { display: block; width: 38%; height: 100%; border-radius: inherit; background: var(--accent); animation: chg-piste 1.1s ease-in-out infinite; }
+@keyframes chg-piste { from { transform: translateX(-100%); } to { transform: translateX(265%); } }
+/* Contenu atténué pendant le chargement (après un court délai pour ne pas clignoter) */
+body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: opacity .25s .3s; }
+#app > :not(.rail):not(header) { transition: opacity .2s; }
+@media (prefers-reduced-motion: reduce) { .chg-logo .chg-reflet, .chg-piste i { animation: none; } .chg-piste i { width: 100%; opacity: .5; } }
+:root[data-motion="reduce"] .chg-logo .chg-reflet { animation: none; opacity: 0; }
+@media (prefers-reduced-transparency: reduce) { .chg-pastille { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+</style>
+<style>
+/* ===== Board Factures : compléments ===== */
+:root { --ok-bg: rgba(27,175,122,0.16); --ok-ink: #0b6b47; --ko-bg: rgba(211,69,47,0.14); --ko-ink: #a1301f; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ok-bg: rgba(48,192,120,0.16); --ok-ink: #6fdca8; --ko-bg: rgba(240,106,82,0.16); --ko-ink: #ff9d8a; } }
+:root[data-theme="dark"] { --ok-bg: rgba(48,192,120,0.16); --ok-ink: #6fdca8; --ko-bg: rgba(240,106,82,0.16); --ko-ink: #ff9d8a; }
+.rail-item { position: relative; }
+.rail-nb { position: absolute; top: 3px; right: 2px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: #c2410c; color: #fff; font-size: 10.5px; font-weight: 700; line-height: 17px; text-align: center; pointer-events: none; }
+.rail-nb.hidden { display: none; }
+.tiles.quatre { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 1000px) { .tiles.quatre { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.tile .value { font-size: 26px; }
+.tile .cmp { font-size: 12.5px; color: var(--muted); margin-top: 1px; }
+.seg { display: inline-flex; padding: 3px; border-radius: 999px; background: var(--lg-fill); box-shadow: var(--lg-drop), var(--lg-inner); flex-wrap: wrap; }
+.seg button { border: 0; background: none; font: inherit; font-size: 13px; font-weight: 580; color: var(--ink-2); padding: 6px 12px; border-radius: 999px; cursor: pointer; min-height: 32px; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(15,20,40,0.16); }
+.board-menu .lg-opt small, .lg-menu .lg-opt small { color: var(--muted); font-size: 12px; margin-left: auto; }
+.vide { padding: 18px; text-align: center; color: var(--muted); font-size: 13px; }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; border: 1px solid var(--grid); }
+.pill.warn { color: var(--warn-ink); background: var(--warn-bg); border-color: transparent; }
+.pill.ok { color: var(--ok-ink); background: var(--ok-bg); border-color: transparent; }
+.pill.ko { color: var(--ko-ink); background: var(--ko-bg); border-color: transparent; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); cursor: pointer; font: inherit; font-weight: 550; }
+input.recherche { min-height: 38px; border-radius: 999px; padding: 7px 14px; border: 0; background: var(--lg-fill); color: var(--ink); box-shadow: var(--lg-drop), inset 0 1px 0 var(--lg-rim-a), inset 0 0 0 0.5px var(--lg-rim-c); font: inherit; font-size: 13.5px; width: 220px; }
+/* File des factures à vérifier */
+.fa-item { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; padding: 14px 0; border-top: 1px solid var(--grid); }
+.fa-item:first-child { border-top: 0; padding-top: 4px; }
+.fa-item .grow { flex: 1; min-width: 0; }
+.fa-titre { font-size: 14px; font-weight: 650; }
+.fa-detail { font-size: 12.8px; color: var(--ink-2); margin-top: 4px; line-height: 1.5; }
+.fa-detail .muted { color: var(--muted); }
+.fa-form { display: grid; grid-template-columns: minmax(150px, 1fr) 130px; gap: 6px; width: 360px; max-width: 100%; flex: none; }
+.fa-form input:not([type="checkbox"]) { min-height: 32px; padding: 4px 10px; font-size: 13px; border-radius: 10px; border: 1px solid var(--grid); background: var(--surface-2); color: var(--ink); min-width: 0; font-family: inherit; }
+.fa-form input:not([type="checkbox"]):focus { outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.fa-retenir { grid-column: 1 / -1; font-size: 12.5px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+.fa-boutons { grid-column: 1 / -1; display: flex; gap: 6px; justify-content: flex-end; }
+.btn.small { min-height: 32px; padding: 4px 14px; font-size: 13px; }
+@media (max-width: 760px) { .fa-item { flex-direction: column; } .fa-form { width: 100%; } .fa-boutons { justify-content: flex-start; } input.recherche { width: 100%; } }
+td .muted { color: var(--muted); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="login" class="wrap hidden">
+  <div class="card">
+    <h1>Factures SHINE</h1>
+    <div class="sub">Accès réservé. Connecte-toi depuis le board Ventes (e-mail et mot de passe) : la connexion vaut pour tous les boards.</div>
+    <p><a class="btn primary" href="./">Se connecter</a></p>
+  </div>
+</div>
+
+<div id="denied" class="wrap hidden">
+  <div class="card">
+    <h1>Accès non autorisé</h1>
+    <div class="sub" id="denied-msg"></div>
+    <p><a class="btn" href="./">Retour au board Ventes</a> <button class="btn" id="logout-2">Se déconnecter</button></p>
+  </div>
+</div>
+
+<div id="app" class="wrap hidden">
+  <nav class="rail" id="rail" aria-label="Onglets du board Factures">
+    <span class="rail-pill" id="rail-pill" aria-hidden="true"></span>
+    <button class="rail-item" data-vue="verifier" data-label="À vérifier" aria-label="À vérifier"><svg viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 4.5V3.5h6v1M8.5 12.3l2.2 2.2 4.8-5"/></svg><span class="rail-nb hidden" id="nb-verifier"></span></button>
+    <button class="rail-item" data-vue="traitees" data-label="Factures traitées" aria-label="Factures traitées"><svg viewBox="0 0 24 24"><path d="M7 3.5h7l4 4v13H7z"/><path d="M14 3.5v4h4M9.5 13h6M9.5 16.5h6"/></svg></button>
+    <button class="rail-item" data-vue="fournisseurs" data-label="Règles fournisseurs" aria-label="Règles fournisseurs"><svg viewBox="0 0 24 24"><path d="M4 8.5h16v11H4zM8 8.5V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2.5M4 13h16"/></svg></button>
+    <span class="rail-sep" aria-hidden="true"></span>
+    <button class="rail-item" id="rail-boards" data-label="Changer de board" aria-label="Changer de board" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></button>
+  </nav>
+
+  <header class="top">
+    <div>
+      <h1>Factures<span id="vue-titre"></span></h1>
+      <div class="sub" id="fresh">Chargement…</div>
+    </div>
+    <div class="filters">
+      <input type="search" class="recherche" id="f-recherche" placeholder="Chercher un fournisseur, un compte…" aria-label="Chercher">
+      <button class="btn" id="theme" title="Changer de thème" aria-label="Changer de thème">◐</button>
+    </div>
+  </header>
+
+  <div class="grid tiles quatre" id="tuiles"></div>
+
+  <!-- ===== À vérifier ===== -->
+  <section data-panel="verifier">
+    <div class="card" style="margin-top:14px">
+      <div class="card-head">
+        <h2>Factures à vérifier</h2>
+        <span class="hint">ce que les règles n'ont pas classé seules · « Retenir » apprend la règle pour la prochaine fois</span>
+      </div>
+      <div id="fa-liste"><div class="vide">Chargement…</div></div>
+      <datalist id="fa-fournisseurs"></datalist>
+    </div>
+  </section>
+
+  <!-- ===== Traitées ===== -->
+  <section data-panel="traitees" class="hidden">
+    <div class="card" style="margin-top:14px">
+      <div class="card-head">
+        <h2>Factures traitées ces 60 jours</h2>
+        <span class="seg" id="f-traitees" role="group" aria-label="Filtre"><button data-v="tout" aria-pressed="true">Toutes</button><button data-v="classee" aria-pressed="false">Classées seules</button><button data-v="validee" aria-pressed="false">Validées à la main</button><button data-v="ecartee" aria-pressed="false">Écartées</button></span>
+      </div>
+      <div class="tbl-wrap" id="tbl-traitees"></div>
+    </div>
+  </section>
+
+  <!-- ===== Règles fournisseurs ===== -->
+  <section data-panel="fournisseurs" class="hidden">
+    <div class="card" style="margin-top:14px">
+      <div class="card-head">
+        <h2>Règles fournisseurs</h2>
+        <span class="seg" id="f-fournisseurs" role="group" aria-label="Filtre"><button data-v="tout" aria-pressed="true">Tous</button><button data-v="ok" aria-pressed="false">Prêts</button><button data-v="a_valider" aria-pressed="false">À valider</button><button data-v="eclater" aria-pressed="false">Éclatés ligne à ligne</button></span>
+      </div>
+      <div class="sub" style="margin:0 0 10px">Le fournisseur décide du compte : un fournisseur « prêt » est classé tout seul, un fournisseur « à valider » envoie ses factures dans la file. Montant = grand livre 2025-2026.</div>
+      <div class="tbl-wrap" id="tbl-fournisseurs"></div>
+    </div>
+  </section>
+
+  <footer><span id="who"></span><button class="link" id="logout">Se déconnecter</button></footer>
+</div>
+
+<!-- Chargement SHINE (voir chargement.debut / chargement.fin) -->
+<div class="chargement" id="chargement" aria-hidden="true">
+  <div class="chg-barre"><i></i></div>
+  <div class="chg-pastille">
+    <svg class="chg-logo" viewBox="-1 -1 111.65 21.08">
+      <defs>
+        <path id="chg-forme" d="M 8.1448219,7.6754597 H 18.194705 c 4.50036,0 6.930002,1.684184 6.930002,5.0525513 0,3.782511 -2.291594,6.046496 -7.923946,6.046496 H 0 L 3.6720729,14.025661 H 17.642514 c 1.352869,0 1.960279,-0.386534 1.960279,-1.352869 0,-0.938725 -0.60741,-1.325259 -1.960279,-1.325259 H 7.5926309 c -4.7488454,0 -6.9300013,-2.1259373 -6.9300013,-5.3010373 0,-3.478806 2.3192038,-5.7427905 7.9239453,-5.7427905 H 24.627735 L 20.955662,5.1077697 H 8.1448219 c -1.325259,0 -1.960279,0.331315 -1.960279,1.270041 0,0.938725 0.63502,1.297649 1.960279,1.297649 z M 50.0807,0.3037052 V 18.774507 H 44.393129 V 11.651238 H 33.404521 v 7.123269 H 27.66173 V 0.3037052 h 5.742791 V 6.8471727 H 44.393129 V 0.3037052 Z m 9.316947,0 V 18.774507 h -5.71518 V 0.3037052 Z M 81.674921,19.078212 c -0.717849,0 -1.408088,-0.165657 -2.291594,-0.993944 L 68.063404,7.9239457 V 18.774507 H 62.872805 V 3.4511957 C 62.872805,0.9939444 64.363721,0 65.992686,0 66.682925,0 67.373164,0.1656574 68.28428,0.9939444 L 79.604203,11.154266 V 0.3037052 h 5.218209 V 15.599406 c 0,2.457252 -1.490917,3.478806 -3.147491,3.478806 z m 12.260416,-5.052551 h 15.710143 l -3.67207,4.748846 H 88.192554 V 0.3037052 h 21.397706 l -3.69968,4.8040645 H 93.935337 v 2.208766 H 108.56871 L 105.28317,11.51319 H 93.935337 Z"/>
+        <clipPath id="chg-clip"><use href="#chg-forme"/></clipPath>
+        <linearGradient id="chg-degrade" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".9"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+      <use href="#chg-forme" class="chg-fond"/>
+      <g clip-path="url(#chg-clip)"><g transform="skewX(-20)"><rect class="chg-reflet" x="0" y="-6" width="18" height="32" fill="url(#chg-degrade)"/></g></g>
+    </svg>
+    <div class="chg-piste"><i></i></div>
+  </div>
+</div>
+<div class="sr-chg" id="chg-statut" role="status" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></div>
+
+<div class="tip" id="tip"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js"></script>
+<script>
+(() => {
+// Board Factures (rangeur de factures V5) : la file « à vérifier », les factures traitées et les règles fournisseurs.
+// Données : fonctions factures_a_verifier_liste, factures_fournisseurs_liste, traiter_facture, acces_factures (Supabase).
+// Accès réservé : rôle admin, ou acces_board.boards.factures = lecture | valideur | admin.
+const SUPABASE_URL = 'https://dfolpanugctzebwpfhze.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_k4fwRYCWpfxHvljJgQDiiw_wLCnxu3n';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: true, detectSessionInUrl: true } });
+const DRIVE_A_VERIFIER = 'https://drive.google.com/drive/folders/1yotLfi9VKbnzQbRdrR4m3Vl2x5By9LSy';
+const DRIVE_DEPOT = 'https://drive.google.com/drive/folders/1HBHNC6jxvKC3S0p4QS1Ha3XTnRA1VgLm';
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtN = (v, dec = 0) => (v == null || isNaN(v)) ? '–' : new Intl.NumberFormat('fr-FR', { maximumFractionDigits: dec, minimumFractionDigits: dec }).format(v);
+const fmtE = (v, dec = 0) => (v == null || isNaN(v)) ? '–' : fmtN(v, dec) + ' €';
+const fmtD = d => d ? new Date(d + (d.length === 10 ? 'T00:00:00' : '')).toLocaleDateString('fr-FR') : 'sans date';
+const montant = r => r.montant_ttc == null ? '–' : r.devise && r.devise !== 'EUR' ? `${fmtN(+r.montant_ttc, 2)} ${esc(r.devise)}` : fmtE(+r.montant_ttc, 2);
+
+const S = { acces: null, droit: null, vue: 'verifier', rows: [], fournisseurs: [], fTraitees: 'tout', fFournisseurs: 'tout', q: '' };
+const VUES = { verifier: 'À vérifier', traitees: 'Traitées', fournisseurs: 'Règles fournisseurs' };
+const peutValider = () => ['valideur', 'admin'].includes(S.droit);
+const cherche = (...champs) => !S.q || champs.join(' ').toLowerCase().includes(S.q);
+
+// ---------- Thème ----------
+(function initTheme() {
+  let t = null; try { t = localStorage.getItem('shine-theme'); } catch (e) {}
+  if (t) document.documentElement.setAttribute('data-theme', t);
+  $('theme').onclick = () => {
+    const cur = document.documentElement.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const nxt = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', nxt);
+    try { localStorage.setItem('shine-theme', nxt); } catch (e) {}
+    render();
+  };
+})();
+const pref = (k, def) => { try { const v = localStorage.getItem('shine-' + k); return v == null ? def : v; } catch (e) { return def; } };
+const setPref = (k, v) => { try { if (v == null) localStorage.removeItem('shine-' + k); else localStorage.setItem('shine-' + k, v); } catch (e) {} };
+// ---------- Chargement SHINE ----------
+const chargement = (() => {
+  const el = $('chargement'), barre = el.querySelector('.chg-barre i');
+  let n = 0, p = 0, avance, delai, nettoie;
+  const pos = v => { p = v; barre.style.transform = `scaleX(${v})`; };
+  return {
+    debut() {
+      if (n++) return;
+      clearTimeout(nettoie); el.classList.remove('fini', 'logo');
+      el.classList.add('actif'); requestAnimationFrame(() => pos(.12));
+      document.body.classList.add('en-chargement'); $('chg-statut').textContent = 'Chargement…';
+      avance = setInterval(() => pos(p + (.9 - p) * .1), 250);
+      delai = setTimeout(() => el.classList.add('logo'), 350);
+    },
+    fin() {
+      if (!n || --n) return;
+      clearInterval(avance); clearTimeout(delai); pos(1);
+      el.classList.add('fini'); document.body.classList.remove('en-chargement'); $('chg-statut').textContent = '';
+      nettoie = setTimeout(() => { el.classList.remove('actif', 'logo', 'fini'); pos(0); }, 550);
+    },
+  };
+})();
+// ---------- Données ----------
+async function charger() {
+  chargement.debut();
+  try {
+    const [l, f] = await Promise.all([sb.rpc('factures_a_verifier_liste'), sb.rpc('factures_fournisseurs_liste')]);
+    if (l.error) throw l.error;
+    S.rows = l.data || []; S.fournisseurs = f.data || [];
+    $('fa-fournisseurs').innerHTML = S.fournisseurs.map(x => `<option value="${esc(x.nom)}">`).join('');
+    $('fresh').innerHTML = `Mis à jour à ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · dépôt : <a href="${DRIVE_DEPOT}" target="_blank" rel="noopener">1 - A DEPOSER</a> · <a href="${DRIVE_A_VERIFIER}" target="_blank" rel="noopener">3 - A VERIFIER</a>`;
+    render();
+  } catch (e) { $('fa-liste').innerHTML = `<div class="vide">Liste indisponible : ${esc(e.message)}</div>`; }
+  finally { chargement.fin(); }
+}
+
+// ---------- Rendu ----------
+function render() {
+  const ouvertes = S.rows.filter(r => r.statut === 'a_verifier');
+  const nb = $('nb-verifier'); nb.textContent = ouvertes.length > 99 ? '99+' : ouvertes.length; nb.classList.toggle('hidden', !ouvertes.length);
+  const t = (label, v, cmp) => `<div class="card tile"><div class="label">${label}</div><div class="value">${v}</div><div class="cmp">${cmp}</div></div>`;
+  const aVal = S.fournisseurs.filter(f => f.statut === 'a_valider').length, prets = S.fournisseurs.filter(f => f.statut === 'ok').length;
+  $('tuiles').innerHTML = t('À vérifier', fmtN(ouvertes.length), `${fmtE(ouvertes.reduce((a, x) => a + (x.devise === 'EUR' ? +x.montant_ttc || 0 : 0), 0))} TTC en attente`)
+    + t('Classées seules', fmtN(S.rows.filter(r => r.statut === 'classee').length), 'ces 60 derniers jours')
+    + t('Validées à la main', fmtN(S.rows.filter(r => r.statut === 'validee').length), `dont ${S.rows.filter(r => r.regle_apprise).length} avec une règle apprise`)
+    + t('Règles fournisseurs', `${fmtN(prets)} prêtes`, `${fmtN(aVal)} à valider · ${fmtN(S.fournisseurs.length)} fournisseurs`);
+  document.querySelectorAll('[data-panel]').forEach(p => p.classList.toggle('hidden', p.dataset.panel !== S.vue));
+  $('vue-titre').textContent = S.vue === 'verifier' ? '' : ' · ' + VUES[S.vue];
+  if (S.vue === 'verifier') renderVerifier(ouvertes);
+  else if (S.vue === 'traitees') renderTraitees();
+  else renderFournisseurs();
+}
+
+function renderVerifier(ouvertes) {
+  const vis = ouvertes.filter(r => cherche(r.fournisseur, r.fournisseur_lu, r.num_facture, r.motif, r.suggestion));
+  if (!vis.length) { $('fa-liste').innerHTML = `<div class="vide">${ouvertes.length ? 'Aucune facture ne correspond à la recherche.' : 'Rien à vérifier : tout ce qui a été déposé est classé.'}</div>`; return; }
+  $('fa-liste').innerHTML = vis.map(r => {
+    const bloq = (r.controles || []).filter(c => c.effet === 'bloquant'), signaux = (r.controles || []).filter(c => c.effet !== 'bloquant');
+    const vent = (r.ventilation || []).map(v => `${esc(v.compte)} ${fmtE(+v.montant_ht || 0, 2)}`).join(' + ');
+    const pdf = r.drive_url ? ` · <a href="${esc(r.drive_url)}" target="_blank" rel="noopener">Voir le PDF</a>` : r.source === 'serveur' ? ' · PDF sur le serveur P:' : '';
+    const titre = `${esc(r.fournisseur || r.fournisseur_lu || 'Fournisseur inconnu')} · ${montant(r)} · ${fmtD(r.date_facture)}${r.num_facture ? ' · n° ' + esc(r.num_facture) : ''}`;
+    const detail = bloq.map(c => `<b>${esc(c.controle)}</b> : ${esc(c.detail)}`).join('<br>')
+      + (signaux.length ? `<br><span class="muted">${signaux.map(c => esc(c.detail)).join(' · ')}</span>` : '')
+      + `<br><span class="muted">${r.suggestion ? 'Nature lue : ' + esc(r.suggestion) + ' · ' : ''}${vent ? 'Proposé : ' + vent : 'Aucun compte proposé'}${r.fournisseur_lu && r.fournisseur_lu !== r.fournisseur ? ' · nom sur la facture : « ' + esc(r.fournisseur_lu) + ' »' : ''}${pdf}</span>`;
+    const compte = r.ventilation?.length === 1 ? r.ventilation[0].compte : '';
+    const act = peutValider() ? `<div class="fa-form">
+        <input list="fa-fournisseurs" data-fo="${r.id}" value="${esc(r.fournisseur_id ? r.fournisseur : '')}" placeholder="Fournisseur (ou nouveau nom)" aria-label="Fournisseur">
+        <input data-co="${r.id}" value="${esc(compte)}" placeholder="${r.ventilation?.length > 1 ? 'garder la ventilation' : 'Compte (ex. 60110000)'}" inputmode="numeric" aria-label="Compte">
+        <label class="fa-retenir"><input type="checkbox" data-re="${r.id}"> Retenir pour ce fournisseur</label>
+        <div class="fa-boutons"><button class="btn small primary" data-fa="${r.id}" data-a="valider">Valider</button><button class="btn small" data-fa="${r.id}" data-a="ecarter" title="Pas une facture à comptabiliser (proforma, doublon, facture d'une autre société…)">Écarter</button></div>
+      </div>` : '<span class="pill">lecture seule</span>';
+    return `<div class="fa-item"><div class="grow"><div class="fa-titre">${titre}</div><div class="fa-detail">${detail}</div></div>${act}</div>`;
+  }).join('');
+}
+
+function renderTraitees() {
+  const vis = S.rows.filter(r => r.statut !== 'a_verifier' && (S.fTraitees === 'tout' || r.statut === S.fTraitees) && cherche(r.fournisseur, r.num_facture, (r.ventilation || []).map(v => v.compte).join(' ')));
+  if (!vis.length) { $('tbl-traitees').innerHTML = '<div class="vide">Rien ici pour l\'instant.</div>'; return; }
+  const LIB = { classee: ['ok', 'Classée seule'], validee: ['ok', 'Validée'], ecartee: ['', 'Écartée'] };
+  $('tbl-traitees').innerHTML = `<table><thead><tr><th>Date</th><th>Fournisseur</th><th class="n">TTC</th><th>Comptes</th><th>Statut</th><th></th></tr></thead><tbody>` + vis.map(r => {
+    const [c, l] = LIB[r.statut] || ['', r.statut];
+    const comptes = (r.ventilation || []).map(v => `${esc(v.compte)} <span class="muted">${fmtE(+v.montant_ht || 0, 2)}</span>`).join('<br>') || '–';
+    const qui = r.valide_par ? `<br><span class="muted">${esc(r.valide_par)}${r.regle_apprise ? ' · ' + esc(r.regle_apprise) : ''}</span>` : '';
+    const pdf = r.drive_url ? `<a href="${esc(r.drive_url)}" target="_blank" rel="noopener">PDF</a>` : '';
+    const annuler = peutValider() && r.statut !== 'classee' ? ` <button class="link" data-fa="${r.id}" data-a="annuler">Remettre à vérifier</button>` : '';
+    return `<tr><td>${fmtD(r.date_facture)}</td><td>${esc(r.fournisseur || r.fournisseur_lu || '')}${r.num_facture ? `<br><span class="muted">n° ${esc(r.num_facture)}</span>` : ''}</td><td class="n">${montant(r)}</td><td>${comptes}</td><td><span class="pill ${c}">${l}</span>${qui}</td><td>${pdf}${annuler}</td></tr>`;
+  }).join('') + '</tbody></table>';
+}
+
+function renderFournisseurs() {
+  const f = S.fFournisseurs;
+  const vis = S.fournisseurs.filter(x => (f === 'tout' || (f === 'eclater' ? x.mode === 'eclater' : x.statut === f)) && cherche(x.nom, x.compte, (x.alias || []).join(' ')))
+    .sort((a, b) => (+b.montant_exercice || 0) - (+a.montant_exercice || 0));
+  if (!vis.length) { $('tbl-fournisseurs').innerHTML = '<div class="vide">Aucun fournisseur.</div>'; return; }
+  const ST = { ok: ['ok', 'prêt'], a_valider: ['warn', 'à valider'], hors: ['', 'hors périmètre'] };
+  $('tbl-fournisseurs').innerHTML = `<table><thead><tr><th>Fournisseur</th><th>Compte</th><th>Territoire</th><th>Règle</th><th class="n">2025-2026</th></tr></thead><tbody>` + vis.map(x => {
+    const [c, l] = ST[x.statut] || ['', x.statut];
+    return `<tr><td><b>${esc(x.nom)}</b>${x.alias?.length ? `<br><span class="muted">${esc(x.alias.slice(0, 6).join(' · '))}${x.alias.length > 6 ? '…' : ''}</span>` : ''}</td>
+      <td>${x.mode === 'eclater' ? '<span class="muted">ligne à ligne</span>' : esc(x.compte || '–')}</td><td>${esc(x.territoire || '–')}${x.regime_tva && x.regime_tva !== 'FR' ? `<br><span class="muted">${esc(x.regime_tva.replace(/_/g, ' ').toLowerCase())}</span>` : ''}</td>
+      <td><span class="pill ${c}">${l}</span>${x.motifs?.length ? `<br><span class="muted">${esc(x.motifs.join(' ; '))}</span>` : ''}${x.modifie_par ? `<br><span class="muted">modifié par ${esc(x.modifie_par)}</span>` : ''}</td>
+      <td class="n">${x.montant_exercice ? fmtE(+x.montant_exercice) : '–'}</td></tr>`;
+  }).join('') + '</tbody></table>';
+}
+
+// ---------- Actions ----------
+// Choisir un fournisseur connu pré-remplit son compte
+$('fa-liste').addEventListener('change', e => {
+  const i = e.target.closest('[data-fo]'); if (!i) return;
+  const f = S.fournisseurs.find(x => x.nom === i.value.trim()), c = $('fa-liste').querySelector(`[data-co="${i.dataset.fo}"]`);
+  if (f?.compte && c && !c.value) c.value = f.compte;
+});
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-fa]'); if (!b) return;
+  const id = +b.dataset.fa, a = b.dataset.a, p = { p_id: id, p_action: a };
+  if (a === 'valider') {
+    const nom = $('fa-liste').querySelector(`[data-fo="${id}"]`).value.trim(), f = S.fournisseurs.find(x => x.nom === nom);
+    p.p_compte = $('fa-liste').querySelector(`[data-co="${id}"]`).value.trim() || null;
+    p.p_retenir = $('fa-liste').querySelector(`[data-re="${id}"]`).checked;
+    if (f) p.p_fournisseur_id = f.id; else if (nom) p.p_nouveau = nom;
+    if (p.p_nouveau && !confirm(`Créer le fournisseur « ${nom} » ?`)) return;
+  }
+  b.disabled = true; const txt = b.textContent; b.textContent = '…';
+  const { error } = await sb.rpc('traiter_facture', p);
+  if (error) { alert(error.message); b.textContent = txt; b.disabled = false; return; }
+  await charger();
+});
+[['f-traitees', 'fTraitees'], ['f-fournisseurs', 'fFournisseurs']].forEach(([id, k]) => $(id).addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return; S[k] = b.dataset.v;
+  $(id).querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); render();
+}));
+$('f-recherche').addEventListener('input', () => { S.q = $('f-recherche').value.trim().toLowerCase(); render(); });
+
+// ---------- Sélecteurs ----------
+const VALUE = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value');
+let lgOpen = null;
+function lgClose(focusBtn) { if (!lgOpen) return; const { menu, btn } = lgOpen; lgOpen = null; menu.remove(); btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('pointerdown', lgOutside, true); if (focusBtn) btn.focus(); }
+function lgOutside(e) { if (lgOpen && !lgOpen.menu.contains(e.target) && !lgOpen.btn.contains(e.target)) lgClose(false); }
+function placer(menu, btn, cls) {
+  const r = btn.getBoundingClientRect(); menu.style.minWidth = Math.max(220, r.width) + 'px';
+  const m = { width: menu.offsetWidth, height: menu.offsetHeight };
+  let left = Math.max(16, Math.min(r.left, innerWidth - 16 - m.width));
+  if (cls === 'board-menu' && innerWidth > 900) { left = r.right + 14; menu.style.top = Math.max(16, Math.min(r.top - 8, innerHeight - m.height - 16)) + 'px'; }
+  else { const bas = r.bottom + 8 + m.height <= innerHeight - 8 || r.top < m.height + 16; if (bas) menu.style.top = (r.bottom + 8) + 'px'; else { menu.style.top = (r.top - 8 - m.height) + 'px'; menu.classList.add('up'); } }
+  menu.style.left = left + 'px';
+}
+function ouvrirMenu(btn, items, onPick, cls) {
+  if (lgOpen && lgOpen.btn === btn) return lgClose(false);
+  lgClose(false);
+  const menu = document.createElement('div'); menu.className = 'lg-menu ' + (cls || ''); menu.setAttribute('role', 'listbox');
+  menu.innerHTML = items.map((o, i) => `<button type="button" class="lg-opt" role="option" data-i="${i}" aria-selected="${!!o.sel}"><span class="ck">✓</span><span>${esc(o.t)}</span>${o.small ? `<small>${esc(o.small)}</small>` : ''}</button>`).join('');
+  document.body.appendChild(menu); placer(menu, btn, cls);
+  btn.setAttribute('aria-expanded', 'true'); lgOpen = { menu, btn };
+  const opts = [...menu.querySelectorAll('.lg-opt')];
+  opts.forEach(b => b.addEventListener('click', () => { lgClose(true); onPick(items[+b.dataset.i]); }));
+  menu.addEventListener('keydown', e => { const k = opts.indexOf(document.activeElement); if (e.key === 'ArrowDown') { e.preventDefault(); opts[Math.min(opts.length - 1, k + 1)].focus(); } else if (e.key === 'ArrowUp') { e.preventDefault(); opts[Math.max(0, k - 1)].focus(); } else if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); lgClose(true); } });
+  (opts.find(b => b.getAttribute('aria-selected') === 'true') || opts[0])?.focus({ preventScroll: true });
+  setTimeout(() => document.addEventListener('pointerdown', lgOutside, true));
+}
+// ---------- Menu latéral et changement de board ----------
+const BOARDS = [
+  { k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients' },
+  { k: 'achats', t: 'Achats', href: './#achats', small: 'matières premières, par fournisseur' },
+  { k: 'charges', t: 'Charges', href: './#charges', small: 'salaires, transport, frais généraux…' },
+  { k: 'transport', t: 'Transport', href: './transport.html', small: 'coûts DPD et Colissimo par colis' },
+  { k: 'factures', t: 'Factures', href: './factures.html', small: 'factures d\'achat à vérifier' },
+  { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }
+];
+const railItems = [...document.querySelectorAll('.rail-item[data-vue]')];
+function railSync() { const a = railItems.find(b => b.dataset.vue === S.vue) || railItems[0]; railItems.forEach(b => b.setAttribute('aria-current', String(b === a))); $('rail-pill').style.transform = `translate(${a.offsetLeft}px, ${a.offsetTop}px)`; }
+function setVue(v) { S.vue = v; setPref('dernier-factures-onglet', v); history.replaceState(null, '', '#' + v); railSync(); render(); scrollTo({ top: 0 }); }
+railItems.forEach(b => b.addEventListener('click', () => setVue(b.dataset.vue)));
+addEventListener('resize', railSync);
+$('rail-boards').addEventListener('click', () => {
+  const acc = S.acces || {}; const ok = k => acc.role === 'admin' || (acc.boards && acc.boards[k]) || (['ventes', 'achats', 'charges', 'transport'].includes(k) && acc.role);
+  ouvrirMenu($('rail-boards'), BOARDS.filter(b => ok(b.k)).map(b => ({ ...b, sel: b.k === 'factures' })), b => { if (b.k !== 'factures') location.href = b.href; }, 'board-menu');
+});
+
+// ---------- Connexion ----------
+const logout = async () => { await sb.auth.signOut(); location.href = './'; };
+$('logout').onclick = logout; $('logout-2').onclick = logout;
+async function start(session) {
+  ['login', 'denied', 'app'].forEach(id => $(id).classList.add('hidden'));
+  if (!session) { $('login').classList.remove('hidden'); return; }
+  const [{ data: acces }, { data: droit }] = await Promise.all([sb.rpc('mon_acces'), sb.rpc('acces_factures')]);
+  if (!droit) { $('denied-msg').textContent = `${session.user.email} n'a pas accès au board Factures. Il est réservé : demande à Robin de t'ajouter.`; $('denied').classList.remove('hidden'); return; }
+  S.acces = acces || {}; S.droit = droit;
+  $('who').textContent = `Connecté : ${session.user.email}${peutValider() ? '' : ' (lecture seule)'}`;
+  $('app').classList.remove('hidden');
+  const h = location.hash.slice(1) || pref('dernier-factures-onglet', 'verifier'); if (VUES[h]) S.vue = h;
+  railSync(); await charger();
+}
+let started = false;
+sb.auth.onAuthStateChange((ev, session) => { if (ev === 'SIGNED_OUT') return; if (!started || ev === 'SIGNED_IN') { started = true; start(session); } });
+sb.auth.getSession().then(({ data }) => { if (!started) { started = true; start(data.session); } });
+})();
+</script>
+</body>
+</html>
