@@ -127,7 +127,8 @@ export function classer(l: Lecture, ctx: Contexte): Resultat {
     bloque(5, "Document qui n'est pas une facture", l.type_doc === "facture" || l.type_doc === "avoir" ? "mention proforma / devis / confirmation de commande dans le texte" : `document lu comme « ${l.type_doc} »`);
   if (l.type_doc === "autre") bloque(5, "Document qui n'est pas une facture", "ni facture ni avoir");
   // 6. Acompte
-  if (l.type_doc === "acompte" || / ACOMPTE | DEPOSIT | PREPAYMENT | BALANCE 70 /.test(texte))
+  // Le mot seul ne suffit pas : les conditions générales de vente parlent souvent d'acompte (Plast'Embal, 29/09)
+  if (l.type_doc === "acompte" || / FACTURE D ACOMPTE | DEMANDE D ACOMPTE | DEPOSIT INVOICE | PREPAYMENT INVOICE | ADVANCE PAYMENT | BALANCE 70 | 30 DEPOSIT /.test(texte))
     bloque(6, "Acompte", "un acompte n'est pas une charge : compte 4091");
   // 9. Destinataire
   const dest = norm(`${l.destinataire_nom ?? ""} ${l.destinataire_tva ?? ""}`);

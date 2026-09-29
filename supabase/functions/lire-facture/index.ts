@@ -99,15 +99,15 @@ Deno.serve(async (req) => {
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, { auth: { persistSession: false } });
 
   // Rejouer les règles sur une facture déjà lue (aucun appel à Claude)
-  if (corps.reclasser) {
-    const { data: fa, error } = await sb.from("factures_achats").select("id, fichier, lecture, texte").eq("id", corps.reclasser).single();
+  const reclasser = async (id: number) => {
+    const { data: fa, error } = await sb.from("factures_achats").select("id, fichier, lecture, texte").eq("id", id).single();
     if (error || !fa?.lecture) return json({ error: "Facture inconnue ou lue avant le rangeur V5 (pas de lecture gardée)" }, 404);
-    const ctx = await contexte(sb, fa.fichier, fa.texte, fa.id);
-    const r = classer(fa.lecture as Lecture, ctx);
+    const r = classer(fa.lecture as Lecture, await contexte(sb, fa.fichier, fa.texte, fa.id));
     const { error: e } = await sb.from("factures_achats").update(ligneDeBase(r)).eq("id", fa.id);
     if (e) return json({ error: "Écriture impossible : " + e.message }, 500);
-    return json({ id: fa.id, ...r, fournisseur: r.fournisseur?.nom ?? null });
-  }
+    return json({ id: fa.id, ...r, fournisseur: r.fournisseur?.nom ?? null, montant_ttc: (fa.lecture as Lecture).montant_ttc });
+  };
+  if (corps.reclasser) return await reclasser(corps.reclasser);
 
   const { fichier, pdf } = corps;
   const comparer = corps.comparer === true;
@@ -123,7 +123,9 @@ Deno.serve(async (req) => {
   if (!cle) return json({ error: "Secret ANTHROPIC_API_KEY absent dans Supabase" }, 500);
 
   if (!comparer) {
-    const { data: existe } = await sb.from("factures_achats").select("id, statut").eq("empreinte", empreinte).maybeSingle();
+    const { data: existe } = await sb.from("factures_achats").select("id, statut, drive_id").eq("empreinte", empreinte).maybeSingle();
+    // Le même fichier Drive qui revient (rangement interrompu) : on rejoue les règles et on le range, ce n'est pas un doublon
+    if (existe && corps.drive_id && existe.drive_id === corps.drive_id) return await reclasser(existe.id);
     if (existe) return json({ deja: true, id: existe.id, statut: existe.statut });
   }
   const texte = await texteDuPdf(octets);
