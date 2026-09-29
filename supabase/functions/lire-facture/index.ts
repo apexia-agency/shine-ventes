@@ -131,13 +131,12 @@ Deno.serve(async (req) => {
   const texte = await texteDuPdf(octets);
 
   const client = new Anthropic({ apiKey: cle });
-  let rep: Anthropic.Beta.BetaMessage;
+  let rep: Anthropic.Message;
   try {
-    rep = await client.beta.messages.create({
+    // Appel simple, sans le « fallback côté serveur » (bêta) : il renvoyait « 503 credential validation failed » le 29/09 à 16 h
+    rep = await client.messages.create({
       model: modele,
       max_tokens: 16000,
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default", // refus du modèle : bascule automatique côté serveur
       system: [{ type: "text", text: SYSTEME, cache_control: { type: "ephemeral" } }],
       thinking: { type: "adaptive" },
       output_config: { effort: "medium", format: { type: "json_schema", schema: SCHEMA } },
@@ -148,7 +147,7 @@ Deno.serve(async (req) => {
           { type: "text", text: `Nom du fichier déposé : ${fichier}` },
         ],
       }],
-    } as unknown as Anthropic.Beta.MessageCreateParamsNonStreaming) as Anthropic.Beta.BetaMessage;
+    } as unknown as Anthropic.MessageCreateParamsNonStreaming) as Anthropic.Message;
   } catch (e) {
     if (e instanceof Anthropic.RateLimitError) return json({ error: "Limite de débit Claude, réessayer plus tard" }, 429);
     if (e instanceof Anthropic.APIError) return json({ error: `Erreur Claude (${e.status ?? "?"}) : ${e.message}` }, 502);
