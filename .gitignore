@@ -1,2 +1,3 @@
 outils/factures/lire-factures.journal.json
 outils/factures/comparer-*.json
+node_modules/
