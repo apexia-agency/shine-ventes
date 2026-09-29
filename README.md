@@ -107,3 +107,8 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
   Fonctions : `factures_a_verifier_liste`, `factures_fournisseurs_liste`, `traiter_facture` (valider / écarter / annuler ; « Retenir » ajoute la règle au fournisseur), `acces_factures`.
 - Code : `supabase/functions/lire-facture/` (`index.ts` lecture, `moteur.ts` règles, testable hors ligne) ; `{ reclasser: id }` rejoue les règles sans rappeler Claude.
 - Questions ouvertes : comptes 61324000 / 61327000 de SCI CMD, polish Scholl (produit fini chimique ?), 13 comptes « à créer » par le comptable.
+- Rangement : `2 - CLASSEES / <exercice> / <mois> / <compte>_<LIBELLÉ>` (plan de comptes `factures_comptes`, fonction `factures_chemin_rangement`, sous-flux n8n « trouver ou créer un dossier »).
+- Export comptable : chaque nuit à 5 h 30 (flux n8n « export comptable mensuel »), pour le mois précédent et le mois en cours, `AAAA-MM_SHINE_ecritures_achats.csv`
+  (import du cabinet : Journal ; Date ; Société ; Pièce ; Tiers ; N° facture ; Compte ; Libellé ; Débit ; Crédit ; Fichier) et `AAAA-MM_SHINE_journal_achats.csv`
+  (30 colonnes, une ligne par facture) dans le dossier du mois. Fonction `factures_export_mois(mois)` ; pièces `AC-<exercice>-0001` attribuées au premier export.
+  TVA : FR déductible (44566, 44562 pour les immobilisations), non déductible (ajoutée à la charge), autoliquidation (445662 / 4452), sans TVA. Avoir : sens inversé.
