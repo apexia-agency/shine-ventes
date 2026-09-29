@@ -72,3 +72,22 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
 - Relu chaque lundi à 7h par le workflow n8n « IMPORT — Plan de trésorerie (achats et charges) vers le board », qui charge la table `tresorerie_mensuel` (fonction `charger_tresorerie`). Il refuse de charger si un onglet ne retombe pas sur sa ligne TOTAL.
 - Montants **payés en banque** (TTC quand il y a de la TVA), **mois réels seulement** (ceux où des encaissements sont constatés dans FLUX MENSUELS). Comparaison N-1 sur les mêmes mois.
 - Salaires en deux totaux (salaires, charges sociales), jamais le détail par personne. Space Up : seulement les prestations payées par SHINE. La TVA reversée est affichée à part, hors charges.
+
+## Board Transport (coûts des colis DPD et Colissimo)
+
+- `transport.html` : le board (même connexion que les autres, ouvert à tous les associés), par le bouton « Changer de board ».
+  Onglets : tableau de bord, régions, profil de fret (comparaison à poids égal, barème constaté, économies possibles), frais annexes, fichiers et couverture, comptes rendus mensuels.
+- Sources : exports Excel DPD (un par mois et par service : Relais, Predict, Classic + multi-colis) et factures PDF Colissimo, déposés dans l'onglet Fichiers.
+  Le même fichier (ou la même facture Colissimo sous un autre nom) n'est jamais compté deux fois. Les factures DPD en PDF ne sont pas lues (pas de détail par colis).
+- Lecture des fichiers : `transport-lecteurs.js` (dans le navigateur au dépôt, et `outils/transport/charger.mjs` pour charger un dossier entier).
+- Base : `transport_fichiers` (fichiers lus, statut intégré / doublon / retiré), `transport_colis` (une ligne par colis, sans nom ni adresse), `transport_comptes_rendus`.
+  Le board lit `transport_donnees(du, au)` (agrégats). Migrations `20260929_board_transport.sql` et `20260929_transport_tranche_multicolis.sql`.
+- Règles de coût : coût HT = transport + gasoil + taxes + annexes.
+  - DPD : « Prix cumulé » ne contient que le transport ; on ajoute l'indexation gasoil, la participation sûreté et la contribution logistique (taxes), et les colonnes « Fact. … » (annexes).
+    Une ligne à 0 colis = frais ajoutés après coup sur un colis déjà facturé (retour, SMS, relais non retiré…). Plusieurs colis sur une ligne = multi-colis (depuis juillet 2025).
+  - Colissimo : transport = port net, gasoil = CAE, taxes = décarbonation + SMIC, annexes = suppléments. Ce que le détail par colis n'explique pas (suppléments non rattachés, arrondis)
+    devient une ligne « ajustement de facture » : chaque facture retombe au centime sur son récapitulatif. Avoirs, indemnisations et prestations complémentaires restent au niveau de la facture.
+  - Colissimo nouveau format (depuis août 2026) : récapitulatif par service et par tarif, sans poids ni code postal (région « inconnue », poids « inconnu »).
+- Chargement initial (29/09/2026) : 83 exports DPD (janv. 2024 → mai 2026, 58 191 colis, 481 124 € HT) et 20 factures Colissimo (févr. 2025 → août 2026, 55 643 colis, 456 309 € HT).
+  Doublons écartés : « 2025-08 DPD RELAI.xlsx » (copie de juillet 2025), « 2026-01 DPD RELAI BIS », et 4 factures Colissimo en double.
+  Fichiers manquants : DPD Relais août 2025 et mars 2026, DPD Predict mars 2026, tout DPD depuis juin 2026.

@@ -138,7 +138,8 @@
         compte, nb, multi: nb > 1 || typeTxt.includes('multi'),
         date_envoi: d, num_facture: fac || null, num_colis: numColis,
         ref_envoi: ref ? empreinte('dpd|' + ref) : null,
-        colis: nb, poids_kg: kg > 0 ? r2(kg * 1000) / 1000 : null, cp, pays, region: region(cp, pays), tranche: nb ? tranche(kg) : 'frais',
+        // Multi-colis : le poids est celui de l'envoi ; la tranche se lit au poids moyen d'un colis
+        colis: nb, poids_kg: kg > 0 ? r2(kg * 1000) / 1000 : null, cp, pays, region: region(cp, pays), tranche: nb ? tranche(kg / nb) : 'frais',
         transport: r2(pt), gasoil: r2(gas), taxes: r2(tax), annexes: r2(ann), annexes_detail: Object.keys(det).length ? det : null,
         cle: empreinte(['dpd', fac, numColis, d, nb, kg, r2(pt), r2(gas), r2(tax), r2(ann)].join('|'))
       });

@@ -2259,6 +2259,7 @@ const BOARDS = [
   { k: 'ventes', t: 'Ventes', href: './', small: 'CA par famille de clients', vue: 'general' },
   { k: 'achats', t: 'Achats', href: './#achats', small: 'matières premières, par fournisseur', vue: 'achats' },
   { k: 'charges', t: 'Charges', href: './#charges', small: 'salaires, transport, frais généraux…', vue: 'charges' },
+  { k: 'transport', t: 'Transport', href: './transport.html', small: 'coûts DPD et Colissimo par colis' },
   { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }
 ];
 const boardCourant = () => VUES[S.vue].finance ? S.vue : 'ventes';
@@ -2267,7 +2268,7 @@ $('rail-boards').addEventListener('click', () => {
   if (lgOpen && lgOpen.btn === btn) return lgClose(false);
   lgClose(false);
   const a = S.acces || {};
-  const dispo = BOARDS.filter(b => b.vue || a.role === 'admin' || (a.boards && a.boards[b.k]));
+  const dispo = BOARDS.filter(b => b.vue || a.role === 'admin' || (a.boards && a.boards[b.k]) || (b.k === 'transport' && a.role));
   const menu = document.createElement('div');
   menu.className = 'lg-menu'; menu.setAttribute('role', 'menu');
   menu.innerHTML = dispo.map((b, i) => `<button type="button" class="lg-opt" role="menuitem" data-i="${i}" aria-selected="${b.k === boardCourant()}"><span class="ck">✓</span><span>${esc(b.t)}</span><small style="color:var(--muted);font-size:12px;margin-left:auto">${esc(b.small)}</small></button>`).join('');
