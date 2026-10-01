@@ -28,7 +28,7 @@
   --bad: #b42828;
   --warn-bg: rgba(255,214,120,0.30);
   --warn-ink: #5c4000;
-  --s-b2c: #2a78d6; --s-pro: #eb6834; --s-rev: #1baf7a; --s-mkt: #eda100; --s-intra: #4a3aa7; --s-none: #b9b8b0; --s-mdd: #e87ba4; --s-autre: #008300; --s-hors: #8a8983;
+  --s-b2c: #2a78d6; --s-pro: #eb6834; --s-rev: #1baf7a; --s-mkt: #eda100; --s-intra: #4a3aa7; --s-none: #b9b8b0; --s-mdd: #e87ba4; --s-autre: #008300; --s-hors: #8a8983; --s-myclear: #0e93a8;
   --n1: #7d7c78; --bar: #2a78d6; --bar-track: rgba(60,60,67,0.08);
   --blob-1: #b8d4ff; --blob-2: #ffd3bd; --blob-3: #c6f0de; --blob-4: #e3d9ff;
 }
@@ -43,7 +43,7 @@
     --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
     --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
     --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
-    --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974;
+    --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974; --s-myclear: #2bb3c6;
     --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
     --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
   }
@@ -58,7 +58,7 @@
   --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
   --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
   --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
-  --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974;
+  --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974; --s-myclear: #2bb3c6;
   --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
   --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
 }
@@ -1450,17 +1450,20 @@ const COND_PART = [
   { k: '5', lib: '5 L', c: '--c4' }, { k: '0.15', lib: '150 ml', c: '--c5' }, { k: '0.25', lib: '250 ml', c: '--c6' },
   { k: '0.2', lib: '200 ml', c: '--c7' }, { k: 'acc', lib: 'Accessoires', c: '--c8' }, { k: 'autres', lib: 'Autres formats', c: '--c-autres' }
 ];
+const SEG_MYCLEAR = { k: 'MYCLEAR', label: 'MyClear', v: '--s-myclear' };
+const COND_SEGMENTS = [...SEGMENTS.slice(0, -1), SEG_MYCLEAR, SEGMENTS[SEGMENTS.length - 1]];
+const condSeg = r => r.canal === 'myclear' ? 'MYCLEAR' : (r.segment || 'NON_SEGMENTE');
 let condVue = 'barres';
 const condSegOff = new Set(); // familles de clients décochées
 function renderCond() {
-  // Tous les canaux, MyClear compris : tout est conditionné chez nous.
+  // Tous les canaux, MyClear compris : tout est conditionné chez nous. MyClear est montré comme une famille à part.
   // Dans le board Ventes, un onglet (Particuliers, Pros, Revendeurs, MyClear) limite à sa famille de clients ou à son canal.
   const fin = !!VUES[S.vue].finance, ong = !fin && S.vue !== 'general' ? VUES[S.vue].titre : null;
   const famOn = [...condTypesOn].flatMap(t => COND_TYPES[t].fam);
   const toutes = (S.prodOrig || []).filter(r => famOn.includes(r.famille) && condOrigOn.has(r.origine) && +r.quantite &&
-    (fin || (segOk(r) && (S.vue !== 'myclear' || r.canal === 'myclear'))));
+    (fin || (S.vue === 'myclear' ? r.canal === 'myclear' : segOk(r) && (!segVue() || r.canal !== 'myclear'))));
   // Filtres par famille de clients (au-dessus du graphique) : on peut en retirer
-  const segDispo = SEGMENTS.filter(s => toutes.some(r => (r.segment || 'NON_SEGMENTE') === s.k));
+  const segDispo = COND_SEGMENTS.filter(s => toutes.some(r => condSeg(r) === s.k));
   $('cond-segs').innerHTML = (segDispo.length > 1 ? segDispo.map(s => `<button type="button" class="chip" data-seg="${s.k}" aria-pressed="${!condSegOff.has(s.k)}"><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</button>`).join('') : '') +
     '<span class="chip-sep" aria-hidden="true"></span>' +
     Object.entries(COND_TYPES).map(([k, t]) => `<button type="button" class="chip" data-type="${k}" aria-pressed="${condTypesOn.has(k)}">${esc(t.lib)}</button>`).join('') +
@@ -1484,14 +1487,14 @@ function renderCond() {
     else if (segDispo.filter(s => !condSegOff.has(s.k)).length > 1) condSegOff.add(k); // garder au moins une famille
     renderCond();
   });
-  const lignes = toutes.filter(r => !condSegOff.has(r.segment || 'NON_SEGMENTE'));
+  const lignes = toutes.filter(r => !condSegOff.has(condSeg(r)));
   const val = r => condUnite === 'litres' ? +r.quantite * (S.contenance?.[r.sku] || 0) : condUnite === 'ca' ? +r.ca_ht : +r.quantite;
   const conds = new Map(); // conditionnement → { tot, seg: Map, skus: Map(libellé → unités) }
   for (const r of lignes) {
     const k = condCle(r);
     if (condUnite === 'litres' && (k === 'poids' || k === 'acc')) continue;
     const o = conds.get(k) || { k, l: COND_SPECIAL[k] ? null : +k, tot: 0, seg: new Map(), skus: new Map() };
-    const v = val(r), seg = r.segment || 'NON_SEGMENTE';
+    const v = val(r), seg = condSeg(r);
     o.tot += v; o.seg.set(seg, (o.seg.get(seg) || 0) + v);
     o.skus.set(r.libelle || r.sku, (o.skus.get(r.libelle || r.sku) || 0) + +r.quantite);
     conds.set(k, o);
@@ -1500,7 +1503,7 @@ function renderCond() {
   const rang = o => COND_SPECIAL[o.k]?.rang || 0;
   const liste = [...conds.values()].filter(o => o.tot > 0 && (condUnite !== 'litres' || o.k !== 'x'))
     .sort((a, b) => rang(a) - rang(b) || a.l - b.l);
-  const segs = SEGMENTS.filter(s => liste.some(o => o.seg.get(s.k)));
+  const segs = COND_SEGMENTS.filter(s => liste.some(o => o.seg.get(s.k)));
   const total = liste.reduce((a, o) => a + o.tot, 0);
   const u = condUnite === 'litres' ? ' L' : '';
   const fmtV = v => condUnite === 'ca' ? fmtEur(v) : fmtN(v, condUnite === 'litres' && Math.abs(v) < 100 ? 1 : 0) + u;
@@ -1592,7 +1595,7 @@ function condCamembert(liste, total, fmtV) {
   svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="pie-tot">${fmtV(total)}</text><text x="${cx}" y="${cy + 16}" text-anchor="middle" class="pie-sub">${condUnite === 'litres' ? 'litres' : condUnite === 'ca' ? 'CA HT' : 'unités'}</text></svg>`;
   const legende = vis.map((p, i) => `<div class="pie-row" data-i="${i}"><i class="sw" style="background:var(${p.c})"></i><span>${esc(p.lib)}${p.k === 'autres' ? ` <small class="muted">(${esc(p.formats.join(', '))})</small>` : ''}</span><b>${fmtV(p.tot)}</b><small>${fmtN(pct(p.tot, total), 1)} %</small></div>`).join('');
   el.innerHTML = `<div class="pie-wrap">${svg}<div class="pie-leg">${legende}</div></div>`;
-  const segsP = SEGMENTS.filter(s => vis.some(p => p.seg.get(s.k)));
+  const segsP = COND_SEGMENTS.filter(s => vis.some(p => p.seg.get(s.k)));
   el.querySelectorAll('[data-i]').forEach(n => {
     n.addEventListener('mousemove', ev => { const p = vis[+n.dataset.i]; condTip(p, segsP, fmtV, ev, `${p.lib} · ${fmtN(pct(p.tot, total), 1)} % du total`); });
     n.addEventListener('mouseleave', hideTip);
