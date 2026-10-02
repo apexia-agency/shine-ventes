@@ -156,6 +156,8 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
 - Ajouter une règle : `insert into mails_regles (portee, cle, decision, libelle) values ('domaine', 'exemple.com', 'inutile', null);` (`origine = 'claude'` : règle proposée, à confirmer par Jérémy).
 - Code : `supabase/functions/trier-mail/index.ts` ; `{ essai: true }` décide sans rien écrire. Appel avec la clé service (connexion n8n « Supabase SHINE ventes »).
 - n8n, dossier « JEREMY » : « Boîte Jérémy · tri et brouillons » (toutes les 5 min, nouveaux mails seulement) et « Boîte Jérémy · essai de la fonction trier-mail » (faux mail, sans écriture, à ne pas publier).
-- État au 02/10/2026 : fonction en ligne et essayée (4 faux mails : règle, demande d'une acheteuse, publicité piégée, facture Google Ads). Flux **pas encore publié**, déclencheur désactivé :
-  il manque la connexion Gmail de Jérémy dans n8n (n8n a rattaché d'office « Gmail account », boîte non vérifiée) et les libellés Gmail `TRI/À supprimer` et `TRI/À répondre`.
-- Pas encore fait : rattrapage des anciens mails non lus, factures en pièce jointe vers le rangeur, fiche fournisseur, brouillons envoyés depuis l'adresse `@shine-group.fr`.
+- État au 02/10/2026 : fonction en ligne et essayée (4 faux mails : règle, demande d'une acheteuse, publicité piégée, facture Google Ads). Flux **publié le 02/10 à 18 h 30**
+  avec la connexion n8n « Gmail account 3 » (boîte `shinegroupfr@gmail.com`, vérifiée par ses libellés ; « Gmail account » et « Gmail account 2 » sont à Robin). Libellés `TRI/À supprimer` et `TRI/À répondre` créés.
+- Boîte pro : c'est `jeremy.b@shine-group.fr` (serveur poste.io, webmail.shine-group.fr). Un filtre du webmail copie tout vers Gmail, mais seuls les mails internes `@shine-group.fr` y arrivent ;
+  les mails externes transférés n'arrivent pas (cause non vérifiée, sans doute refusés par Gmail). Gmail ne relève plus les boîtes externes ; l'envoi « en tant que » `jeremy.b@` est déjà réglé dans Gmail. À régler côté serveur de messagerie.
+- Pas encore fait : rattrapage des anciens mails non lus, factures en pièce jointe vers le rangeur, fiche fournisseur.
