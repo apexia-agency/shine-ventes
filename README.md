@@ -154,6 +154,8 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
   Garde-fous : jamais « inutile » pour SHINE, pour un client connu ou pour une règle « garder » ; « inutile » seulement si Claude en est sûr à 80 % au moins.
 - Accès à la base : la seule lecture ouverte est `mail_contexte(empreinte)` (fiche client, chiffre par exercice, 5 dernières factures avec suivi). Pas de SQL libre : un mail est écrit par un inconnu.
 - Confidentialité : ni le texte des mails ni les adresses des correspondants ne sont gardés. `mails_traites` garde le domaine, l'empreinte SHA-256 de l'adresse, la décision et son motif.
+- Corrections de Jérémy dans Gmail : libellé `TRI/Toujours inutile` ou `TRI/Toujours garder` posé sur un mail. Le flux n8n « Boîte Jérémy · apprendre des corrections »
+  (toutes les 30 min) en fait une règle (`mail_regle_apprendre`), range le mail en conséquence et retire le libellé. « Toujours garder » est gardé par empreinte de l'adresse (portée `empreinte`), pas par l'adresse.
 - Ajouter une règle : `insert into mails_regles (portee, cle, decision, libelle) values ('domaine', 'exemple.com', 'inutile', null);` (`origine = 'claude'` : règle proposée, à confirmer par Jérémy).
 - Code : `supabase/functions/trier-mail/index.ts` ; `{ essai: true }` décide sans rien écrire. Appel avec la clé service (connexion n8n « Supabase SHINE ventes »).
 - n8n, dossier « JEREMY » : « Boîte Jérémy · tri et brouillons » (toutes les 5 min, nouveaux mails seulement) et « Boîte Jérémy · essai de la fonction trier-mail » (faux mail, sans écriture, à ne pas publier).

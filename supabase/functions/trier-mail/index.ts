@@ -105,14 +105,16 @@ Deno.serve(async (req) => {
     return json(reponse);
   };
 
-  // Règle de Jérémy : l'adresse exacte passe avant le domaine, le domaine le plus précis avant le plus large
+  // Règle de Jérémy : l'expéditeur exact (adresse, ou empreinte pour un « toujours garder ») passe avant le domaine,
+  // le domaine le plus précis avant le plus large
   const domaines = domaine.split(".").map((_, i, t) => t.slice(i).join(".")).filter((d) => d.includes("."));
-  const { data: regles, error: eRegles } = await sb.from("mails_regles").select("id, portee, cle, decision, libelle").eq("actif", true).in("cle", [adresse, ...domaines]);
+  const { data: regles, error: eRegles } = await sb.from("mails_regles").select("id, portee, cle, decision, libelle").eq("actif", true).in("cle", [adresse, empreinte, ...domaines]);
   if (eRegles) return json({ error: "Règles illisibles : " + eRegles.message }, 500);
-  const regle = (regles || []).find((r) => r.portee === "adresse" && r.cle === adresse) ||
+  const regle = (regles || []).find((r) => r.portee === "empreinte" && r.cle === empreinte) ||
+    (regles || []).find((r) => r.portee === "adresse" && r.cle === adresse) ||
     domaines.map((d) => (regles || []).find((r) => r.portee === "domaine" && r.cle === d)).find(Boolean);
   if (regle?.decision === "inutile") {
-    return await rendre({ source: "regle", regle_id: regle.id, decision: "inutile", categorie: "publicite", libelle: regle.libelle, motif: `Règle : ${regle.cle}` });
+    return await rendre({ source: "regle", regle_id: regle.id, decision: "inutile", categorie: "publicite", libelle: regle.libelle, motif: `Règle : ${regle.portee === "empreinte" ? "expéditeur" : regle.cle}` });
   }
 
   const interne = DOMAINES_SHINE.includes(domaine);
