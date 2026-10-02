@@ -295,6 +295,7 @@ input[type=password] {
 .preco-tbl tr.grp td:first-child { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
 .preco-tbl td.preco-a { font-weight: 700; color: #c0392b; } .preco-tbl td.preco-ok { color: #1b8a5a; }
 .preco-tbl td.sep, .preco-tbl th.sep { border-left: 1px solid color-mix(in srgb, var(--ink-2) 25%, transparent); }
+.preco-tbl tr.arrete td { color: var(--ink-2); } .preco-arrete { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: color-mix(in srgb, var(--ink-2) 18%, transparent); }
 .preco-edit { font-size: 15px; margin-left: 6px; text-decoration: none; } .preco-saisie { display: flex; gap: 6px; align-items: center; margin-top: 6px; } .preco-saisie input { width: 130px; font-size: 16px; }
 .preco-tbl td.ecart-haut { color: #c0392b; } .preco-tbl td.ecart-bas { color: #1b8a5a; }
 .preco-liste { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
@@ -1713,11 +1714,12 @@ async function renderPreco() {
   if (PRECO.onglet === 'accessoires') return;
   if (!PRECO.data) {
     try {
-      const [lignes, obj, lau, cuves, excl] = await Promise.all([fetchAll('agg_preco_chimie'), fetchAll('preco_objectifs'), fetchAll('preco_laurent'), fetchAll('preco_cuves'), fetchAll('preco_exclusions')]);
-      PRECO.data = { lignes, obj, lau, cuves, excl };
+      const [lignes, obj, lau, cuves, excl, arrets] = await Promise.all([fetchAll('agg_preco_chimie'), fetchAll('preco_objectifs'), fetchAll('preco_laurent'), fetchAll('preco_cuves'), fetchAll('preco_exclusions'), fetchAll('preco_arrets')]);
+      PRECO.data = { lignes, obj, lau, cuves, excl, arrets };
     } catch (e) { $('preco-tbl').innerHTML = `<div class="muted">Erreur de chargement : ${esc(e.message || e)}</div>`; return; }
   }
-  const { lignes, obj, lau, cuves, excl } = PRECO.data;
+  const { lignes, obj, lau, cuves, excl, arrets } = PRECO.data;
+  const ARR = new Set((arrets || []).filter(a => a.arrete).map(a => a.sku)); // produits sortis du catalogue
   const mois = [...new Set(lignes.map(r => r.mois))].sort();
   const libM = m => new Date(m.slice(0, 7) + '-15').toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
   const exRef = (obj[0]?.exercice_ref || '').replace('-', '–');
@@ -1756,7 +1758,8 @@ async function renderPreco() {
     const l = L.get(o.sku); o.stock = l && l.stock != null ? +l.stock : null; o.cde = l && l.en_commande != null ? +l.en_commande : 0; o.fluxL = l && l.flux_mensuel != null ? +l.flux_mensuel : null;
     o.flux = (o.t[0] || 0) / (trim[0]?.length || 3);
     o.besoin = besoin(o.v);
-    o.preco = o.stock == null ? null : Math.max(0, Math.ceil(o.besoin - o.stock - o.cde));
+    o.arrete = ARR.has(o.sku);
+    o.preco = o.stock == null || o.arrete ? null : Math.max(0, Math.ceil(o.besoin - o.stock - o.cde));
     // Couverture : le stock est consommé mois après mois selon la prévision
     o.couv = null; if (o.stock != null) { let reste = o.stock, c = 0, fini = false; for (const v of o.v) { if (v <= 0) { c += 1; continue; } if (reste >= v) { reste -= v; c += 1; } else { c += reste / v; fini = true; break; } } o.couv = fini ? c : Infinity; }
   }
@@ -1771,7 +1774,7 @@ async function renderPreco() {
     (!q || g.r.toLowerCase().includes(q) || g.items.some(o => o.sku.toLowerCase().includes(q) || o.lib.toLowerCase().includes(q)))
   ).map(g => {
     g.items.sort((a, b) => (a.l ?? 99) - (b.l ?? 99)); g.nom = nomG(g);
-    const lit = f => g.items.reduce((s, o) => s + (o.l ? f(o) * o.l : 0), 0);
+    const lit = f => g.items.reduce((s, o) => s + (o.l && !o.arrete ? f(o) * o.l : 0), 0); // les formats arrêtés ne comptent pas dans le besoin en vrac
     g.cuve = C.get(g.r) || null; g.aCond = lit(o => o.preco || 0); g.stockL = lit(o => o.stock || 0);
     g.tL = trim.map((_, i) => lit(o => o.t[i] || 0)); g.fluxL = lit(o => o.flux); g.besoinL = lit(o => o.besoin);
     g.totL = lit(o => o.tot); g.t0 = g.items.reduce((s, o) => s + (o.t[0] || 0), 0);
@@ -1796,10 +1799,10 @@ async function renderPreco() {
   };
   const ligneP = o => {
     const ec = o.fluxL && o.flux ? (o.fluxL / o.flux - 1) * 100 : null;
-    return `<tr><td>${fmtL(o.l)} <span class="muted">${esc(o.sku)}</span></td><td class="n ${o.preco == null ? '' : o.preco > 0 ? 'preco-a' : 'preco-ok'}">${o.preco == null ? tiret : o.preco > 0 ? fmtN(o.preco) : 'rien'}</td><td class="n">${o.stock == null ? tiret : fmtN(o.stock)}${o.cde ? `<small>+ ${fmtN(o.cde)} en commande</small>` : ''}</td><td class="n${o.corr.length ? ' corr' : ''}"${o.corr.length ? ` title="${esc(o.corr.join(' · '))}"` : ''}>${fmtN(o.t[0] || 0)}</td><td class="n"><b>${fmtN(o.flux)}</b></td><td class="n">${mo(o.couv)}</td><td class="n">${fmtN(o.n1)}</td>${trim.slice(1).map((_, i) => `<td class="n${i ? '' : ' sep'}">${fmtN(o.t[i + 1] || 0)}</td>`).join('')}<td class="n">${fmtN(o.tot)}</td><td class="n sep">${o.fluxL == null ? tiret : fmtN(o.fluxL)}</td><td class="n ${ec == null ? '' : Math.abs(ec) < 15 ? '' : ec > 0 ? 'ecart-haut' : 'ecart-bas'}">${ec == null ? tiret : (ec > 0 ? '+' : '') + fmtN(ec, 0) + ' %'}</td></tr>`;
+    return `<tr${o.arrete ? ' class="arrete"' : ''}><td>${fmtL(o.l)} <span class="muted">${esc(o.sku)}</span>${o.arrete ? ' <span class="preco-arrete">arrêté</span>' : ''}</td><td class="n ${o.preco == null ? '' : o.preco > 0 ? 'preco-a' : 'preco-ok'}">${o.arrete ? '<span class="muted">arrêté</span>' : o.preco == null ? tiret : o.preco > 0 ? fmtN(o.preco) : 'rien'}</td><td class="n">${o.stock == null ? tiret : fmtN(o.stock)}${o.cde ? `<small>+ ${fmtN(o.cde)} en commande</small>` : ''}</td><td class="n${o.corr.length ? ' corr' : ''}"${o.corr.length ? ` title="${esc(o.corr.join(' · '))}"` : ''}>${fmtN(o.t[0] || 0)}</td><td class="n"><b>${fmtN(o.flux)}</b></td><td class="n">${mo(o.couv)}</td><td class="n">${fmtN(o.n1)}</td>${trim.slice(1).map((_, i) => `<td class="n${i ? '' : ' sep'}">${fmtN(o.t[i + 1] || 0)}</td>`).join('')}<td class="n">${fmtN(o.tot)}</td><td class="n sep">${o.fluxL == null ? tiret : fmtN(o.fluxL)}</td><td class="n ${ec == null ? '' : Math.abs(ec) < 15 ? '' : ec > 0 ? 'ecart-haut' : 'ecart-bas'}">${ec == null ? tiret : (ec > 0 ? '+' : '') + fmtN(ec, 0) + ' %'}</td></tr>`;
   };
   $('preco-tbl').innerHTML = groupes.length ? `<table>${tete}<tbody>${groupes.map(g => ligneG(g) + g.items.map(ligneP).join('')).join('')}</tbody></table>` +
-    `<p class="sub" style="margin-top:8px">${fmtN(groupes.length)} produits, ${fmtN(nbP)} références. ${pf ? `Produits achetés finis, sans cuve chez nous (aérosols, additifs…). <b>À commander</b> = ventes prévues sur ${PRECO.jours} jours − stock − déjà en commande.` : `<b>À conditionner</b> = ventes prévues sur ${PRECO.jours} jours − stock de bidons − bidons déjà en commande. <b>Vrac à commander</b> = ce qui manque pour tenir ${PRECO.jours} jours en comptant les bidons, la cuve et le vrac déjà en commande.`} Une case soulignée a été corrigée (détail au survol). Stock des bidons (unités) et des cuves (litres) : copie du tableau de Laurent du ${dateL ? new Date(dateL).toLocaleDateString('fr-FR') : '–'}, pas encore mise à jour chaque nuit. « Écart » : flux de Laurent comparé au nôtre (rouge s'il est plus haut d'au moins 15 %, vert s'il est plus bas).</p>`
+    `<p class="sub" style="margin-top:8px">${fmtN(groupes.length)} produits, ${fmtN(nbP)} références. ${pf ? `Produits achetés finis, sans cuve chez nous (aérosols, additifs…). <b>À commander</b> = ventes prévues sur ${PRECO.jours} jours − stock − déjà en commande.` : `<b>À conditionner</b> = ventes prévues sur ${PRECO.jours} jours − stock de bidons − bidons déjà en commande. <b>Vrac à commander</b> = ce qui manque pour tenir ${PRECO.jours} jours en comptant les bidons, la cuve et le vrac déjà en commande.`} Un format <b>arrêté</b> (sorti du catalogue) n'a plus de préconisation et ne compte pas dans le besoin en vrac : on écoule son stock. Une case soulignée a été corrigée (détail au survol). Stock des bidons (unités) et des cuves (litres) : copie du tableau de Laurent du ${dateL ? new Date(dateL).toLocaleDateString('fr-FR') : '–'}, pas encore mise à jour chaque nuit. « Écart » : flux de Laurent comparé au nôtre (rouge s'il est plus haut d'au moins 15 %, vert s'il est plus bas).</p>`
     : '<div class="muted">Aucun produit sur cette sélection.</div>';
   // Corrections : opérations retirées et ruptures probables
   const ret = new Map(); for (const r of lignes) if (+r.q_retire) ret.set(r.sku, (ret.get(r.sku) || 0) + +r.q_retire);
