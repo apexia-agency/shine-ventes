@@ -1456,6 +1456,7 @@ const COND_SEGMENTS = [...SEGMENTS.slice(0, -1), SEG_TIKTOK, SEG_MYCLEAR, SEGMEN
 const condSeg = r => r.canal === 'myclear' ? 'MYCLEAR' : r.canal === 'tiktok_b2c' ? 'TIKTOK' : (r.segment || 'NON_SEGMENTE');
 let condVue = 'barres';
 const condSegOff = new Set(); // familles de clients décochées
+let condPortOn = true; // part « Frais de port facturés » du camembert (mode CA)
 function renderCond() {
   // Tous les canaux, MyClear compris : tout est conditionné chez nous. MyClear est montré comme une famille à part.
   // Dans le board Ventes, un onglet (Particuliers, Pros, Revendeurs, MyClear) limite à sa famille de clients ou à son canal.
@@ -1469,7 +1470,9 @@ function renderCond() {
     '<span class="chip-sep" aria-hidden="true"></span>' +
     Object.entries(COND_TYPES).map(([k, t]) => `<button type="button" class="chip" data-type="${k}" aria-pressed="${condTypesOn.has(k)}">${esc(t.lib)}</button>`).join('') +
     '<span class="chip-sep" aria-hidden="true"></span>' +
-    Object.entries(COND_ORIG).map(([k, lib]) => `<button type="button" class="chip" data-orig="${k}" aria-pressed="${condOrigOn.has(k)}">${esc(lib)}</button>`).join('');
+    Object.entries(COND_ORIG).map(([k, lib]) => `<button type="button" class="chip" data-orig="${k}" aria-pressed="${condOrigOn.has(k)}">${esc(lib)}</button>`).join('') +
+    (condVue === 'camembert' && condUnite === 'ca' ? `<span class="chip-sep" aria-hidden="true"></span><button type="button" class="chip" data-port="1" aria-pressed="${condPortOn}"><i class="sw" style="background:#3d4a5c"></i>Frais de port</button>` : '');
+  $('cond-segs').querySelectorAll('.chip[data-port]').forEach(b => b.onclick = () => { condPortOn = !condPortOn; renderCond(); });
   $('cond-segs').querySelectorAll('.chip[data-orig]').forEach(b => b.onclick = () => {
     const k = b.dataset.orig;
     if (!condOrigOn.has(k)) condOrigOn.add(k);
@@ -1521,7 +1524,7 @@ function renderCond() {
   $('cond-pie').classList.toggle('hidden', condVue !== 'camembert');
   // Frais de port facturés (hors CA produits) : montrés comme une part du camembert quand on regarde le CA
   let port = null;
-  if (condVue === 'camembert' && condUnite === 'ca') {
+  if (condVue === 'camembert' && condUnite === 'ca' && condPortOn) {
     port = { k: 'port', lib: 'Frais de port facturés', c: '--c-port', tot: 0, seg: new Map(), skus: new Map(), formats: [] };
     for (const r of (S.commandes || [])) {
       if (!dansPer(r) || !+r.port_ht || condSegOff.has(condSeg(r))) continue;
