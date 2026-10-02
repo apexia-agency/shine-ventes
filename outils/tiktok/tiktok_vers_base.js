@@ -34,7 +34,7 @@ const net = s => String(s ?? '').replace(/[|\r\n\t]/g, ' ').trim();
 const r2 = v => Math.round(v * 100) / 100;
 
 // Articles sans référence vendeur dans TikTok : rattachés d'après le libellé
-const SANS_REF = [[/Cire Express.*450/i, 'AS49-450'], [/Gant Y[ée]ti/i, 'ACS21'], [/Nettoyant Vitre.*450/i, 'AS21-450'], [/Sac de transport detailing/i, 'ACS82']];
+const SANS_REF = [[/Cire Express.*450/i, 'AS49-450'], [/Gant Y[ée]ti/i, 'ACS21'], [/Nettoyant Vitre.*450/i, 'AS21-450'], [/Sac de transport detailing/i, 'ACS82'], [/ONE PASS XXL/i, 'ACS77']];
 
 const [sortie, ...fichiers] = process.argv.slice(2);
 const cmd = new Map();

@@ -42,7 +42,7 @@ Commandes de test retirées (`supabase/migrations/20260928_commandes_test.sql`) 
 Les ventes TikTok Shop SHINE sont dans le board : canal `tiktok_b2c`, famille Particuliers, sous-famille « TikTok Shop ». 1 520 commandes du 23/07/2025 au 01/10/2026, 29 053 € HT de produits (1 612 € sur 2024-2025, 27 251 € sur 2025-2026) et 4 733 € HT de port.
 - Source : exports « Toutes les commandes » du Seller Center, préparés par `outils/tiktok/tiktok_vers_base.js` puis chargés par la fonction `charger_tiktok` (`supabase/migrations/20261002_tiktok_shop.sql`), suivie de `finaliser_collecte()`. **Chargement à la main** tant que la collecte de nuit ne ramène pas TikTok (codes API à obtenir, côté Robin) : les ventes après le 01/10/2026 ne sont pas dans le board.
 - Règles (les mêmes que l'export comptable) : commandes annulées, pas encore expédiées ou remboursées en entier écartées ; date = expédition ; HT = TTC / 1,2 ; remise TikTok non déduite (TikTok la reverse), remise vendeur déduite ; remboursement partiel déduit.
-- Articles sans référence dans TikTok rattachés par le libellé (`20261002_tiktok_references.sql`). Reste 37 « Microfibre de séchage ONE PASS XXL » (552 € HT) sans produit : comptées dans le CA, pas dans les volumes par produit, en attendant que Jérémy dise à quelle référence elles correspondent.
+- Articles sans référence dans TikTok rattachés par le libellé (`20261002_tiktok_references.sql`). La « Microfibre de séchage ONE PASS XXL » est l'ACS77 (confirmé par Jérémy le 02/10 ; produit désactivé pour rupture), `20261002_tiktok_one_pass_acs77.sql`.
 - Camembert des volumes en mode CA : une part « Frais de port facturés » s'ajoute aux formats (le CA des produits ne contient pas le port).
 
 ## Compositions des packs et contenances (27/09/2026, Jérémy)
