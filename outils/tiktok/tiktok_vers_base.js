@@ -33,6 +33,9 @@ const iso = s => { const m = String(s || '').trim().match(/^(\d{2})\/(\d{2})\/(\
 const net = s => String(s ?? '').replace(/[|\r\n\t]/g, ' ').trim();
 const r2 = v => Math.round(v * 100) / 100;
 
+// Articles sans référence vendeur dans TikTok : rattachés d'après le libellé
+const SANS_REF = [[/Cire Express.*450/i, 'AS49-450'], [/Gant Y[ée]ti/i, 'ACS21'], [/Nettoyant Vitre.*450/i, 'AS21-450'], [/Sac de transport detailing/i, 'ACS82']];
+
 const [sortie, ...fichiers] = process.argv.slice(2);
 const cmd = new Map();
 for (const f of fichiers) {
@@ -44,7 +47,7 @@ for (const f of fichiers) {
     if (!vus.has(id)) { cmd.delete(id); vus.add(id); } // une commande présente dans un fichier plus récent le remplace en entier
     const o = cmd.get(id) || { id, statut: r[I('Order Status')] || '', date: iso(r[I('Shipped Time')]), acheteur: net(r[I('Buyer Username')]) || 'acheteur-' + id, pays: net(r[I('Country')]), cp: net(r[I('Zipcode')]),
       port: eur(r[I('Original Shipping Fee')]) - eur(r[I('Shipping Fee Seller Discount')]), rembourse: eur(r[I('Order Refund Amount')]), lignes: [] };
-    o.lignes.push({ sku: net(r[I('Seller SKU')]), lib: net(r[I('Product Name')]).slice(0, 120), q: +String(r[I('Quantity')] || '0').trim() || 0, pu: eur(r[I('SKU Unit Original Price')]), brut: eur(r[I('SKU Subtotal Before Discount')]), remise: eur(r[I('SKU Seller Discount')]) });
+    o.lignes.push({ sku: net(r[I('Seller SKU')]) || SANS_REF.find(([re]) => re.test(r[I('Product Name')] || ''))?.[1] || '', lib: net(r[I('Product Name')]).slice(0, 120), q: +String(r[I('Quantity')] || '0').trim() || 0, pu: eur(r[I('SKU Unit Original Price')]), brut: eur(r[I('SKU Subtotal Before Discount')]), remise: eur(r[I('SKU Seller Discount')]) });
     cmd.set(id, o);
   }
 }

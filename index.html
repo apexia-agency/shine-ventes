@@ -184,9 +184,9 @@ h2 { font-size: 15px; font-weight: 680; margin: 0; letter-spacing: -0.01em; }
 .chip-sep { width: 1px; align-self: stretch; background: var(--grid); margin: 2px 4px; }
 .hb .cond-stack { width: 100%; }
 /* Camembert : formats dans un ordre fixe, une couleur par format (palette catégorielle validée) */
-.cond-pie { --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300; --c7: #4a3aa7; --c8: #e34948; --c-autres: #9a9890; }
-[data-theme="dark"] .cond-pie { --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --c-autres: #7d7b74; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cond-pie { --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --c-autres: #7d7b74; } }
+.cond-pie { --c1: #2a78d6; --c2: #eb6834; --c3: #1baf7a; --c4: #eda100; --c5: #e87ba4; --c6: #008300; --c7: #4a3aa7; --c8: #e34948; --c-autres: #9a9890; --c-port: #3d4a5c; }
+[data-theme="dark"] .cond-pie { --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --c-autres: #7d7b74; --c-port: #c5cedb; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .cond-pie { --c1: #3987e5; --c2: #d95926; --c3: #199e70; --c4: #c98500; --c5: #d55181; --c6: #008300; --c7: #9085e9; --c8: #e66767; --c-autres: #7d7b74; --c-port: #c5cedb; } }
 .pie-wrap { display: flex; gap: 28px; align-items: center; flex-wrap: wrap; justify-content: center; }
 .pie-wrap svg { overflow: visible; max-width: 100%; height: auto; }
 .pie-wrap .part { cursor: pointer; transition: opacity .15s; }
@@ -1518,7 +1518,19 @@ function renderCond() {
     (sansCond && condUnite === 'unites' ? ` ${fmtN(sansCond.tot)} unités sans contenance renseignée (${sansCond.skus.size} produits).` : '');
   $('cond-barres').classList.toggle('hidden', condVue !== 'barres');
   $('cond-pie').classList.toggle('hidden', condVue !== 'camembert');
-  if (condVue === 'camembert') condCamembert(liste, total, fmtV);
+  // Frais de port facturés (hors CA produits) : montrés comme une part du camembert quand on regarde le CA
+  let port = null;
+  if (condVue === 'camembert' && condUnite === 'ca') {
+    port = { k: 'port', lib: 'Frais de port facturés', c: '--c-port', tot: 0, seg: new Map(), skus: new Map(), formats: [] };
+    for (const r of (S.commandes || [])) {
+      if (!dansPer(r) || !+r.port_ht || condSegOff.has(condSeg(r))) continue;
+      if (!(fin || (S.vue === 'myclear' ? r.canal === 'myclear' : segOk(r) && (!segVue() || r.canal !== 'myclear')))) continue;
+      port.tot += +r.port_ht; port.seg.set(condSeg(r), (port.seg.get(condSeg(r)) || 0) + +r.port_ht);
+    }
+    if (port.tot > 0) $('cond-note').innerHTML += ` Le camembert ajoute les <b>frais de port facturés aux clients (${fmtEur(port.tot)} HT)</b>, qui ne sont pas comptés dans le CA des produits.`;
+    else port = null;
+  }
+  if (condVue === 'camembert') condCamembert(liste, total, fmtV, port);
   else condBarres(liste, segs, total, fmtV);
   // Tableau conditionnement × famille de clients (les deux vues)
   const cell = v => v ? fmtV(v) : '<span class="muted">–</span>';
@@ -1548,7 +1560,7 @@ function condTop(lignes) {
 function condTip(o, segs, fmtV, ev, titre) {
   let h = `<div class="t">${esc(titre || condLib(o.k, o.l))}</div>` + segs.filter(s => o.seg.get(s.k)).map(s => `<div class="r"><span><i class="sw" style="background:var(${s.v})"></i>${esc(s.label)}</span><b>${fmtV(o.seg.get(s.k))} · ${fmtN(pct(o.seg.get(s.k), o.tot), 0)} %</b></div>`).join('');
   const top = [...o.skus.entries()].sort((a, b) => b[1] - a[1]);
-  h += `<hr>${top.slice(0, 8).map(([n, v]) => `<div class="r"><span>${esc(n.length > 42 ? n.slice(0, 41) + '…' : n)}</span><b>${fmtN(v)}</b></div>`).join('')}${top.length > 8 ? `<div class="r"><span class="muted">+ ${top.length - 8} autres produits</span></div>` : ''}`;
+  if (top.length) h += `<hr>${top.slice(0, 8).map(([n, v]) => `<div class="r"><span>${esc(n.length > 42 ? n.slice(0, 41) + '…' : n)}</span><b>${fmtN(v)}</b></div>`).join('')}${top.length > 8 ? `<div class="r"><span class="muted">+ ${top.length - 8} autres produits</span></div>` : ''}`;
   showTip(h, ev);
 }
 // Barres : chaque barre fait toute la largeur et se découpe selon les familles de clients qui ont acheté ce format
@@ -1565,7 +1577,7 @@ function condBarres(liste, segs, total, fmtV) {
   });
 }
 // Camembert : part de chaque format dans les ventes des familles de clients cochées
-function condCamembert(liste, total, fmtV) {
+function condCamembert(liste, total, fmtV, port) {
   const parts = COND_PART.map(p => ({ ...p, tot: 0, seg: new Map(), skus: new Map(), formats: [] }));
   const cle = o => o.k === 'aero' ? 'aero' : COND_PART.some(p => p.k === o.k) ? o.k : 'autres';
   for (const o of liste) {
@@ -1574,6 +1586,7 @@ function condCamembert(liste, total, fmtV) {
     for (const [s, v] of o.seg) p.seg.set(s, (p.seg.get(s) || 0) + v);
     for (const [n, v] of o.skus) p.skus.set(n, (p.skus.get(n) || 0) + v);
   }
+  if (port) { parts.push(port); total += port.tot; }
   const vis = parts.filter(p => p.tot > 0);
   const el = $('cond-pie');
   if (!total) { el.innerHTML = '<div class="muted">Aucune vente de chimie sur cette sélection.</div>'; return; }
@@ -1592,7 +1605,7 @@ function condCamembert(liste, total, fmtV) {
     if (part >= 0.03) { const [tx, ty] = pt((a0 + a1) / 2, R + 20); svg += `<text x="${tx}" y="${ty + 4}" text-anchor="middle" class="pie-pct">${fmtN(100 * part, part < 0.1 ? 1 : 0)} %</text>`; }
     a0 = a1;
   });
-  svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="pie-tot">${fmtV(total)}</text><text x="${cx}" y="${cy + 16}" text-anchor="middle" class="pie-sub">${condUnite === 'litres' ? 'litres' : condUnite === 'ca' ? 'CA HT' : 'unités'}</text></svg>`;
+  svg += `<text x="${cx}" y="${cy - 4}" text-anchor="middle" class="pie-tot">${fmtV(total)}</text><text x="${cx}" y="${cy + 16}" text-anchor="middle" class="pie-sub">${condUnite === 'litres' ? 'litres' : condUnite === 'ca' ? (port ? 'CA HT, port compris' : 'CA HT') : 'unités'}</text></svg>`;
   const legende = vis.map((p, i) => `<div class="pie-row" data-i="${i}"><i class="sw" style="background:var(${p.c})"></i><span>${esc(p.lib)}${p.k === 'autres' ? ` <small class="muted">(${esc(p.formats.join(', '))})</small>` : ''}</span><b>${fmtV(p.tot)}</b><small>${fmtN(pct(p.tot, total), 1)} %</small></div>`).join('');
   el.innerHTML = `<div class="pie-wrap">${svg}<div class="pie-leg">${legende}</div></div>`;
   const segsP = COND_SEGMENTS.filter(s => vis.some(p => p.seg.get(s.k)));
