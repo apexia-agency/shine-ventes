@@ -1762,7 +1762,7 @@ async function renderPreco() {
   const G = new Map();
   for (const o of prod.values()) { if (!(o.tot > 0) && !(o.stock > 0)) continue; const g = G.get(racine(o.sku)) || { r: racine(o.sku), items: [] }; g.items.push(o); G.set(g.r, g); }
   const q = PRECO.q.trim().toLowerCase();
-  const nomG = g => { const a = [...g.items].sort((x, y) => y.t[0] - x.t[0])[0].lib; return a.replace(/s*([^()]*)s*$/, '').replace(/s*-?s*d+([.,]d+)?s?(ml|l|g|kg)s*$/i, '').trim() || a; };
+  const nomG = g => { const a = [...g.items].sort((x, y) => y.t[0] - x.t[0])[0].lib; return a.replace(/\s*\([^()]*\)\s*$/, '').replace(/\s*-?\s*\d+([.,]\d+)?\s?(ml|l|g|kg)\s*$/i, '').trim() || a; };
   const groupes = [...G.values()].filter(g =>
     (PRECO.marque === 'toutes' || g.items.some(o => o.marque === PRECO.marque)) &&
     (!q || g.r.toLowerCase().includes(q) || g.items.some(o => o.sku.toLowerCase().includes(q) || o.lib.toLowerCase().includes(q)))
