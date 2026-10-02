@@ -293,7 +293,8 @@ input[type=password] {
 .preco-tbl tr.grp td small, .preco-tbl td small { display: block; font-weight: 400; color: var(--ink-2); font-size: 11.5px; }
 .preco-tbl td:first-child, .preco-tbl th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); min-width: 210px; }
 .preco-tbl tr.grp td:first-child { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
-.preco-tbl td.preco-a { font-weight: 700; color: #c0392b; } .preco-tbl td.preco-ok { color: #1b8a5a; }
+.preco-tbl td.preco-a { font-weight: 700; } .preco-tbl td.preco-ok { color: #1b8a5a; } .preco-tbl .rouge { color: #c0392b; } .preco-tbl .vert { color: #1b8a5a; }
+.preco-tbl td.mois, .preco-tbl th.mois { font-size: 12px; padding-left: 6px; padding-right: 6px; } .preco-info { cursor: help; color: var(--ink-2); font-weight: 400; }
 .preco-tbl td.sep, .preco-tbl th.sep { border-left: 1px solid color-mix(in srgb, var(--ink-2) 25%, transparent); }
 .preco-tbl tr.arrete td { color: var(--ink-2); } .preco-arrete { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: color-mix(in srgb, var(--ink-2) 18%, transparent); }
 .preco-edit { font-size: 15px; margin-left: 6px; text-decoration: none; } .preco-saisie { display: flex; gap: 6px; align-items: center; margin-top: 6px; } .preco-saisie input { width: 130px; font-size: 16px; }
@@ -851,7 +852,8 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
       <div class="seg-toggle" id="preco-onglets" role="group" aria-label="Type de produits">
         <button class="btn small" data-o="chimie" aria-pressed="true">Chimie</button>
         <button class="btn small" data-o="pf" aria-pressed="false">Chimie PF</button>
-        <button class="btn small" data-o="accessoires" aria-pressed="false">Accessoires</button>
+        <button class="btn small" data-o="import" aria-pressed="false">Accessoires import</button>
+        <button class="btn small" data-o="intra" aria-pressed="false">Accessoires intra</button>
       </div>
     </div>
     <div id="preco-chimie">
@@ -859,8 +861,8 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
       <div class="grid tiles" id="preco-tiles"></div>
       <div class="card">
         <div class="card-head">
-          <h2>Préconisation par produit</h2>
-          <span class="hint">unités pour chaque format, litres pour le produit</span>
+          <h2 id="preco-titre">Préconisation par produit</h2>
+          <span class="hint" id="preco-hint">unités pour chaque format, litres pour le produit</span>
         </div>
         <div class="preco-barre">
           <span class="sub">Stock visé</span>
@@ -1706,104 +1708,133 @@ document.querySelectorAll('.cond-vue .btn').forEach(b => b.onclick = () => {
 // ---------- Préco de vente (board Achats) ----------
 // Lit l'agrégat agg_preco_chimie (une ligne par produit et par mois prévu), les objectifs par famille de clients,
 // la dernière copie du tableau de Laurent (flux et stock) et la liste des opérations exceptionnelles retirées.
-const PRECO = { data: null, onglet: 'chimie', marque: 'SHINE', q: '', jours: 75, groupes: [] };
+const PRECO = { data: null, onglet: 'chimie', marque: 'SHINE', q: '', jours: 75, csv: null };
 async function renderPreco() {
-  const pf = PRECO.onglet === 'pf'; // Chimie PF : produits sans cuve, achetés finis (aérosols, additifs…)
-  $('preco-chimie').classList.toggle('hidden', PRECO.onglet === 'accessoires');
-  $('preco-accessoires').classList.toggle('hidden', PRECO.onglet !== 'accessoires');
-  if (PRECO.onglet === 'accessoires') return;
+  const ong = PRECO.onglet, pf = ong === 'pf', acc = ong === 'import' || ong === 'intra';
+  $('preco-accessoires').classList.add('hidden');
   if (!PRECO.data) {
     try {
-      const [lignes, obj, lau, cuves, excl, arrets] = await Promise.all([fetchAll('agg_preco_chimie'), fetchAll('preco_objectifs'), fetchAll('preco_laurent'), fetchAll('preco_cuves'), fetchAll('preco_exclusions'), fetchAll('preco_arrets')]);
-      PRECO.data = { lignes, obj, lau, cuves, excl, arrets };
+      const [lignes, obj, lau, cuves, excl, arrets, accs, fours] = await Promise.all(['agg_preco_chimie', 'preco_objectifs', 'preco_laurent', 'preco_cuves', 'preco_exclusions', 'preco_arrets', 'preco_accessoires', 'preco_fournisseurs'].map(x => fetchAll(x)));
+      PRECO.data = { lignes, obj, lau, cuves, excl, arrets, accs, fours };
     } catch (e) { $('preco-tbl').innerHTML = `<div class="muted">Erreur de chargement : ${esc(e.message || e)}</div>`; return; }
   }
-  const { lignes, obj, lau, cuves, excl, arrets } = PRECO.data;
+  const { lignes: toutes, obj, lau, cuves, excl, arrets, accs, fours } = PRECO.data;
   const ARR = new Set((arrets || []).filter(a => a.arrete).map(a => a.sku)); // produits sortis du catalogue
-  const mois = [...new Set(lignes.map(r => r.mois))].sort();
+  const lignes = toutes.filter(r => (r.famille === 'ACCESSOIRE_PF') === acc);
+  const mois = [...new Set(toutes.map(r => r.mois))].sort();
   const libM = m => new Date(m.slice(0, 7) + '-15').toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
   const exRef = (obj[0]?.exercice_ref || '').replace('-', '–');
   const objs = ['PARTICULIERS', 'REVENDEURS', 'PROS'].map(k => obj.find(o => o.groupe === k)).filter(Boolean);
   const evol = o => +o.realise_ca ? (+o.objectif_ca / +o.realise_ca - 1) * 100 : 0;
-  // Trimestres glissants : les trois prochains mois, puis les trois suivants…
-  const trim = [0, 1, 2, 3].map(i => mois.slice(3 * i, 3 * i + 3)).filter(a => a.length);
-  const libT = a => a.length ? `${libM(a[0])} → ${libM(a[a.length - 1])}` : '';
-  $('preco-note').innerHTML = `Pour chaque produit : ventes des mêmes mois l'an dernier (packs éclatés), moins les opérations exceptionnelles qui ne se referont pas, corrigées des ruptures probables, multipliées par l'évolution visée pour chaque famille de clients. Les trimestres avancent d'un mois à chaque début de mois. Recalculé chaque nuit${lignes[0]?.calcule_le ? ' (dernier calcul le ' + new Date(lignes[0].calcule_le).toLocaleDateString('fr-FR') + ')' : ''}.`;
+  const m3 = mois.slice(0, 3), libT = a => a.length ? `${libM(a[0])} → ${libM(a[a.length - 1])}` : '';
+  $('preco-titre').textContent = acc ? (ong === 'import' ? 'Accessoires import (Chine)' : 'Accessoires intra (France et Europe)') : pf ? 'Chimie achetée finie' : 'Préconisation par produit';
+  $('preco-hint').textContent = acc ? 'unités, par fournisseur' : pf ? 'unités' : 'unités pour chaque format, litres pour le produit';
+  $('preco-note').innerHTML = `Pour chaque produit : ventes des mêmes mois l'an dernier (packs éclatés), moins les opérations exceptionnelles qui ne se referont pas, corrigées des ruptures probables, multipliées par l'évolution visée pour chaque famille de clients. Les mois avancent d'un cran à chaque début de mois. Recalculé chaque nuit${toutes[0]?.calcule_le ? ' (dernier calcul le ' + new Date(toutes[0].calcule_le).toLocaleDateString('fr-FR') + ')' : ''}.`;
   $('preco-tiles').innerHTML = objs.map(o => `<div class="card tile" data-g="${esc(o.groupe)}"><div class="label">Objectif ${esc(o.libelle)}<button type="button" class="link preco-edit" data-g="${esc(o.groupe)}" data-v="${+o.objectif_ca}" title="Modifier l'objectif" aria-label="Modifier l'objectif ${esc(o.libelle)}">✎</button></div><div class="value">${fmtK(+o.objectif_ca)}</div><div class="delta">réalisé ${esc(exRef)} : ${fmtEur(+o.realise_ca)} · <b>${evol(o) >= 0 ? '+' : ''}${fmtN(evol(o), 1)} %</b></div><div class="delta">${esc(o.perimetre)}</div></div>`).join('');
-  // Copies les plus récentes du tableau de Laurent : bidons (unités) et cuves (litres)
-  const dateL = lau.reduce((a, r) => r.lu_le > a ? r.lu_le : a, '');
-  const L = new Map(lau.filter(r => r.lu_le === dateL).map(r => [r.sku, r]));
-  const dateC = cuves.reduce((a, r) => r.lu_le > a ? r.lu_le : a, '');
-  const racine = s => String(s).split('-')[0];
-  const C = new Map(); // produit → { litres, cde, autres: [] }
-  for (const c of cuves.filter(r => r.lu_le === dateC)) {
-    const o = C.get(racine(c.code)) || { litres: null, cde: 0, autres: [] };
-    if (/-C$/.test(c.code) || c.code === 'AS49-20') { o.litres = (o.litres || 0) + (+c.litres || 0); o.cde += +c.en_commande || 0; }
-    else if (+c.litres) o.autres.push(`${fmtN(+c.litres)} L de « ${c.designation} »`);
-    C.set(racine(c.code), o);
-  }
-  // Besoin sur le nombre de jours visé : mois entiers puis fraction du mois suivant
-  const k = PRECO.jours / 30;
-  const besoin = v => { let b = 0; for (let i = 0; i < Math.ceil(k); i++) b += (v[i] || 0) * Math.min(1, k - i); return b; };
+  const dernier = a => a.reduce((d, r) => r.lu_le > d ? r.lu_le : d, '');
+  const dateL = dernier(lau), L = new Map(lau.filter(r => r.lu_le === dateL).map(r => [r.sku, r]));
+  const dateA = dernier(accs), A = new Map(accs.filter(r => r.lu_le === dateA).map(r => [r.sku, r]));
+  const dateC = dernier(cuves), racine = s => String(s).split('-')[0];
+  const C = new Map(); // produit → cuves du produit (toutes concentrations confondues), en litres
+  for (const c of cuves.filter(r => r.lu_le === dateC)) { const o = C.get(racine(c.code)) || { litres: 0, cde: 0, detail: [] }; o.litres += +c.litres || 0; o.cde += +c.en_commande || 0; o.detail.push(`${c.designation} : ${fmtN(+c.litres || 0)} L${+c.en_commande ? ' (+ ' + fmtN(+c.en_commande) + ' L en commande)' : ''}`); C.set(racine(c.code), o); }
+  // Besoin sur un nombre de mois (mois entiers puis fraction du suivant ; au-delà de 12 mois, on prolonge avec la moyenne)
+  const besoinM = (v, h) => { const moy = v.reduce((a, x) => a + x, 0) / (v.length || 1); let b = 0; for (let i = 0; i < Math.ceil(h); i++) b += (i < v.length ? v[i] : moy) * Math.min(1, h - i); return b; };
+  const couvDe = (v, stock) => { let reste = stock, c = 0; for (const x of v) { if (x <= 0) { c += 1; continue; } if (reste >= x) { reste -= x; c += 1; } else return c + reste / x; } return Infinity; };
   const prod = new Map();
   for (const r of lignes) {
     const o = prod.get(r.sku) || { sku: r.sku, lib: r.libelle || r.sku, l: r.contenance_l == null ? null : +r.contenance_l, marque: r.marque || '', m: {}, tot: 0 };
     o.m[r.mois] = r; o.tot += +r.q_prevu; prod.set(r.sku, o);
   }
+  if (acc) for (const [sku, a] of A) if (!prod.has(sku)) prod.set(sku, { sku, lib: a.designation || sku, l: null, marque: 'SHINE', m: {}, tot: 0 }); // en stock mais sans vente prévue
   for (const o of prod.values()) {
     o.v = mois.map(m => o.m[m] ? +o.m[m].q_prevu : 0);
-    o.t = trim.map(a => a.reduce((s, m) => s + (o.m[m] ? +o.m[m].q_prevu : 0), 0));
-    o.n1 = (trim[0] || []).reduce((s, m) => s + (o.m[m] ? +o.m[m].q_n1 - +o.m[m].q_retire : 0), 0);
-    o.corr = (trim[0] || []).map(m => o.m[m]).filter(r => r && (+r.q_retire || +r.q_rupture)).map(r => +r.q_retire ? `${libM(r.mois)} : ${fmtN(+r.q_retire)} unités retirées (${(r.note || '').split(' ; ')[0] || 'opération exceptionnelle'})` : `${libM(r.mois)} : ${fmtN(+r.q_rupture)} unités ajoutées (rupture probable)`);
-    const l = L.get(o.sku); o.stock = l && l.stock != null ? +l.stock : null; o.cde = l && l.en_commande != null ? +l.en_commande : 0; o.fluxL = l && l.flux_mensuel != null ? +l.flux_mensuel : null;
-    o.flux = (o.t[0] || 0) / (trim[0]?.length || 3);
-    o.besoin = besoin(o.v);
-    o.arrete = ARR.has(o.sku);
-    o.preco = o.stock == null || o.arrete ? null : Math.max(0, Math.ceil(o.besoin - o.stock - o.cde));
-    // Couverture : le stock est consommé mois après mois selon la prévision
-    o.couv = null; if (o.stock != null) { let reste = o.stock, c = 0, fini = false; for (const v of o.v) { if (v <= 0) { c += 1; continue; } if (reste >= v) { reste -= v; c += 1; } else { c += reste / v; fini = true; break; } } o.couv = fini ? c : Infinity; }
+    o.t0 = m3.reduce((s, m) => s + (o.m[m] ? +o.m[m].q_prevu : 0), 0);
+    o.n1 = m3.reduce((s, m) => s + (o.m[m] ? +o.m[m].q_n1 - +o.m[m].q_retire : 0), 0);
+    o.flux = o.t0 / (m3.length || 3); o.arrete = ARR.has(o.sku);
+    const l = acc ? A.get(o.sku) : L.get(o.sku); o.src = l || null;
+    o.stock = l && l.stock != null ? +l.stock : null; o.cde = l && l.en_commande != null ? +l.en_commande : 0; o.fluxL = l && l.flux_mensuel != null ? +l.flux_mensuel : null;
+    o.couv = o.stock == null ? null : couvDe(o.v, o.stock);
+    if (!acc) { o.besoin = besoinM(o.v, PRECO.jours / 30); o.preco = o.stock == null || o.arrete ? null : Math.max(0, Math.ceil(o.besoin - o.stock - o.cde)); }
   }
-  // Regroupement par produit (tous les formats à la suite)
-  const G = new Map();
-  for (const o of prod.values()) { if (!(o.tot > 0) && !(o.stock > 0)) continue; const g = G.get(racine(o.sku)) || { r: racine(o.sku), items: [] }; g.items.push(o); G.set(g.r, g); }
   const q = PRECO.q.trim().toLowerCase();
-  const nomG = g => { const a = [...g.items].sort((x, y) => y.t[0] - x.t[0])[0].lib; return a.replace(/\s*\([^()]*\)\s*$/, '').replace(/\s*-?\s*\d+([.,]\d+)?\s?(ml|l|g|kg)\s*$/i, '').trim() || a; };
-  const groupes = [...G.values()].filter(g =>
-    pf === (C.get(g.r)?.litres == null) &&
-    (PRECO.marque === 'toutes' || g.items.some(o => o.marque === PRECO.marque)) &&
-    (!q || g.r.toLowerCase().includes(q) || g.items.some(o => o.sku.toLowerCase().includes(q) || o.lib.toLowerCase().includes(q)))
-  ).map(g => {
-    g.items.sort((a, b) => (a.l ?? 99) - (b.l ?? 99)); g.nom = nomG(g);
-    const lit = f => g.items.reduce((s, o) => s + (o.l && !o.arrete ? f(o) * o.l : 0), 0); // les formats arrêtés ne comptent pas dans le besoin en vrac
-    g.cuve = C.get(g.r) || null; g.aCond = lit(o => o.preco || 0); g.stockL = lit(o => o.stock || 0);
-    g.tL = trim.map((_, i) => lit(o => o.t[i] || 0)); g.fluxL = lit(o => o.flux); g.besoinL = lit(o => o.besoin);
-    g.totL = lit(o => o.tot); g.t0 = g.items.reduce((s, o) => s + (o.t[0] || 0), 0);
-    if (g.cuve && g.cuve.litres != null) {
-      g.manque = Math.max(0, g.aCond - g.cuve.litres);                                        // la cuve ne suffit pas à conditionner
-      g.aCommander = Math.max(0, Math.ceil((g.besoinL - g.stockL - g.cuve.litres - g.cuve.cde) / 10) * 10); // pour tenir le nombre de jours visé, cuve comprise
-      g.couv = g.fluxL > 0 ? (g.stockL + g.cuve.litres) / g.fluxL : null;
-    }
-    return g;
-  }).sort((a, b) => b.t0 - a.t0);
-  PRECO.groupes = groupes; PRECO.trim = trim; PRECO.libT = libT;
-  const fmtL = l => l == null ? 'unité' : l < 1 ? `${fmtN(l * 1000, 0)} ml` : `${fmtN(l, l % 1 ? 1 : 0)} L`;
   const tiret = '<span class="muted">–</span>', mo = v => v == null ? tiret : v === Infinity ? '> 12 mois' : fmtN(v, 1) + ' mois';
-  const nbP = groupes.reduce((a, g) => a + g.items.length, 0);
-  const tete = `<thead><tr><th>Produit</th><th class="n" title="Unités à ${pf ? 'commander' : 'conditionner'} pour avoir ${PRECO.jours} jours de stock (besoin − stock − déjà en commande)">À ${pf ? 'commander' : 'conditionner'}</th><th class="n" title="Stock lu dans le tableau de Laurent${dateL ? ' le ' + new Date(dateL).toLocaleDateString('fr-FR') : ''}">Stock</th><th class="n" title="Ventes prévues sur les trois prochains mois">Prévu ${esc(libT(trim[0] || []))}</th><th class="n">Flux par mois</th><th class="n" title="Temps que tient le stock actuel avec les ventes prévues">Couverture</th><th class="n" title="Vendu sur les mêmes trois mois l'an dernier, opérations exceptionnelles retirées">Mêmes mois N-1</th>${trim.slice(1).map((a, i) => `<th class="n${i ? '' : ' sep'}">${esc(libT(a))}</th>`).join('')}<th class="n">12 mois</th><th class="n sep" title="Flux mensuel du tableau de Laurent">Flux Laurent</th><th class="n">Écart</th></tr></thead>`;
-  const ligneG = g => {
-    const c = g.cuve && g.cuve.litres != null ? g.cuve : null;
-    const verdict = !c ? `<span class="muted">pas de cuve suivie</span>` : g.aCommander > 0 ? `<span style="color:#c0392b">Vrac à commander : ${fmtN(g.aCommander)} L</span>` : g.manque > 0 ? `<span style="color:#c0392b">Cuve trop juste : manque ${fmtN(g.manque)} L</span>` : `<span style="color:#1b8a5a">Vrac suffisant</span>`;
-    const aCde = g.items.reduce((s, o) => s + (o.preco || 0), 0);
-    if (pf) return `<tr class="grp"><td>${esc(g.nom)} <span class="muted">${esc(g.r)}</span></td><td class="n">${aCde > 0 ? `<span style="color:#c0392b">À commander : ${fmtN(aCde)}</span>` : '<span style="color:#1b8a5a">Stock suffisant</span>'}</td><td class="n">${fmtN(g.items.reduce((s, o) => s + (o.stock || 0), 0))}</td><td class="n">${fmtN(g.t0)}</td><td class="n">${fmtN(g.items.reduce((s, o) => s + o.flux, 0))}</td><td></td><td class="n">${fmtN(g.items.reduce((s, o) => s + o.n1, 0))}</td>${trim.slice(1).map((_, i) => `<td class="n${i ? '' : ' sep'}">${fmtN(g.items.reduce((s, o) => s + (o.t[i + 1] || 0), 0))}</td>`).join('')}<td class="n">${fmtN(g.items.reduce((s, o) => s + o.tot, 0))}</td><td class="sep"></td><td></td></tr>`;
-    return `<tr class="grp"><td>${esc(g.nom)} <span class="muted">${esc(g.r)}</span></td><td class="n">${verdict}<small>à conditionner : ${fmtN(g.aCond)} L</small></td><td class="n">${c ? `Cuve : ${fmtN(c.litres)} L` : tiret}<small>${c && c.cde ? `+ ${fmtN(c.cde)} L en commande · ` : ''}bidons : ${fmtN(g.stockL)} L${c && c.autres.length ? ' · à part : ' + esc(c.autres.join(', ')) : ''}</small></td><td class="n">${fmtN(g.tL[0] || 0)} L</td><td class="n">${fmtN(g.fluxL)} L</td><td class="n" title="Bidons et cuve ensemble">${c ? mo(g.couv) : tiret}<small>${c ? 'cuve comprise' : ''}</small></td><td></td>${trim.slice(1).map((_, i) => `<td class="n${i ? '' : ' sep'}">${fmtN(g.tL[i + 1] || 0)} L</td>`).join('')}<td class="n">${fmtN(g.totL)} L</td><td class="sep"></td><td></td></tr>`;
-  };
-  const ligneP = o => {
-    const ec = o.fluxL && o.flux ? (o.fluxL / o.flux - 1) * 100 : null;
-    return `<tr${o.arrete ? ' class="arrete"' : ''}><td>${fmtL(o.l)} <span class="muted">${esc(o.sku)}</span>${o.arrete ? ' <span class="preco-arrete">arrêté</span>' : ''}</td><td class="n ${o.preco == null ? '' : o.preco > 0 ? 'preco-a' : 'preco-ok'}">${o.arrete ? '<span class="muted">arrêté</span>' : o.preco == null ? tiret : o.preco > 0 ? fmtN(o.preco) : 'rien'}</td><td class="n">${o.stock == null ? tiret : fmtN(o.stock)}${o.cde ? `<small>+ ${fmtN(o.cde)} en commande</small>` : ''}</td><td class="n${o.corr.length ? ' corr' : ''}"${o.corr.length ? ` title="${esc(o.corr.join(' · '))}"` : ''}>${fmtN(o.t[0] || 0)}</td><td class="n"><b>${fmtN(o.flux)}</b></td><td class="n">${mo(o.couv)}</td><td class="n">${fmtN(o.n1)}</td>${trim.slice(1).map((_, i) => `<td class="n${i ? '' : ' sep'}">${fmtN(o.t[i + 1] || 0)}</td>`).join('')}<td class="n">${fmtN(o.tot)}</td><td class="n sep">${o.fluxL == null ? tiret : fmtN(o.fluxL)}</td><td class="n ${ec == null ? '' : Math.abs(ec) < 15 ? '' : ec > 0 ? 'ecart-haut' : 'ecart-bas'}">${ec == null ? tiret : (ec > 0 ? '+' : '') + fmtN(ec, 0) + ' %'}</td></tr>`;
-  };
-  $('preco-tbl').innerHTML = groupes.length ? `<table>${tete}<tbody>${groupes.map(g => ligneG(g) + g.items.map(ligneP).join('')).join('')}</tbody></table>` +
-    `<p class="sub" style="margin-top:8px">${fmtN(groupes.length)} produits, ${fmtN(nbP)} références. ${pf ? `Produits achetés finis, sans cuve chez nous (aérosols, additifs…). <b>À commander</b> = ventes prévues sur ${PRECO.jours} jours − stock − déjà en commande.` : `<b>À conditionner</b> = ventes prévues sur ${PRECO.jours} jours − stock de bidons − bidons déjà en commande. <b>Vrac à commander</b> = ce qui manque pour tenir ${PRECO.jours} jours en comptant les bidons, la cuve et le vrac déjà en commande.`} Un format <b>arrêté</b> (sorti du catalogue) n'a plus de préconisation et ne compte pas dans le besoin en vrac : on écoule son stock. Une case soulignée a été corrigée (détail au survol). Stock des bidons (unités) et des cuves (litres) : copie du tableau de Laurent du ${dateL ? new Date(dateL).toLocaleDateString('fr-FR') : '–'}, pas encore mise à jour chaque nuit. « Écart » : flux de Laurent comparé au nôtre (rouge s'il est plus haut d'au moins 15 %, vert s'il est plus bas).</p>`
-    : '<div class="muted">Aucun produit sur cette sélection.</div>';
+  const fmtL = l => l == null ? 'unité' : l < 1 ? `${fmtN(l * 1000, 0)} ml` : `${fmtN(l, l % 1 ? 1 : 0)} L`;
+  const thMois = mois.map((m, i) => `<th class="n mois${i ? '' : ' sep'}">${libM(m)}</th>`).join('');
+  const tdMois = (o, f = x => x) => mois.map((m, i) => { const r = o.m && o.m[m]; const corr = r && (+r.q_retire || +r.q_rupture); return `<td class="n mois${i ? '' : ' sep'}${corr ? ' corr' : ''}"${corr ? ` title="${esc(+r.q_retire ? fmtN(+r.q_retire) + ' unités retirées (' + ((r.note || '').split(' ; ')[0] || 'opération exceptionnelle') + ')' : fmtN(+r.q_rupture) + ' unités ajoutées (rupture probable)')}"` : ''}>${fmtN(f(o.v[i] || 0))}</td>`; }).join('');
+  const finLaurent = o => { const ec = o.fluxL && o.flux ? (o.fluxL / o.flux - 1) * 100 : null; return `<td class="n sep">${o.fluxL == null ? tiret : fmtN(o.fluxL)}</td><td class="n ${ec == null ? '' : Math.abs(ec) < 15 ? '' : ec > 0 ? 'ecart-haut' : 'ecart-bas'}">${ec == null ? tiret : (ec > 0 ? '+' : '') + fmtN(ec, 0) + ' %'}</td>`; };
+  const badge = o => o.arrete ? ' <span class="preco-arrete">arrêté</span>' : '';
+  let html = '', pied = '';
+
+  if (!acc) {
+    // ---- Chimie (produits avec cuve) et Chimie PF (achetés finis) : formats regroupés par produit
+    const G = new Map();
+    for (const o of prod.values()) { if (!(o.tot > 0) && !(o.stock > 0)) continue; const g = G.get(racine(o.sku)) || { r: racine(o.sku), items: [] }; g.items.push(o); G.set(g.r, g); }
+    const nomG = g => { const a = [...g.items].sort((x, y) => y.t0 - x.t0)[0].lib; return a.replace(/\s*\([^()]*\)\s*$/, '').replace(/\s*-?\s*\d+([.,]\d+)?\s?(ml|l|g|kg)\s*$/i, '').trim() || a; };
+    const groupes = [...G.values()].filter(g =>
+      pf === !C.has(g.r) &&
+      (PRECO.marque === 'toutes' || g.items.some(o => o.marque === PRECO.marque)) &&
+      (!q || g.r.toLowerCase().includes(q) || g.items.some(o => o.sku.toLowerCase().includes(q) || o.lib.toLowerCase().includes(q)))
+    ).map(g => {
+      g.items.sort((a, b) => (a.l ?? 99) - (b.l ?? 99)); g.nom = nomG(g);
+      const lit = f => g.items.reduce((s, o) => s + (o.l && !o.arrete ? f(o) * o.l : 0), 0); // les formats arrêtés ne comptent pas dans le besoin en vrac
+      const uni = f => g.items.reduce((s, o) => s + (f(o) || 0), 0);
+      g.cuve = C.get(g.r) || null; g.aCond = lit(o => o.preco || 0); g.stockL = lit(o => o.stock || 0); g.fluxL = lit(o => o.flux); g.besoinL = lit(o => o.besoin);
+      g.t0 = uni(o => o.t0); g.t0L = lit(o => o.t0); g.totL = lit(o => o.tot); g.vL = mois.map((_, i) => lit(o => o.v[i] || 0));
+      g.aCde = uni(o => o.preco); g.manque = 0; g.aCommander = 0;
+      if (g.cuve) {
+        g.manque = Math.max(0, g.aCond - g.cuve.litres);
+        g.aCommander = Math.max(0, Math.ceil((g.besoinL - g.stockL - g.cuve.litres - g.cuve.cde) / 10) * 10);
+        g.couv = g.fluxL > 0 ? (g.stockL + g.cuve.litres) / g.fluxL : null;
+      }
+      return g;
+    // Tout en haut : les produits dont le vrac est à commander, puis ceux dont la cuve est trop juste
+    }).sort((a, b) => (b.aCommander > 0) - (a.aCommander > 0) || b.aCommander - a.aCommander || (b.manque > 0) - (a.manque > 0) || (pf ? (b.aCde > 0) - (a.aCde > 0) : 0) || b.t0 - a.t0);
+    const tete = `<thead><tr><th>Produit</th><th class="n" title="Unités à ${pf ? 'commander' : 'conditionner'} pour avoir ${PRECO.jours} jours de stock (besoin − stock − déjà en commande)">À ${pf ? 'commander' : 'conditionner'}</th><th class="n" title="Stock lu dans le tableau de Laurent${dateL ? ' le ' + new Date(dateL).toLocaleDateString('fr-FR') : ''}">Stock</th><th class="n" title="Ventes prévues sur les trois prochains mois">Prévu ${esc(libT(m3))}</th><th class="n">Flux par mois</th><th class="n" title="Temps que tient le stock actuel avec les ventes prévues">Couverture</th><th class="n" title="Vendu sur les mêmes trois mois l'an dernier, opérations exceptionnelles retirées">Mêmes mois N-1</th>${thMois}<th class="n">12 mois</th><th class="n sep" title="Flux mensuel du tableau de Laurent">Flux Laurent</th><th class="n">Écart</th></tr></thead>`;
+    const ligneG = g => {
+      if (pf) return `<tr class="grp"><td>${esc(g.nom)} <span class="muted">${esc(g.r)}</span></td><td class="n">${g.aCde > 0 ? `<span class="rouge">À commander : ${fmtN(g.aCde)}</span>` : '<span class="vert">Stock suffisant</span>'}</td><td class="n">${fmtN(g.items.reduce((s, o) => s + (o.stock || 0), 0))}</td><td class="n">${fmtN(g.t0)}</td><td class="n">${fmtN(g.items.reduce((s, o) => s + o.flux, 0))}</td><td></td><td class="n">${fmtN(g.items.reduce((s, o) => s + o.n1, 0))}</td>${mois.map((_, i) => `<td class="n mois${i ? '' : ' sep'}">${fmtN(g.items.reduce((s, o) => s + (o.v[i] || 0), 0))}</td>`).join('')}<td class="n">${fmtN(g.items.reduce((s, o) => s + o.tot, 0))}</td><td class="sep"></td><td></td></tr>`;
+      const c = g.cuve;
+      const verdict = g.aCommander > 0 ? `<span class="rouge">Vrac à commander : ${fmtN(g.aCommander)} L</span>` : g.manque > 0 ? `<span class="rouge">Cuve trop juste : manque ${fmtN(g.manque)} L</span>` : `<span class="vert">Vrac suffisant</span>`;
+      const info = `Bidons en stock : ${fmtN(g.stockL)} L · ${c.detail.join(' · ')}`;
+      return `<tr class="grp"><td>${esc(g.nom)} <span class="muted">${esc(g.r)}</span></td><td class="n">${verdict}<small>à conditionner : ${fmtN(g.aCond)} L</small></td><td class="n" title="${esc(info)}">Cuve : ${fmtN(c.litres)} L <span class="preco-info">ⓘ</span>${c.cde ? `<small>+ ${fmtN(c.cde)} L en commande</small>` : ''}</td><td class="n">${fmtN(g.t0L)} L</td><td class="n">${fmtN(g.fluxL)} L</td><td class="n" title="Bidons et cuve ensemble">${mo(g.couv)}<small>cuve comprise</small></td><td></td>${g.vL.map((v, i) => `<td class="n mois${i ? '' : ' sep'}">${fmtN(v)} L</td>`).join('')}<td class="n">${fmtN(g.totL)} L</td><td class="sep"></td><td></td></tr>`;
+    };
+    const ligneP = o => `<tr${o.arrete ? ' class="arrete"' : ''}><td>${fmtL(o.l)} <span class="muted">${esc(o.sku)}</span>${badge(o)}</td><td class="n ${o.preco == null ? '' : o.preco > 0 ? 'preco-a' : 'preco-ok'}">${o.arrete ? '<span class="muted">arrêté</span>' : o.preco == null ? tiret : o.preco > 0 ? fmtN(o.preco) : 'rien'}</td><td class="n">${o.stock == null ? tiret : fmtN(o.stock)}${o.cde ? `<small>+ ${fmtN(o.cde)} en commande</small>` : ''}</td><td class="n">${fmtN(o.t0)}</td><td class="n"><b>${fmtN(o.flux)}</b></td><td class="n">${mo(o.couv)}</td><td class="n">${fmtN(o.n1)}</td>${tdMois(o)}<td class="n">${fmtN(o.tot)}</td>${finLaurent(o)}</tr>`;
+    html = groupes.length ? `<table>${tete}<tbody>${groupes.map(g => ligneG(g) + g.items.map(ligneP).join('')).join('')}</tbody></table>` : '';
+    const nbV = groupes.filter(g => g.aCommander > 0).length;
+    pied = `${fmtN(groupes.length)} produits, ${fmtN(groupes.reduce((a, g) => a + g.items.length, 0))} références${!pf ? `, dont <b>${fmtN(nbV)} avec du vrac à commander</b> (en haut du tableau)` : ''}. ` + (pf ? `Produits achetés finis, sans cuve chez nous (aérosols, additifs…). <b>À commander</b> = ventes prévues sur ${PRECO.jours} jours − stock − déjà en commande.` : `<b>À conditionner</b> = ventes prévues sur ${PRECO.jours} jours − stock de bidons − bidons déjà en commande : c'est une information, pas une alerte. <b>Vrac à commander</b> (en rouge) = ce qui manque pour tenir ${PRECO.jours} jours en comptant les bidons, toutes les cuves du produit et le vrac déjà en commande. Le détail des cuves est au survol du ⓘ.`) + ` Un format <b>arrêté</b> n'a plus de préconisation et ne compte pas dans le besoin en vrac. Une case soulignée a été corrigée (détail au survol). Stocks : copie du tableau de Laurent du ${dateL ? new Date(dateL).toLocaleDateString('fr-FR') : '–'}, pas encore mise à jour chaque nuit.`;
+    PRECO.csv = { nom: pf ? 'chimie_pf' : 'chimie', tete: ['Produit', 'Référence', 'Format (L)', `À ${pf ? 'commander' : 'conditionner'} (${PRECO.jours} j)`, 'Stock', 'En commande', 'Prévu 3 mois', 'Flux par mois', 'Couverture (mois)', 'Mêmes mois N-1', ...mois.map(m => m.slice(0, 7)), '12 mois', 'Flux Laurent', 'Cuves (L)', 'Vrac en commande (L)', 'Vrac à commander (L)'],
+      lignes: groupes.flatMap(g => g.items.map(o => [g.nom, o.sku, o.l, o.preco, o.stock, o.cde, o.t0, o.flux, o.couv, o.n1, ...o.v, o.tot, o.fluxL, g.cuve ? g.cuve.litres : null, g.cuve ? g.cuve.cde : null, g.cuve ? g.aCommander : null])) };
+  } else {
+    // ---- Accessoires : une section import (Chine) et une section intra, regroupées par fournisseur
+    const ORI = new Map(fours.map(f => [f.fournisseur, f.origine]));
+    const SECU = 1, CYCLE = 3; // import : un mois de sécurité, un conteneur tous les trois mois
+    const items = [...prod.values()].filter(o => o.src).filter(o => (ORI.get(o.src.fournisseur) === 'IMPORT') === (ong === 'import'))
+      .filter(o => !q || o.sku.toLowerCase().includes(q) || o.lib.toLowerCase().includes(q) || String(o.src.fournisseur || '').toLowerCase().includes(q));
+    for (const o of items) {
+      o.delai = o.src.delai_sem != null ? +o.src.delai_sem / 4.345 : (ong === 'import' ? 3.3 : 0.5); // en mois
+      o.cible = ong === 'import' ? o.delai + CYCLE + SECU : o.delai + PRECO.jours / 30;                 // mois de vente à couvrir
+      o.cond = +o.src.cond_appro || 1;
+      const brut = besoinM(o.v, o.cible) - (o.stock || 0) - o.cde;
+      o.preco = o.arrete || o.stock == null ? null : brut > 0 ? Math.ceil(brut / o.cond) * o.cond : 0;
+      const c = couvDe(o.v, (o.stock || 0) + o.cde); o.rupture = c === Infinity ? null : mois[Math.min(mois.length - 1, Math.floor(c))];
+      o.urgent = !o.arrete && c !== Infinity && c < o.delai; // rupture avant qu'une commande passée aujourd'hui n'arrive
+      o.valeur = (o.preco || 0) * (+o.src.pru || 0);
+    }
+    const G = new Map(); for (const o of items) { const k = o.src.fournisseur || 'Fournisseur non renseigné'; const g = G.get(k) || { nom: k, items: [] }; g.items.push(o); G.set(k, g); }
+    const groupes = [...G.values()].map(g => { g.items.sort((a, b) => (b.preco > 0) - (a.preco > 0) || (a.couv ?? 99) - (b.couv ?? 99)); g.nb = g.items.filter(o => o.preco > 0).length; g.valeur = g.items.reduce((s, o) => s + o.valeur, 0); g.delai = g.items[0].delai; return g; })
+      .sort((a, b) => (b.nb > 0) - (a.nb > 0) || b.valeur - a.valeur);
+    const tete = `<thead><tr><th>Produit</th><th class="n" title="Quantité à commander, arrondie au conditionnement d'appro">À commander</th><th class="n" title="Stock lu dans le tableau de Laurent${dateA ? ' le ' + new Date(dateA).toLocaleDateString('fr-FR') : ''}">Stock</th><th class="n">Prévu ${esc(libT(m3))}</th><th class="n">Flux par mois</th><th class="n" title="Temps que tient le stock actuel, sans compter ce qui est en commande">Couverture</th><th class="n" title="Mois où le stock et les commandes en cours seront épuisés">Rupture prévue</th><th class="n">Mêmes mois N-1</th>${thMois}<th class="n">12 mois</th><th class="n sep" title="Flux mensuel du tableau de Laurent">Flux Laurent</th><th class="n">Écart</th>${ong === 'import' ? '<th class="n" title="Première commande de la préco conteneur de Laurent">Préco Laurent</th>' : ''}</tr></thead>`;
+    const ligneG = g => `<tr class="grp"><td>${esc(g.nom)}</td><td class="n">${g.nb ? `<span class="rouge">${fmtN(g.nb)} référence${g.nb > 1 ? 's' : ''} à commander</span><small>environ ${fmtEur(g.valeur)} HT d'achat</small>` : '<span class="vert">Rien à commander</span>'}</td><td class="n" colspan="2">délai moyen : ${fmtN(g.delai * 4.345, 0)} semaines</td><td colspan="${4 + mois.length + 3 + (ong === 'import' ? 1 : 0)}"></td></tr>`;
+    const ligneP = o => `<tr${o.arrete ? ' class="arrete"' : ''}><td>${esc(o.lib)} <span class="muted">${esc(o.sku)}</span>${badge(o)}</td><td class="n ${o.preco > 0 ? 'preco-a' : o.preco === 0 ? 'preco-ok' : ''}${o.urgent && o.preco > 0 ? ' rouge' : ''}"${o.preco > 0 ? ` title="Pour couvrir ${fmtN(o.cible, 1)} mois de vente · par ${fmtN(o.cond)}"` : ''}>${o.arrete ? '<span class="muted">arrêté</span>' : o.preco == null ? tiret : o.preco > 0 ? fmtN(o.preco) : 'rien'}</td><td class="n">${o.stock == null ? tiret : fmtN(o.stock)}${o.cde ? `<small>+ ${fmtN(o.cde)} en commande</small>` : ''}</td><td class="n">${fmtN(o.t0)}</td><td class="n"><b>${fmtN(o.flux)}</b></td><td class="n">${mo(o.couv)}</td><td class="n${o.urgent ? ' rouge' : ''}"${o.urgent ? ' title="Rupture avant l\'arrivée d\'une commande passée aujourd\'hui"' : ''}>${o.rupture ? libM(o.rupture) : '<span class="muted">au-delà</span>'}</td><td class="n">${fmtN(o.n1)}</td>${tdMois(o)}<td class="n">${fmtN(o.tot)}</td>${finLaurent(o)}${ong === 'import' ? `<td class="n">${o.src.preco_laurent == null ? tiret : fmtN(+o.src.preco_laurent)}</td>` : ''}</tr>`;
+    html = groupes.length ? `<table>${tete}<tbody>${groupes.map(g => ligneG(g) + g.items.map(ligneP).join('')).join('')}</tbody></table>` : '';
+    const sansFiche = [...prod.values()].filter(o => !o.src && o.tot > 0).length;
+    pied = `${fmtN(items.length)} références chez ${fmtN(groupes.length)} fournisseurs. ` + (ong === 'import'
+      ? `<b>À commander</b> = ventes prévues pendant le délai du fournisseur + ${CYCLE} mois (un conteneur par trimestre) + ${SECU} mois de sécurité, moins le stock et les commandes en cours, arrondi au conditionnement d'appro. En rouge : la rupture arrive avant qu'une commande passée aujourd'hui ne soit livrée. « Préco Laurent » : sa première commande conteneur (${esc(items.find(o => o.src.preco_laurent_date)?.src.preco_laurent_date || '–')}).`
+      : `<b>À commander</b> = ventes prévues pendant le délai du fournisseur + ${PRECO.jours} jours de stock visé, moins le stock et les commandes en cours, arrondi au conditionnement d'appro.`) +
+      ` Stocks, délais et conditionnements : copie du tableau de Laurent du ${dateA ? new Date(dateA).toLocaleDateString('fr-FR') : '–'}.${sansFiche ? ` ${fmtN(sansFiche)} accessoires vendus n'ont pas de ligne dans son onglet Accessoires et ne sont pas affichés.` : ''}`;
+    PRECO.csv = { nom: 'accessoires_' + ong, tete: ['Fournisseur', 'Référence', 'Produit', 'À commander', 'Par', 'Stock', 'En commande', 'Prévu 3 mois', 'Flux par mois', 'Couverture (mois)', 'Rupture prévue', 'Délai (mois)', 'Mêmes mois N-1', ...mois.map(m => m.slice(0, 7)), '12 mois', 'Flux Laurent', 'Préco Laurent'],
+      lignes: groupes.flatMap(g => g.items.map(o => [g.nom, o.sku, o.lib, o.preco, o.cond, o.stock, o.cde, o.t0, o.flux, o.couv, o.rupture ? o.rupture.slice(0, 7) : '', o.delai, o.n1, ...o.v, o.tot, o.fluxL, o.src.preco_laurent])) };
+  }
+  $('preco-tbl').innerHTML = html ? html + `<p class="sub" style="margin-top:8px">${pied} « Écart » : flux de Laurent comparé au nôtre (rouge s'il est plus haut d'au moins 15 %, vert s'il est plus bas).</p>` : '<div class="muted">Aucun produit sur cette sélection.</div>';
   // Corrections : opérations retirées et ruptures probables
   const ret = new Map(); for (const r of lignes) if (+r.q_retire) ret.set(r.sku, (ret.get(r.sku) || 0) + +r.q_retire);
   const rup = lignes.filter(r => +r.q_rupture).sort((a, b) => +b.q_rupture - +a.q_rupture);
@@ -1843,11 +1874,10 @@ $('preco-tiles').addEventListener('click', async ev => {
   }
 });
 $('preco-csv').onclick = () => {
-  const tr = PRECO.trim || [], nb = v => v == null || v === Infinity ? '' : String(Math.round(v * 10) / 10).replace('.', ',');
-  const tete = ['Produit', 'Référence', 'Format (L)', `À ${PRECO.onglet === 'pf' ? 'commander' : 'conditionner'} (${PRECO.jours} j)`, 'Stock', 'En commande', ...tr.map(a => 'Prévu ' + PRECO.libT(a)), 'Flux par mois', 'Couverture (mois)', 'Mêmes mois N-1', '12 mois', 'Flux Laurent', 'Cuve (L)', 'Vrac en commande (L)', 'Vrac à commander (L)'];
-  const lignes = (PRECO.groupes || []).flatMap(g => g.items.map(o => [g.nom, o.sku, nb(o.l), nb(o.preco), nb(o.stock), nb(o.cde), ...tr.map((_, i) => nb(o.t[i] || 0)), nb(o.flux), nb(o.couv), nb(o.n1), nb(o.tot), nb(o.fluxL), g.cuve && g.cuve.litres != null ? nb(g.cuve.litres) : '', g.cuve ? nb(g.cuve.cde) : '', g.aCommander != null ? nb(g.aCommander) : '']));
-  const csv = '\ufeff' + [tete, ...lignes].map(r => r.map(c => /[;"\n]/.test(String(c)) ? '"' + String(c).replace(/"/g, '""') + '"' : c).join(';')).join('\r\n');
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `SHINE_preco_ventes_${PRECO.onglet === 'pf' ? 'chimie_pf' : 'chimie'}_${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
+  if (!PRECO.csv) return;
+  const nb = v => v == null || v === Infinity || v === '' ? '' : typeof v === 'number' ? String(Math.round(v * 10) / 10).replace('.', ',') : v;
+  const csv = '\ufeff' + [PRECO.csv.tete, ...PRECO.csv.lignes.map(r => r.map(nb))].map(r => r.map(c => /[;"\n]/.test(String(c)) ? '"' + String(c).replace(/"/g, '""') + '"' : c).join(';')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `SHINE_preco_ventes_${PRECO.csv.nom}_${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
 };
 // Barres empilées par mois (oct. → sept.) avec la courbe N-1 ; utilisé par les onglets Achats et Charges
 function graphiqueEmpile(ids, series, data, n1t, y, libN1) {
