@@ -279,6 +279,18 @@ input[type=password] {
 .q-actions .btn.conseil { box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
 @media (max-width: 700px) { .q-item { flex-direction: column; } .q-actions { max-width: none; justify-content: flex-start; } }
 #app.mode-finance .rail-item[data-vue], #app.mode-finance .rail-sep-ventes, #app.mode-finance .rail-pill { display: none; }
+/* Board Achats : deux onglets à gauche (Achats, Préco de vente) */
+.rail-item.rail-achats { display: none; }
+#app.mode-achats .rail-item[data-vue]:not(.rail-achats), #app.mode-achats .rail-sep-ventes { display: none; }
+#app.mode-achats .rail-item.rail-achats { display: grid; }
+#app.mode-achats .rail-pill { display: block; }
+#app.mode-preco > :not(nav):not(header):not(#vue-preco):not(footer) { display: none; }
+#app.mode-preco #per-btn, #app.mode-preco #per-zone, #app.mode-preco #f-ex { display: none; }
+.preco-barre { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; }
+.preco-tbl td.corr { box-shadow: inset 0 -2px 0 var(--accent); cursor: help; }
+.preco-tbl tr.tot td { font-weight: 700; }
+.preco-tbl td.ecart-haut { color: #c0392b; } .preco-tbl td.ecart-bas { color: #1b8a5a; }
+.preco-liste { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; }
 .row-actions { display: flex; gap: 6px; align-items: center; justify-content: flex-end; }
 .row-actions select { min-height: 30px; padding: 3px 10px; font-size: 12.5px; }
 .progress { font-size: 12.5px; color: var(--ink-2); }
@@ -761,6 +773,8 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
     <button class="rail-item" data-vue="revendeurs" data-label="Revendeurs" aria-label="Revendeurs"><svg viewBox="0 0 24 24"><path d="M4 9.5 5.6 4.5h12.8L20 9.5M4 9.5h16M4 9.5c0 1.5 1.2 2.5 2.7 2.5s2.6-1 2.6-2.5c0 1.5 1.2 2.5 2.7 2.5s2.7-1 2.7-2.5c0 1.5 1.1 2.5 2.6 2.5S20 11 20 9.5M5.5 12v7.5h13V12M10 19.5v-4.5h4v4.5"/></svg></button>
     <button class="rail-item" data-vue="myclear" data-label="MyClear" aria-label="MyClear"><svg viewBox="0 0 24 24"><path d="M5.5 8h13l-1 12h-11zM9 10.5V7a3 3 0 0 1 6 0v3.5"/></svg></button>
     <button class="rail-item" data-vue="validation" data-label="À valider" aria-label="À valider"><svg viewBox="0 0 24 24"><rect x="5" y="4.5" width="14" height="16" rx="2"/><path d="M9 4.5V3.5h6v1M8.5 12.3l2.2 2.2 4.8-5"/></svg><span class="rail-nb hidden" id="val-nb"></span></button>
+    <button class="rail-item rail-achats" data-vue="achats" data-label="Achats" aria-label="Achats"><svg viewBox="0 0 24 24"><path d="M4 5h2.2l2 10.2h9.3L19.5 8H7.4"/><circle cx="9.6" cy="18.6" r="1.4"/><circle cx="16.4" cy="18.6" r="1.4"/></svg></button>
+    <button class="rail-item rail-achats" data-vue="preco" data-label="Préco de vente" aria-label="Préco de vente"><svg viewBox="0 0 24 24"><path d="M4 19.5h16M6.5 15.5l3.8-4.2 3 2.6 4.6-6"/><path d="M15 7.5h3.2v3.2"/></svg></button>
     <span class="rail-sep rail-sep-ventes" aria-hidden="true"></span>
     <button class="rail-item" id="rail-boards" data-label="Changer de board" aria-label="Changer de board" aria-haspopup="menu" aria-expanded="false"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="7" height="7" rx="1.6"/><rect x="13" y="4" width="7" height="7" rx="1.6"/><rect x="4" y="13" width="7" height="7" rx="1.6"/><rect x="13" y="13" width="7" height="7" rx="1.6"/></svg></button>
     <button class="rail-item rail-ai" id="rail-ai" data-label="Assistant ventes" aria-label="Assistant ventes" aria-expanded="false" aria-controls="ai-panel"><svg viewBox="0 0 24 24"><path d="M4.6 5h14.8a1.1 1.1 0 0 1 1.1 1.1v9.3a1.1 1.1 0 0 1-1.1 1.1H10.2L5.6 20v-3.5h-1a1.1 1.1 0 0 1-1.1-1.1V6.1A1.1 1.1 0 0 1 4.6 5z"/><path d="M12 7.9l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg></button>
@@ -823,6 +837,40 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
   </div>
 
   <!-- Onglets Achats et Charges : décaissements réels du plan de trésorerie -->
+  <!-- Board Achats, onglet Préco de vente : prévision des ventes par produit (agrégat agg_preco_chimie, recalculé chaque nuit) -->
+  <div id="vue-preco" class="hidden">
+    <div class="preco-barre">
+      <div class="seg-toggle" id="preco-onglets" role="group" aria-label="Type de produits">
+        <button class="btn small" data-o="chimie" aria-pressed="true">Chimie</button>
+        <button class="btn small" data-o="accessoires" aria-pressed="false">Accessoires</button>
+      </div>
+    </div>
+    <div id="preco-chimie">
+      <div class="sub fin-note" id="preco-note"></div>
+      <div class="grid tiles" id="preco-tiles"></div>
+      <div class="card">
+        <div class="card-head">
+          <h2>Ventes prévues par produit et par mois</h2>
+          <span class="hint">unités, packs éclatés</span>
+        </div>
+        <div class="preco-barre">
+          <select id="preco-fmt" aria-label="Format"><option value="tous">Tous les formats</option><option value="0.45">450 ml</option><option value="0.75">750 ml</option><option value="5">5 L</option><option value="autres">Autres formats</option></select>
+          <select id="preco-marque" aria-label="Marque"><option value="SHINE">Marque SHINE</option><option value="toutes">Toutes les marques</option></select>
+          <input type="search" id="preco-q" placeholder="Filtrer un produit" style="min-width:220px">
+          <button class="link" id="preco-csv">Exporter en CSV</button>
+        </div>
+        <div class="tbl-wrap preco-tbl" id="preco-tbl"><div class="muted">Chargement…</div></div>
+      </div>
+      <div class="card" style="margin-top:14px">
+        <div class="card-head"><h2>Corrections appliquées</h2><span class="hint">ce qui a été retiré ou ajouté aux ventes de l'an dernier</span></div>
+        <div id="preco-corr"></div>
+      </div>
+    </div>
+    <div id="preco-accessoires" class="hidden">
+      <div class="card"><div class="muted">La préconisation des accessoires arrive dans une prochaine étape : la méthode sera différente de la chimie (délais d'import, minimums de commande).</div></div>
+    </div>
+  </div>
+
   <div id="vue-finance" class="hidden">
     <div class="sub fin-note" id="fin-note"></div>
     <div class="grid tiles" id="fin-tiles"></div>
@@ -1167,7 +1215,9 @@ const VUES = {
   validation: { titre: 'À valider', validation: true },
   // Boards Achats et Charges (plan de trésorerie) : même page, ouverts par le bouton « Changer de board »
   achats: { titre: 'Achats', finance: 'ACHATS' },
-  charges: { titre: 'Charges', finance: 'CHARGES' }
+  charges: { titre: 'Charges', finance: 'CHARGES' },
+  // Préconisation de vente : onglet du board Achats
+  preco: { titre: 'Préco de vente', preco: true }
 };
 const canalDeVue = v => VUES[v]?.canal || 'SHINE';
 // Lignes mensuelles de l'exercice choisi, limitées à la période s'il y en a une
@@ -1252,7 +1302,7 @@ async function loadExercice() {
     sb.rpc('kpi_periode', { p_du: n1du, p_au: n1au }),
     fetchAll('v_groupes_resume', q => q.eq('exercice', S.ex)),
     loadClients(),
-    S.vue === 'general' || VUES[S.vue].finance || VUES[S.vue].validation ? null : loadTop()
+    S.vue === 'general' || VUES[S.vue].finance || VUES[S.vue].validation || VUES[S.vue].preco ? null : loadTop()
   ]);
   S.prod = prod.prod; S.prodOrig = prod.orig; S.groupes = groupes; S.clients = clients;
   S.top = top?.lignes || []; S.nbClients = top?.nb ?? null;
@@ -1311,6 +1361,7 @@ function shiftYear(iso, n) { const [y, m, d] = iso.split('-').map(Number); const
 // ---------- Rendu ----------
 function render() {
   if (!S.ex) return;
+  if (VUES[S.vue].preco) { renderFresh(); renderPreco(); return; }
   const all = canalFilter(S.mensuel);
   const rows = all.filter(estProduit);
   const cur = rows.filter(dansPer);
@@ -1638,6 +1689,91 @@ document.querySelectorAll('.cond-vue .btn').forEach(b => b.onclick = () => {
   document.querySelectorAll('.cond-vue .btn').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   renderCond();
 });
+// ---------- Préco de vente (board Achats) ----------
+// Lit l'agrégat agg_preco_chimie (une ligne par produit et par mois prévu), les objectifs par famille de clients,
+// la dernière copie du tableau de Laurent (flux et stock) et la liste des opérations exceptionnelles retirées.
+const PRECO = { data: null, onglet: 'chimie', fmt: 'tous', marque: 'SHINE', q: '', lignes: [] };
+async function renderPreco() {
+  $('preco-chimie').classList.toggle('hidden', PRECO.onglet !== 'chimie');
+  $('preco-accessoires').classList.toggle('hidden', PRECO.onglet !== 'accessoires');
+  if (PRECO.onglet !== 'chimie') return;
+  if (!PRECO.data) {
+    try {
+      const [lignes, obj, lau, excl] = await Promise.all([fetchAll('agg_preco_chimie'), fetchAll('preco_objectifs'), fetchAll('preco_laurent'), fetchAll('preco_exclusions')]);
+      PRECO.data = { lignes, obj, lau, excl };
+    } catch (e) { $('preco-tbl').innerHTML = `<div class="muted">Erreur de chargement : ${esc(e.message || e)}</div>`; return; }
+  }
+  const { lignes, obj, lau, excl } = PRECO.data;
+  const mois = [...new Set(lignes.map(r => r.mois))].sort();
+  const libM = m => new Date(m.slice(0, 7) + '-15').toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+  const exRef = obj[0]?.exercice_ref || '';
+  const ordre = ['PARTICULIERS', 'REVENDEURS', 'PROS'];
+  const objs = ordre.map(k => obj.find(o => o.groupe === k)).filter(Boolean);
+  const evol = o => +o.realise_ca ? (+o.objectif_ca / +o.realise_ca - 1) * 100 : 0;
+  $('preco-note').innerHTML = `Pour chaque produit : ventes du même mois de l'exercice ${esc(exRef.replace('-', '–'))} (packs éclatés), moins les opérations exceptionnelles qui ne se referont pas, corrigées des ruptures probables, puis multipliées par l'évolution visée pour chaque famille de clients. Recalculé chaque nuit${lignes[0]?.calcule_le ? ' (dernier calcul le ' + new Date(lignes[0].calcule_le).toLocaleDateString('fr-FR') + ')' : ''}.`;
+  $('preco-tiles').innerHTML = objs.map(o => `<div class="card tile"><div class="label">Objectif ${esc(o.libelle)}</div><div class="value">${fmtK(+o.objectif_ca)}</div><div class="delta">réalisé ${esc(exRef.replace('-', '–'))} : ${fmtEur(+o.realise_ca)} · <b>${evol(o) >= 0 ? '+' : ''}${fmtN(evol(o), 1)} %</b></div><div class="delta">${esc(o.perimetre)}</div></div>`).join('');
+  // Copie la plus récente du tableau de Laurent
+  const dateL = lau.reduce((a, r) => r.lu_le > a ? r.lu_le : a, '');
+  const L = new Map(lau.filter(r => r.lu_le === dateL).map(r => [r.sku, r]));
+  // Une ligne par produit
+  const prod = new Map();
+  for (const r of lignes) {
+    const o = prod.get(r.sku) || { sku: r.sku, lib: r.libelle || r.sku, l: r.contenance_l == null ? null : +r.contenance_l, marque: r.marque || '', m: {}, tot: 0, n1: 0 };
+    o.m[r.mois] = r; o.tot += +r.q_prevu; o.n1 += +r.q_n1; prod.set(r.sku, o);
+  }
+  const fmtL = l => l == null ? '–' : l < 1 ? `${fmtN(l * 1000, 0)} ml` : `${fmtN(l, l % 1 ? 1 : 0)} L`;
+  const q = PRECO.q.trim().toLowerCase();
+  const liste = [...prod.values()].filter(o =>
+    (PRECO.marque === 'toutes' || o.marque === PRECO.marque) &&
+    (PRECO.fmt === 'tous' || (PRECO.fmt === 'autres' ? ![0.45, 0.75, 5].includes(o.l) : o.l === +PRECO.fmt)) &&
+    (!q || o.sku.toLowerCase().includes(q) || o.lib.toLowerCase().includes(q)) && (o.tot > 0 || o.n1 > 0)
+  ).sort((a, b) => b.tot - a.tot);
+  PRECO.lignes = liste; PRECO.mois = mois; PRECO.L = L;
+  const nbM = mois.length || 12;
+  const cell = (o, m) => {
+    const r = o.m[m]; if (!r) return '<td class="n muted">–</td>';
+    const notes = [];
+    if (+r.q_retire) notes.push(`${fmtN(+r.q_retire)} unités retirées (${r.note ? r.note.split(' ; ')[0] : 'opération exceptionnelle'})`);
+    if (+r.q_rupture) notes.push(`${fmtN(+r.q_rupture)} unités ajoutées : rupture probable chez les particuliers`);
+    const titre = `Vendu l'an dernier : ${fmtN(+r.q_n1)} · particuliers ${fmtN(+r.q_part)}, pros ${fmtN(+r.q_pro)}, revendeurs ${fmtN(+r.q_rev)}${+r.q_autres ? ', autres ' + fmtN(+r.q_autres) : ''}${notes.length ? ' · ' + notes.join(' · ') : ''}`;
+    return `<td class="n${notes.length ? ' corr' : ''}" title="${esc(titre)}">${fmtN(+r.q_prevu)}</td>`;
+  };
+  const totM = m => liste.reduce((a, o) => a + (o.m[m] ? +o.m[m].q_prevu : 0), 0);
+  const tot = liste.reduce((a, o) => a + o.tot, 0), totN1 = liste.reduce((a, o) => a + o.n1, 0);
+  $('preco-tbl').innerHTML = liste.length ? `<table><thead><tr><th>Réf.</th><th>Produit</th><th>Format</th>${mois.map(m => `<th class="n">${libM(m)}</th>`).join('')}<th class="n">Total prévu</th><th class="n">Flux par mois</th><th class="n">Vendu ${esc(exRef.replace('-', '–'))}</th><th class="n" title="Flux mensuel lu dans le tableau de Laurent${dateL ? ' le ' + new Date(dateL).toLocaleDateString('fr-FR') : ''}">Flux Laurent</th><th class="n">Écart</th><th class="n" title="Stock de bidons lu dans le tableau de Laurent${dateL ? ' le ' + new Date(dateL).toLocaleDateString('fr-FR') : ''}">Stock</th><th class="n" title="Stock ÷ ventes prévues des prochains mois">Couverture</th></tr></thead><tbody>` +
+    `<tr class="tot"><td></td><td>Total (${fmtN(liste.length)} produits)</td><td></td>${mois.map(m => `<td class="n">${fmtN(totM(m))}</td>`).join('')}<td class="n">${fmtN(tot)}</td><td class="n">${fmtN(tot / nbM)}</td><td class="n">${fmtN(totN1)}</td><td></td><td></td><td></td><td></td></tr>` +
+    liste.map(o => {
+      const flux = o.tot / nbM, l = L.get(o.sku), fl = l && l.flux_mensuel != null ? +l.flux_mensuel : null, st = l && l.stock != null ? +l.stock : null;
+      const ec = fl ? (fl / flux - 1) * 100 : null;
+      // Couverture : on consomme le stock mois après mois selon la prévision
+      let couv = null; if (st != null) { let reste = st; couv = 0; for (const m of mois) { const v = o.m[m] ? +o.m[m].q_prevu : 0; if (v <= 0) { couv += 1; continue; } if (reste >= v) { reste -= v; couv += 1; } else { couv += reste / v; reste = -1; break; } } if (reste >= 0) couv = null; }
+      return `<tr><td class="muted">${esc(o.sku)}</td><td>${esc(o.lib)}</td><td>${fmtL(o.l)}</td>${mois.map(m => cell(o, m)).join('')}<td class="n"><b>${fmtN(o.tot)}</b></td><td class="n"><b>${fmtN(flux)}</b></td><td class="n">${fmtN(o.n1)}</td><td class="n">${fl == null ? '<span class="muted">–</span>' : fmtN(fl)}</td><td class="n ${ec == null || !isFinite(ec) ? '' : Math.abs(ec) < 15 ? '' : ec > 0 ? 'ecart-haut' : 'ecart-bas'}">${ec == null || !isFinite(ec) ? '<span class="muted">–</span>' : (ec > 0 ? '+' : '') + fmtN(ec, 0) + ' %'}</td><td class="n">${st == null ? '<span class="muted">–</span>' : fmtN(st)}</td><td class="n">${st == null ? '<span class="muted">–</span>' : couv == null ? '> 12 mois' : fmtN(couv, 1) + ' mois'}</td></tr>`;
+    }).join('') + '</tbody></table>' +
+    `<p class="sub" style="margin-top:8px">Une case soulignée a été corrigée : passe la souris dessus pour le détail. « Écart » compare le flux du tableau de Laurent au nôtre (en rouge quand le sien est plus haut d'au moins 15 %, en vert quand il est plus bas). Stock et flux de Laurent : copie du ${dateL ? new Date(dateL).toLocaleDateString('fr-FR') : '–'}, pas encore mise à jour chaque nuit.</p>`
+    : '<div class="muted">Aucun produit sur cette sélection.</div>';
+  // Corrections : opérations retirées et ruptures probables
+  const ret = new Map(); for (const r of lignes) if (+r.q_retire) ret.set(r.sku, (ret.get(r.sku) || 0) + +r.q_retire);
+  const rup = lignes.filter(r => +r.q_rupture).sort((a, b) => +b.q_rupture - +a.q_rupture);
+  const moisN1 = m => { const d = new Date(m.slice(0, 7) + '-15'); d.setFullYear(d.getFullYear() - 1); return d.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }); };
+  $('preco-corr').innerHTML =
+    `<p class="sub"><b>Opérations exceptionnelles retirées</b></p><ul class="preco-liste">${excl.filter(e => e.actif).map(e => `<li>${esc(e.libelle)} — ${fmtN([...ret.values()].reduce((a, v) => a + v, 0))} unités retirées sur ${ret.size} produits</li>`).join('') || '<li class="muted">Aucune</li>'}</ul>` +
+    `<p class="sub" style="margin-top:10px"><b>Ruptures probables chez les particuliers</b> (mois très en dessous des deux mois voisins, ramené à leur moyenne — à confirmer)</p><ul class="preco-liste">${rup.map(r => `<li>${esc(r.libelle || r.sku)} <span class="muted">${esc(r.sku)}</span> — ${moisN1(r.mois)} : ${fmtN(+r.q_n1)} vendues, ${fmtN(+r.q_rupture)} ajoutées</li>`).join('') || '<li class="muted">Aucune</li>'}</ul>`;
+}
+document.querySelectorAll('#preco-onglets .btn').forEach(b => b.onclick = () => {
+  PRECO.onglet = b.dataset.o;
+  document.querySelectorAll('#preco-onglets .btn').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  renderPreco();
+});
+$('preco-fmt').onchange = e => { PRECO.fmt = e.target.value; renderPreco(); };
+$('preco-marque').onchange = e => { PRECO.marque = e.target.value; renderPreco(); };
+$('preco-q').oninput = e => { PRECO.q = e.target.value; renderPreco(); };
+$('preco-csv').onclick = () => {
+  const mois = PRECO.mois || [], nb = v => String(Math.round(v)).replace('.', ',');
+  const tete = ['Référence', 'Produit', 'Format (L)', ...mois.map(m => m.slice(0, 7)), 'Total prévu', 'Flux par mois', 'Vendu exercice précédent', 'Flux Laurent', 'Stock'];
+  const lignes = (PRECO.lignes || []).map(o => { const l = PRECO.L.get(o.sku); return [o.sku, o.lib, o.l == null ? '' : String(o.l).replace('.', ','), ...mois.map(m => o.m[m] ? nb(+o.m[m].q_prevu) : ''), nb(o.tot), nb(o.tot / (mois.length || 12)), nb(o.n1), l && l.flux_mensuel != null ? nb(+l.flux_mensuel) : '', l && l.stock != null ? nb(+l.stock) : '']; });
+  const csv = '\ufeff' + [tete, ...lignes].map(r => r.map(c => /[;"\n]/.test(String(c)) ? '"' + String(c).replace(/"/g, '""') + '"' : c).join(';')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `SHINE_preco_ventes_chimie_${new Date().toISOString().slice(0, 10)}.csv`; a.click(); URL.revokeObjectURL(a.href);
+};
 // Barres empilées par mois (oct. → sept.) avec la courbe N-1 ; utilisé par les onglets Achats et Charges
 function graphiqueEmpile(ids, series, data, n1t, y, libN1) {
   const segs = series.filter(s => data.some(d => (d[s.k] || 0) > 0));
@@ -1707,6 +1843,11 @@ function vueUI() {
   $('vue-validation').classList.toggle('hidden', !val);
   if (val) { $('board-nom').textContent = 'À valider'; $('vue-titre').textContent = ''; document.title = 'À valider · Ventes SHINE'; }
   $('vue-finance').classList.toggle('hidden', !fin);
+  const pre = !!VUES[S.vue].preco;
+  $('app').classList.toggle('mode-preco', pre);
+  $('app').classList.toggle('mode-achats', pre || S.vue === 'achats');
+  $('vue-preco').classList.toggle('hidden', !pre);
+  if (pre) { $('board-nom').textContent = 'Achats SHINE'; $('vue-titre').textContent = ' · Préco de vente'; document.title = 'Préco de vente · Achats SHINE'; }
   // Volumes par conditionnement : ce sont des ventes, la carte n'est que dans le board Ventes
   $('card-cond').classList.toggle('hidden', fin);
   railSync();
@@ -2293,7 +2434,7 @@ const BOARDS = [
   { k: 'factures', t: 'Factures', href: './factures.html', small: 'factures d\'achat à vérifier' },
   { k: 'data_center', t: 'Data Center', href: './data-center.html', small: 'performance du site et des campagnes' }
 ];
-const boardCourant = () => VUES[S.vue].finance ? S.vue : 'ventes';
+const boardCourant = () => VUES[S.vue].preco ? 'achats' : VUES[S.vue].finance ? S.vue : 'ventes';
 $('rail-boards').addEventListener('click', () => {
   const btn = $('rail-boards');
   if (lgOpen && lgOpen.btn === btn) return lgClose(false);

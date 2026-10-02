@@ -1,3 +1,4 @@
+-- APPLIQUÉ dans Supabase le 02/10/2026.
 -- Préconisation de vente (board Achats, onglet « Préco de vente ») — demandé par Jérémy le 02/10/2026.
 -- Environnement à part : tables preco_*, agrégat agg_preco_chimie, fonction rafraichir_preco() lancée chaque nuit par sa
 -- propre tâche. Rien n'est modifié dans la collecte ni dans rafraichir_agregats ; la préco ne fait que lire agg_produits_mensuel,
@@ -128,9 +129,9 @@ begin
   group by 1, 2, 3;
 
   -- Ruptures probables chez les particuliers
-  create temp table t_r on commit drop as
+  create temp table t_rupt on commit drop as
   with s as (
-    select sku, mois, q, lag(q) over w q_avant, lead(q) over w q_apres, lag(mois) over w m_avant, lead(mois) over w m_apres,
+    select sku, mois, q, lag(q) over w q_avant, lead(q) over w q_apres,
            sum(q) filter (where mois >= v_du) over (partition by sku) q_an
     from (select d.sku, m.mois::date mois, coalesce(v.q, 0) q
           from (select distinct sku from t_v where g = 'PARTICULIERS') d
@@ -148,8 +149,8 @@ begin
   insert into agg_preco_chimie (sku, mois, libelle, contenance_l, marque, q_n1, q_retire, q_rupture, q_part, q_pro, q_rev, q_autres, q_prevu, note)
   select b.sku, (b.mois + interval '1 year')::date, p.libelle, p.contenance_l, p.marque,
          round(sum(b.q)), round(sum(b.x)), round(sum(b.r)),
-         round(sum(b.prevu) filter (where b.g = 'PARTICULIERS')), round(sum(b.prevu) filter (where b.g = 'PROS')),
-         round(sum(b.prevu) filter (where b.g = 'REVENDEURS')), round(sum(b.prevu) filter (where b.g = 'AUTRES')),
+         coalesce(round(sum(b.prevu) filter (where b.g = 'PARTICULIERS')), 0), coalesce(round(sum(b.prevu) filter (where b.g = 'PROS')), 0),
+         coalesce(round(sum(b.prevu) filter (where b.g = 'REVENDEURS')), 0), coalesce(round(sum(b.prevu) filter (where b.g = 'AUTRES')), 0),
          round(sum(b.prevu)),
          nullif(concat_ws(' ; ', max(b.motif), case when sum(b.r) > 0 then 'Rupture probable chez les particuliers : mois ramené à la moyenne des mois voisins' end), '')
   from (
@@ -158,14 +159,14 @@ begin
     from (select sku, mois, g from t_v where mois >= v_du union select sku, mois, g from t_x) k
     left join t_v v on v.sku = k.sku and v.mois = k.mois and v.g = k.g
     left join t_x x on x.sku = k.sku and x.mois = k.mois and x.g = k.g
-    left join t_r r on r.sku = k.sku and r.mois = k.mois and k.g = 'PARTICULIERS'
+    left join t_rupt r on r.sku = k.sku and r.mois = k.mois and k.g = 'PARTICULIERS'
     left join preco_objectifs o on o.groupe = k.g
   ) b join produits p on p.sku = b.sku
   where p.famille in ('CHIMIE_CONDITIONNEE', 'CHIMIE_PF')
   group by b.sku, b.mois, p.libelle, p.contenance_l, p.marque;
   get diagnostics n = row_count;
   return jsonb_build_object('exercice_reference', v_ex, 'lignes', n,
-    'ruptures', (select count(*) from t_r where ajout > 0), 'unites_retirees', (select coalesce(round(sum(q)), 0) from t_x));
+    'ruptures', (select count(*) from t_rupt where ajout > 0), 'unites_retirees', (select coalesce(round(sum(q)), 0) from t_x));
 end $$;
 revoke all on function public.rafraichir_preco() from public, anon, authenticated;
 

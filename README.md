@@ -56,6 +56,15 @@ Septembre EBP a été rechargé en entier à partir des exports EBP du 02/10 (la
 - **Attention pour un prochain rechargement EBP** : `appliquer_ebp_detail` repart de la sauvegarde `bak_ebp_lignes_20260925`. Si on recharge les montants d'un mois sans aligner cette sauvegarde, l'ancien total du mois s'ajoute au nouveau.
 - Quatre nouveaux clients : Nexus (Intragroupe, validé), Bourbon Bikes (MDD, proposé), Dam's Garage et Alti'Cars (Revendeurs indépendants, proposés).
 
+## Préco de vente (board Achats, 02/10/2026, Jérémy)
+
+Onglet « Préco de vente » du board Achats (`#preco`), sous-onglets Chimie et Accessoires (accessoires : à venir). **Environnement à part** : tables `preco_*`, agrégat `agg_preco_chimie`, fonction `rafraichir_preco()` lancée chaque nuit par sa propre tâche (`preco-nuit`, 5 h 40 UTC). Rien n'est modifié dans la collecte ni dans `rafraichir_agregats` (`supabase/migrations/20261002_preco_ventes.sql`).
+- **Méthode chimie** : ventes du même mois de l'exercice précédent (packs éclatés) − opérations exceptionnelles (`preco_exclusions`) + correction des ruptures probables chez les particuliers, × évolution visée par famille de clients (objectif ÷ réalisé, `preco_objectifs`).
+- **Objectifs 2026-2027** (Jérémy) : particuliers 3 000 000 € (site, réalisé 2 910 472 €, +3,1 %), revendeurs avec Jokeriders 1 550 000 € (réalisé 1 504 321 €, +3,0 %), pros 350 000 € (réalisé 341 011 €, +2,6 %). Pour changer un objectif : `update preco_objectifs set objectif_ca = … where groupe = '…'; select rafraichir_preco();`.
+- **Opération retirée** : implantation Norauto d'octobre 2025 (colis `COL…-IMPLANT` de Mobivia). L'opération de mai 2026 est gardée.
+- **Rupture probable** : mois où les particuliers achètent moins de 40 % de la moyenne des deux mois voisins (moyenne d'au moins 40 unités) ; ajout plafonné à 30 % de l'année. À remplacer par les jours d'indisponibilité du tableau de Laurent quand il sera lu chaque nuit.
+- **Tableau de Laurent** : `preco_laurent` contient une copie du 02/10/2026 (flux mensuel et stock de bidons, 111 produits). Étape suivante : lecture de nuit du Google Sheet (stock des bidons et des cuves), puis préco de commande et alertes de stock bas.
+
 ## Compositions des packs et contenances (27/09/2026, Jérémy)
 
 **Appliqué dans Supabase le 27/09/2026** (migrations `contenances_produits` et `packs_composition_site_et_ebp`, puis `rafraichir_agregats`) : 76 packs,
