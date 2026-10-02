@@ -117,3 +117,36 @@ Pour le mois choisi, le board reprend les règles déjà validées avec Jérémy
 Les compositions de COL1-DEV, COL2-DEV et COL3-DEV sont déjà dans `packs_composition` : rien à ajouter de ce côté.
 
 **Autre constat du même jour** : le board n'a les factures EBP que jusqu'au 24/09/2026. Il manque 52 factures du 25 au 30/09 (37 772 € HT) et la facture intragroupe FA00004605 à NEXUS (190 508,51 € HT, 30/09). Relancer l'import EBP de fin septembre.
+
+## Réponse de Robin — 02/10/2026
+
+**Pour** : Jérémy (et sa conversation Claude). **De** : Robin (conversation Claude du 02/10/2026).
+
+### Déjà fait
+
+- **Avoir de prix Norauto OPE DeV** : corrigé le 02/10 (migration `supabase/migrations/20261002_ebp_quantites_norauto.sql`, poussée puis appliquée, agrégats recalculés).
+  COL1-DEV, COL2-DEV et COL3-DEV sont à 204 chacun sur mai-juin 2026, montants inchangés (85 345,44 € HT, total EBP de juin identique au centime).
+  La correction est dans une table à part, `ebp_quantites_corrigees` (client, mois, article, quantité ajoutée), lue par `appliquer_ebp_detail` : un futur import du détail ne l'efface pas.
+  Pas dans `ebp_remises_validees`, qui sert aux remises en pied de facture (prorata des montants), pas aux quantités.
+- **Pas encore fait** : la règle générale « avoir à prix unitaire très inférieur à la facture d'origine = remise, pas retour ». En attendant, chaque cas se corrige par une ligne dans `ebp_quantites_corrigees`.
+- **Au passage (02/10)** : `v_ventes` rangeait les ventes d'octobre 2026 dans 2025-2026 (règle d'exercice écrite en dur). Corrigé (`20261002_v_ventes_exercice.sql`) : même calcul `exercice_de()` que les agrégats. À savoir pour l'export : il lit sans doute `v_ventes` ou `v_export_cdc`.
+- **Import EBP de fin septembre** : à relancer par Robin (export EBP puis formulaire d'import).
+
+### Réponses aux trois questions
+
+1. **La collecte PrestaShop passe par l'API (webservice)** des deux sites, ni par MySQL ni par des fichiers.
+   - **Bloc 1** : le module d'export comptable n'est pas lisible par l'API. Deux options :
+     - **A (préférée)** : si le module sait produire son fichier tout seul (URL d'export ou tâche planifiée), la collecte de nuit va le chercher et le charge ligne à ligne, sans rien recalculer, comme tu le demandes.
+     - **B** : sinon, reconstruire les écritures depuis l'API (`order_invoices` et leurs taxes, `order_payments` avec mode de paiement et `transaction_id`, `order_slip` pour les avoirs). Faisable, mais il faudra comparer un mois entier au fichier du module avant de l'envoyer au cabinet.
+   - **Bloc 2** : faisable par l'API. `order_histories` donne la date de passage dans chaque statut (Annulé, Remboursé, Erreur de paiement) ; les avoirs (`order_slip`) et les paiements donnent le montant réellement remboursé, y compris partiel.
+   - **Bloc 3** : EBP n'a pas d'API. Robin exporte `Shine Group.txt` depuis EBP ; pour éviter le dépôt à la main dans le board, proposition : un dossier Drive où Robin dépose le fichier, lu par n8n la nuit suivante.
+   - **Bloc 4** : TikTok attend les codes API de la CM de Robin (Seller Center). En attendant, l'export CSV « Toutes les commandes » peut être déposé de la même façon. AutoDoc : dépôt manuel au début, d'accord.
+2. **Tables** : noms et colonnes OK. Si on part sur l'option B, ajouter dans `compta_ventes_ecritures` l'identifiant de paiement PrestaShop pour retrouver la transaction, et dans `compta_commandes_etats` le numéro de l'avoir quand il existe.
+3. **Qui fait quoi** (proposition de Robin) :
+   - **conversation de Robin** : la collecte. Tables, migrations, lecture API PrestaShop, dépôt EBP et TikTok par Drive, branchement dans la collecte de nuit et dans les alertes mail. Elle gère déjà les collectes.
+   - **conversation de Jérémy** : le bouton « Export mensuel » et ses règles (onglets par famille, Annulées, Remboursées, Avoirs, Contrôles, Lisez-moi), validées avec le cabinet.
+   Personne ne crée les tables tant que tu n'as pas confirmé ce partage, pour ne pas les faire en double.
+
+### La question qui débloque le bloc 1
+
+Le module d'export comptable de PrestaShop (sur chaque site) peut-il produire son fichier sans clic : lien d'export, clé, tâche cron ? À regarder dans la configuration du module, dans le back-office. Selon la réponse, on part sur A ou B.
