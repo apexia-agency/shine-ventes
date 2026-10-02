@@ -45,6 +45,10 @@ Les ventes TikTok Shop SHINE sont dans le board : canal `tiktok_b2c`, famille Pa
 - Articles sans référence dans TikTok rattachés par le libellé (`20261002_tiktok_references.sql`). La « Microfibre de séchage ONE PASS XXL » est l'ACS77 (confirmé par Jérémy le 02/10 ; produit désactivé pour rupture), `20261002_tiktok_one_pass_acs77.sql`.
 - Camembert des volumes en mode CA : une part « Frais de port facturés » s'ajoute aux formats (le CA des produits ne contient pas le port).
 
+## Nexus : famille Intragroupe (02/10/2026, Jérémy)
+
+Le client EBP Nexus (`CL00803`) est rangé d'avance dans la famille **Intragroupe**, segment validé (`supabase/migrations/20261002_nexus_intragroupe.sql`). Sa facture FA00004605 du 30/09/2026 (190 508,51 € HT de refacturations) n'est pas encore dans la base : à son arrivée, vérifier qu'elle apparaît bien dans Intragroupe et pas dans le CA des ventes, puis mettre à jour les chiffres de contrôle.
+
 ## Compositions des packs et contenances (27/09/2026, Jérémy)
 
 **Appliqué dans Supabase le 27/09/2026** (migrations `contenances_produits` et `packs_composition_site_et_ebp`, puis `rafraichir_agregats`) : 76 packs,
