@@ -125,3 +125,7 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
 - Confidentialité : ni le texte des mails ni les adresses des correspondants ne sont gardés. `mails_traites` garde le domaine, l'empreinte SHA-256 de l'adresse, la décision et son motif.
 - Ajouter une règle : `insert into mails_regles (portee, cle, decision, libelle) values ('domaine', 'exemple.com', 'inutile', null);` (`origine = 'claude'` : règle proposée, à confirmer par Jérémy).
 - Code : `supabase/functions/trier-mail/index.ts` ; `{ essai: true }` décide sans rien écrire. Appel avec la clé service (connexion n8n « Supabase SHINE ventes »).
+- n8n, dossier « JEREMY » : « Boîte Jérémy · tri et brouillons » (toutes les 5 min, nouveaux mails seulement) et « Boîte Jérémy · essai de la fonction trier-mail » (faux mail, sans écriture, à ne pas publier).
+- État au 02/10/2026 : fonction en ligne et essayée (4 faux mails : règle, demande d'une acheteuse, publicité piégée, facture Google Ads). Flux **pas encore publié**, déclencheur désactivé :
+  il manque la connexion Gmail de Jérémy dans n8n (n8n a rattaché d'office « Gmail account », boîte non vérifiée) et les libellés Gmail `TRI/À supprimer` et `TRI/À répondre`.
+- Pas encore fait : rattrapage des anciens mails non lus, factures en pièce jointe vers le rangeur, fiche fournisseur, brouillons envoyés depuis l'adresse `@shine-group.fr`.

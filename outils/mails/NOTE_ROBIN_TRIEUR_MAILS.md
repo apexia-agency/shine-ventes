@@ -5,9 +5,11 @@ Jérémy met en place son propre tri de mails. **Rien de ton travail n'est modif
 
 ## Ce qui est ajouté
 
-- Dans n8n (ton instance `robinshine`) : un dossier « JEREMY » et un flux « Boîte Jérémy · tri et brouillons ».
-  Il utilise la connexion existante « Supabase SHINE ventes » (lecture seule de la connexion, rien n'y est changé)
-  et une connexion Gmail propre à Jérémy.
+- Dans n8n (ton instance `robinshine`) : un dossier « JEREMY » avec deux flux, « Boîte Jérémy · tri et brouillons »
+  et « Boîte Jérémy · essai de la fonction trier-mail ». Ils utilisent la connexion existante « Supabase SHINE ventes »
+  (rien n'y est changé) et une connexion Gmail propre à Jérémy, à créer.
+- À la création, n8n a rattaché d'office ta connexion « Gmail account » aux nœuds Gmail du flux de tri. Le flux n'est pas
+  publié et son déclencheur est désactivé : aucune boîte n'a été lue. La connexion sera remplacée par celle de Jérémy.
 - Dans la base du board : tables `mails_regles` et `mails_traites`, fonction `mail_contexte`, fonction Edge `trier-mail`.
   Détail dans le `README.md`, partie « Trieur de mails de Jérémy ».
 
