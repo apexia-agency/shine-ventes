@@ -25,17 +25,25 @@ Panneau de questions ouvert depuis le menu latéral (icône bulle).
 
 Le dossier `supabase/` et ce fichier ne sont pas publiés avec le board (voir `.vercelignore`).
 
-## Chiffres de contrôle (26/09/2026, après retrait des doublons ; 2024-2025 mis à jour le 28/09 après retrait des commandes de test)
+## Chiffres de contrôle (02/10/2026, après ajout des ventes TikTok Shop)
 
 | Exercice | CA HT total | dont CA produits | dont pros |
 |---|---|---|---|
-| 2024-2025 | 4 122 410 € | 4 049 152 € | 361 527 € |
-| 2025-2026 (au 26/09) | 4 740 326 € | 4 707 682 € | 333 719 € |
+| 2024-2025 | 4 124 022 € | 4 050 764 € | 360 969 € |
+| 2025-2026 (au 02/10) | 4 797 889 € | 4 765 227 € | 356 881 € |
 
-L'exercice 2024-2025 est clos : son total ne doit plus bouger. 2025-2026 augmente chaque nuit avec les nouvelles factures.
+L'exercice 2024-2025 est clos : son total ne doit plus bouger (4 122 410 € avant TikTok + 1 612 € de ventes TikTok d'août et septembre 2025). 2025-2026 augmente chaque nuit avec les nouvelles factures.
 Ces totaux ne doivent pas bouger quand on éclate des packs ou qu'on détaille EBP.
 Doublons retirés : bascule du site pro (`supabase/migrations/20260925_doublons_bascule.sql`) et factures PrestaShop en double (`supabase/migrations/20260925_doublons_factures.sql`).
 Commandes de test retirées (`supabase/migrations/20260928_commandes_test.sql`) : John Test (196,93 €, 2024-2025) et Société Test (27,96 €, 2025-2026).
+
+## Ventes TikTok Shop (02/10/2026, Jérémy)
+
+Les ventes TikTok Shop SHINE sont dans le board : canal `tiktok_b2c`, famille Particuliers, sous-famille « TikTok Shop ». 1 520 commandes du 23/07/2025 au 01/10/2026, 29 053 € HT de produits (1 612 € sur 2024-2025, 27 251 € sur 2025-2026) et 4 733 € HT de port.
+- Source : exports « Toutes les commandes » du Seller Center, préparés par `outils/tiktok/tiktok_vers_base.js` puis chargés par la fonction `charger_tiktok` (`supabase/migrations/20261002_tiktok_shop.sql`), suivie de `finaliser_collecte()`. **Chargement à la main** tant que la collecte de nuit ne ramène pas TikTok (codes API à obtenir, côté Robin) : les ventes après le 01/10/2026 ne sont pas dans le board.
+- Règles (les mêmes que l'export comptable) : commandes annulées, pas encore expédiées ou remboursées en entier écartées ; date = expédition ; HT = TTC / 1,2 ; remise TikTok non déduite (TikTok la reverse), remise vendeur déduite ; remboursement partiel déduit.
+- Articles sans référence dans TikTok rattachés par le libellé (`20261002_tiktok_references.sql`). Reste 37 « Microfibre de séchage ONE PASS XXL » (552 € HT) sans produit : comptées dans le CA, pas dans les volumes par produit, en attendant que Jérémy dise à quelle référence elles correspondent.
+- Camembert des volumes en mode CA : une part « Frais de port facturés » s'ajoute aux formats (le CA des produits ne contient pas le port).
 
 ## Compositions des packs et contenances (27/09/2026, Jérémy)
 
