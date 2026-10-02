@@ -1,3 +1,4 @@
+-- APPLIQUÉ dans Supabase le 02/10/2026 ; vérifié : objectif Pros 350 000 → 400 000 fait passer la prévision pros de 30 140 à 34 637 unités sur 12 mois (remis à 350 000).
 -- Préco de vente : modifier un objectif depuis le board renvoyait une erreur (« UPDATE requires a WHERE clause »).
 -- Les appels venant du board passent par une protection qui refuse toute mise à jour sans condition ; la ligne de
 -- rafraichir_preco qui recalcule le CA réalisé des objectifs n'en avait pas. On part de la définition actuelle de la
