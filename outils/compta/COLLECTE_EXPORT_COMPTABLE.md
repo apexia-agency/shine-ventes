@@ -95,3 +95,25 @@ Pour le mois choisi, le board reprend les règles déjà validées avec Jérémy
 1. La collecte PrestaShop passe-t-elle par l'API, par la base MySQL ou par des fichiers ? Selon la réponse, le bloc 1 se prend soit dans le module d'export comptable, soit directement dans les tables de factures et de taxes.
 2. Les noms et colonnes des tables ci-dessus te conviennent-ils ? Dès ton accord, la migration est écrite dans `supabase/migrations/` et poussée avant d'être appliquée (règle du dépôt).
 3. Qui crée les tables : toi dans ton flux, ou la conversation de Jérémy ? À décider pour ne pas le faire en double.
+
+## Ajout du 02/10/2026 — Avoirs de prix EBP : les quantités ne doivent pas être déduites
+
+**Constat** (vérifié dans EBP le 02/10/2026, lignes de factures exportées article par article) : sur l'exercice, les unités EBP du board collent à EBP à 2 % près, sauf sur l'opération Norauto « OPE DeV » (Mobivia, CL00691).
+
+| Pièce | Date | Contenu | Nature |
+|---|---|---|---|
+| FA00003822 | 18/05/2026 | COL1-DEV × 16, COL3-DEV × 204 | Facture annulée |
+| AV00000326 | 25/06/2026 | COL1-DEV × −16, COL3-DEV × −204 | Annule FA00003822 en entier |
+| FA00004094 | 25/06/2026 | COL1-DEV × 16 à 148,90 €, COL3-DEV × 204 à 153,75 € | Facture valide (remplace FA00003822) |
+| FA00003823 | 18/05/2026 | COL1-DEV × 188 à 181,54 €, COL2-DEV × 204 à 175,59 € | Facture valide |
+| AV00000325 | 25/06/2026 | COL1-DEV × −188 à 32,64 €, COL2-DEV × −204 à 59,88 € | **Remise de prix** sur FA00003823, écrite avec des quantités négatives. Aucune marchandise n'est revenue (bons de livraison : 204 colis de chaque type, une seule fois). |
+
+**Effet dans le board** : le chiffre d'affaires est juste (85 345,44 € HT), mais les quantités sont fausses. Le board compte 16 COL1-DEV et 0 COL2-DEV au lieu de 204 et 204. Il manque 188 × COL1-DEV (45 flacons de 450 ml chacun) et 204 × COL2-DEV (24 flacons de 750 ml et 5 aérosols chacun) dans les volumes par produit, et les prix unitaires de ces produits sont faussés.
+
+**Correction demandée** (validée par Jérémy le 02/10/2026) :
+1. Pour l'avoir AV00000325 : garder les montants (−6 136,32 € et −12 215,52 €) mais mettre les quantités à zéro, dans le mécanisme des remises EBP validées (`ebp_remises_validees`), pour que l'import suivant ne l'écrase pas.
+2. Règle générale à prévoir dans l'import EBP : un avoir dont le prix unitaire est très inférieur à celui de la facture d'origine pour le même article et le même client est une remise de prix, pas un retour ; ses quantités ne se déduisent pas des unités vendues.
+
+Les compositions de COL1-DEV, COL2-DEV et COL3-DEV sont déjà dans `packs_composition` : rien à ajouter de ce côté.
+
+**Autre constat du même jour** : le board n'a les factures EBP que jusqu'au 24/09/2026. Il manque 52 factures du 25 au 30/09 (37 772 € HT) et la facture intragroupe FA00004605 à NEXUS (190 508,51 € HT, 30/09). Relancer l'import EBP de fin septembre.
