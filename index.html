@@ -28,7 +28,7 @@
   --bad: #b42828;
   --warn-bg: rgba(255,214,120,0.30);
   --warn-ink: #5c4000;
-  --s-b2c: #2a78d6; --s-pro: #eb6834; --s-rev: #1baf7a; --s-mkt: #eda100; --s-intra: #4a3aa7; --s-none: #b9b8b0; --s-mdd: #e87ba4; --s-autre: #008300; --s-hors: #8a8983; --s-myclear: #0e93a8;
+  --s-b2c: #2a78d6; --s-pro: #eb6834; --s-rev: #1baf7a; --s-mkt: #eda100; --s-intra: #4a3aa7; --s-none: #b9b8b0; --s-mdd: #e87ba4; --s-autre: #008300; --s-hors: #8a8983; --s-myclear: #0e93a8; --s-tiktok: #c2409f;
   --n1: #7d7c78; --bar: #2a78d6; --bar-track: rgba(60,60,67,0.08);
   --blob-1: #b8d4ff; --blob-2: #ffd3bd; --blob-3: #c6f0de; --blob-4: #e3d9ff;
 }
@@ -43,7 +43,7 @@
     --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
     --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
     --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
-    --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974; --s-myclear: #2bb3c6;
+    --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974; --s-myclear: #2bb3c6; --s-tiktok: #e06cc0;
     --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
     --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
   }
@@ -58,7 +58,7 @@
   --grid: rgba(235,235,245,0.10); --axis: rgba(235,235,245,0.22); --ring: rgba(255,255,255,0.12);
   --accent: #4a95ec; --good: #30c030; --bad: #ff7a7a;
   --warn-bg: rgba(255,190,70,0.14); --warn-ink: #f3d58a;
-  --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974; --s-myclear: #2bb3c6;
+  --s-b2c: #3987e5; --s-pro: #d95926; --s-rev: #199e70; --s-mkt: #c98500; --s-intra: #9085e9; --s-none: #5c5b57; --s-mdd: #d9689a; --s-autre: #3aa63a; --s-hors: #7a7974; --s-myclear: #2bb3c6; --s-tiktok: #e06cc0;
   --n1: #9a9892; --bar: #3987e5; --bar-track: rgba(255,255,255,0.07);
   --blob-1: #1d3f78; --blob-2: #5a2c1c; --blob-3: #124a38; --blob-4: #36295e;
 }
@@ -1451,8 +1451,9 @@ const COND_PART = [
   { k: '0.2', lib: '200 ml', c: '--c7' }, { k: 'acc', lib: 'Accessoires', c: '--c8' }, { k: 'autres', lib: 'Autres formats', c: '--c-autres' }
 ];
 const SEG_MYCLEAR = { k: 'MYCLEAR', label: 'MyClear', v: '--s-myclear' };
-const COND_SEGMENTS = [...SEGMENTS.slice(0, -1), SEG_MYCLEAR, SEGMENTS[SEGMENTS.length - 1]];
-const condSeg = r => r.canal === 'myclear' ? 'MYCLEAR' : (r.segment || 'NON_SEGMENTE');
+const SEG_TIKTOK = { k: 'TIKTOK', label: 'TikTok Shop', v: '--s-tiktok' };
+const COND_SEGMENTS = [...SEGMENTS.slice(0, -1), SEG_TIKTOK, SEG_MYCLEAR, SEGMENTS[SEGMENTS.length - 1]];
+const condSeg = r => r.canal === 'myclear' ? 'MYCLEAR' : r.canal === 'tiktok_b2c' ? 'TIKTOK' : (r.segment || 'NON_SEGMENTE');
 let condVue = 'barres';
 const condSegOff = new Set(); // familles de clients décochées
 function renderCond() {
@@ -1511,7 +1512,7 @@ function renderCond() {
   const sansCond = conds.get('x');
   const retires = segDispo.filter(s => condSegOff.has(s.k)).map(s => s.label);
   const perLib = S.per ? (S.per.du === S.per.au ? libMois(S.per.du) : `${libMois(S.per.du)} → ${libMois(S.per.au)}`) : `exercice ${S.ex.replace('-', '–')}`;
-  $('cond-note').innerHTML = `${perLib.charAt(0).toUpperCase() + perLib.slice(1)}, ${typesLib}, ${ong ? `onglet ${esc(ong)}` : 'tous canaux (site, pros, revendeurs EBP, marketplaces, MyClear)'}` +
+  $('cond-note').innerHTML = `${perLib.charAt(0).toUpperCase() + perLib.slice(1)}, ${typesLib}, ${ong ? `onglet ${esc(ong)}` : 'tous canaux (site, pros, revendeurs EBP, marketplaces, TikTok Shop, MyClear)'}` +
     (retires.length ? `, <b>sans ${esc(retires.join(', '))}</b>` : '') +
     (condOrigOn.size === 1 ? (condOrigOn.has('seul') ? ', <b>hors packs</b> (produits vendus seuls)' : ', <b>uniquement les produits vendus dans des packs</b>') : ', packs éclatés compris') + `. ` +
     `Total : <b>${fmtV(total)}</b>${condUnite === 'unites' ? ' vendues' : condUnite === 'ca' ? ' HT' : ' (aérosols en volume net ; produits au poids et accessoires exclus)'}.` +
