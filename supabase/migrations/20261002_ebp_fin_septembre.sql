@@ -1,3 +1,4 @@
+-- APPLIQUÉ dans Supabase le 02/10/2026 (étapes 1 à 5) : 119 pièces, 281 928,01 € HT, 115 pièces détaillées, aucun écart.
 -- EBP : septembre 2026 rechargé en entier (demandé par Jérémy le 02/10/2026). La base s'arrêtait au 24/09 (chargement du 25/09) :
 -- il manquait les factures et avoirs du 25 au 30/09 (36 550 € HT hors Nexus) et la facture Nexus FA00004605 (190 508,51 € HT, intragroupe).
 -- Les données viennent des exports EBP du 02/10 (factures, avoirs, lignes), préparées par outils/ebp/ebp_mois_vers_base.js.

@@ -25,13 +25,14 @@ Panneau de questions ouvert depuis le menu latéral (icône bulle).
 
 Le dossier `supabase/` et ce fichier ne sont pas publiés avec le board (voir `.vercelignore`).
 
-## Chiffres de contrôle (02/10/2026, après ajout des ventes TikTok Shop)
+## Chiffres de contrôle (02/10/2026, après ajout des ventes TikTok Shop et de la fin septembre EBP)
 
 | Exercice | CA HT total | dont CA produits | dont pros |
 |---|---|---|---|
 | 2024-2025 | 4 124 022 € | 4 050 764 € | 360 969 € |
-| 2025-2026 (au 02/10) | 4 797 889 € | 4 765 227 € | 356 881 € |
+| 2025-2026 (exercice complet) | 5 024 948 € | 4 801 692 € | 357 881 € |
 
+Le total 2025-2026 comprend 190 509 € de refacturation Nexus (Intragroupe, hors produits : montrée à part dans « Autres facturations », pas dans le CA des ventes).
 L'exercice 2024-2025 est clos : son total ne doit plus bouger (4 122 410 € avant TikTok + 1 612 € de ventes TikTok d'août et septembre 2025). 2025-2026 augmente chaque nuit avec les nouvelles factures.
 Ces totaux ne doivent pas bouger quand on éclate des packs ou qu'on détaille EBP.
 Doublons retirés : bascule du site pro (`supabase/migrations/20260925_doublons_bascule.sql`) et factures PrestaShop en double (`supabase/migrations/20260925_doublons_factures.sql`).
@@ -47,7 +48,13 @@ Les ventes TikTok Shop SHINE sont dans le board : canal `tiktok_b2c`, famille Pa
 
 ## Nexus : famille Intragroupe (02/10/2026, Jérémy)
 
-Le client EBP Nexus (`CL00803`) est rangé d'avance dans la famille **Intragroupe**, segment validé (`supabase/migrations/20261002_nexus_intragroupe.sql`). Sa facture FA00004605 du 30/09/2026 (190 508,51 € HT de refacturations) n'est pas encore dans la base : à son arrivée, vérifier qu'elle apparaît bien dans Intragroupe et pas dans le CA des ventes, puis mettre à jour les chiffres de contrôle.
+Le client EBP Nexus (`CL00803`) est rangé dans la famille **Intragroupe**, segment validé (`supabase/migrations/20261002_nexus_intragroupe.sql`). Sa facture FA00004605 du 30/09/2026 (190 508,51 € HT de refacturations) est dans la base depuis le 02/10 : hors produits, elle n'entre pas dans le CA des ventes.
+
+## EBP : fin septembre 2026 rechargée (02/10/2026, Jérémy)
+
+Septembre EBP a été rechargé en entier à partir des exports EBP du 02/10 (la base s'arrêtait au 24/09) : 119 clients, 281 928 € HT net, dont 91 420 € hors Nexus (54 869 € avant). Marche à suivre et précautions dans `supabase/migrations/20261002_ebp_fin_septembre.sql`, préparation des fichiers par `outils/ebp/ebp_mois_vers_base.js`.
+- **Attention pour un prochain rechargement EBP** : `appliquer_ebp_detail` repart de la sauvegarde `bak_ebp_lignes_20260925`. Si on recharge les montants d'un mois sans aligner cette sauvegarde, l'ancien total du mois s'ajoute au nouveau.
+- Quatre nouveaux clients : Nexus (Intragroupe, validé), Bourbon Bikes (MDD, proposé), Dam's Garage et Alti'Cars (Revendeurs indépendants, proposés).
 
 ## Compositions des packs et contenances (27/09/2026, Jérémy)
 
