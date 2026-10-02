@@ -291,7 +291,10 @@ input[type=password] {
 .preco-tbl tr.tot td { font-weight: 700; }
 .preco-tbl tr.grp td { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); font-weight: 600; border-top: 2px solid color-mix(in srgb, var(--accent) 35%, transparent); }
 .preco-tbl tr.grp td small, .preco-tbl td small { display: block; font-weight: 400; color: var(--ink-2); font-size: 11.5px; }
+.preco-tbl { max-height: 76vh; overflow: auto; }
+.preco-tbl thead th { position: sticky; top: 0; z-index: 2; background: var(--surface); box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--ink-2) 30%, transparent); }
 .preco-tbl td:first-child, .preco-tbl th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); min-width: 210px; }
+.preco-tbl thead th:first-child { z-index: 3; }
 .preco-tbl tr.grp td:first-child { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
 .preco-tbl td.preco-a { font-weight: 700; } .preco-tbl td.preco-ok { color: #1b8a5a; } .preco-tbl .rouge { color: #c0392b; } .preco-tbl .vert { color: #1b8a5a; }
 .preco-tbl td.mois, .preco-tbl th.mois { font-size: 12px; padding-left: 6px; padding-right: 6px; } .preco-info { cursor: help; color: var(--ink-2); font-weight: 400; }
@@ -865,7 +868,12 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
           <span class="hint" id="preco-hint">unités pour chaque format, litres pour le produit</span>
         </div>
         <div class="preco-barre">
-          <span class="sub">Stock visé</span>
+          <span class="sub" id="preco-jours-lib">Stock visé</span>
+          <div class="seg-toggle hidden" id="preco-cont" role="group" aria-label="Conteneurs par an">
+            <button class="btn small" data-c="2" aria-pressed="false">2 conteneurs par an</button>
+            <button class="btn small" data-c="3" aria-pressed="false">3 par an</button>
+            <button class="btn small" data-c="4" aria-pressed="true">4 par an</button>
+          </div>
           <div class="seg-toggle" id="preco-jours" role="group" aria-label="Stock visé">
             <button class="btn small" data-j="60" aria-pressed="false">60 jours</button>
             <button class="btn small" data-j="75" aria-pressed="true">75 jours</button>
@@ -876,6 +884,7 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
           <button class="link" id="preco-csv">Exporter en CSV</button>
         </div>
         <div class="tbl-wrap preco-tbl" id="preco-tbl"><div class="muted">Chargement…</div></div>
+        <p class="sub" id="preco-pied" style="margin-top:8px"></p>
       </div>
       <div class="card" style="margin-top:14px">
         <div class="card-head"><h2>Corrections appliquées</h2><span class="hint">ce qui a été retiré ou ajouté aux ventes de l'an dernier</span></div>
@@ -1708,10 +1717,14 @@ document.querySelectorAll('.cond-vue .btn').forEach(b => b.onclick = () => {
 // ---------- Préco de vente (board Achats) ----------
 // Lit l'agrégat agg_preco_chimie (une ligne par produit et par mois prévu), les objectifs par famille de clients,
 // la dernière copie du tableau de Laurent (flux et stock) et la liste des opérations exceptionnelles retirées.
-const PRECO = { data: null, onglet: 'chimie', marque: 'SHINE', q: '', jours: 75, csv: null };
+const PRECO = { data: null, onglet: 'chimie', marque: 'SHINE', q: '', jours: 75, conteneurs: 4, csv: null };
 async function renderPreco() {
   const ong = PRECO.onglet, pf = ong === 'pf', acc = ong === 'import' || ong === 'intra';
   $('preco-accessoires').classList.add('hidden');
+  // Import : on choisit le nombre de conteneurs par an ; ailleurs, le nombre de jours de stock visé
+  $('preco-cont').classList.toggle('hidden', ong !== 'import'); $('preco-jours').classList.toggle('hidden', ong === 'import');
+  $('preco-jours-lib').textContent = ong === 'import' ? 'Rythme des commandes' : 'Stock visé';
+  $('preco-marque').classList.toggle('hidden', acc);
   if (!PRECO.data) {
     try {
       const [lignes, obj, lau, cuves, excl, arrets, accs, fours] = await Promise.all(['agg_preco_chimie', 'preco_objectifs', 'preco_laurent', 'preco_cuves', 'preco_exclusions', 'preco_arrets', 'preco_accessoires', 'preco_fournisseurs'].map(x => fetchAll(x)));
@@ -1806,7 +1819,7 @@ async function renderPreco() {
   } else {
     // ---- Accessoires : une section import (Chine) et une section intra, regroupées par fournisseur
     const ORI = new Map(fours.map(f => [f.fournisseur, f.origine]));
-    const SECU = 1, CYCLE = 3; // import : un mois de sécurité, un conteneur tous les trois mois
+    const SECU = 1, CYCLE = 12 / PRECO.conteneurs; // import : un mois de sécurité, et le temps entre deux conteneurs
     const items = [...prod.values()].filter(o => o.src).filter(o => (ORI.get(o.src.fournisseur) === 'IMPORT') === (ong === 'import'))
       .filter(o => !q || o.sku.toLowerCase().includes(q) || o.lib.toLowerCase().includes(q) || String(o.src.fournisseur || '').toLowerCase().includes(q));
     for (const o of items) {
@@ -1822,19 +1835,20 @@ async function renderPreco() {
     const G = new Map(); for (const o of items) { const k = o.src.fournisseur || 'Fournisseur non renseigné'; const g = G.get(k) || { nom: k, items: [] }; g.items.push(o); G.set(k, g); }
     const groupes = [...G.values()].map(g => { g.items.sort((a, b) => (b.preco > 0) - (a.preco > 0) || (a.couv ?? 99) - (b.couv ?? 99)); g.nb = g.items.filter(o => o.preco > 0).length; g.valeur = g.items.reduce((s, o) => s + o.valeur, 0); g.delai = g.items[0].delai; return g; })
       .sort((a, b) => (b.nb > 0) - (a.nb > 0) || b.valeur - a.valeur);
-    const tete = `<thead><tr><th>Produit</th><th class="n" title="Quantité à commander, arrondie au conditionnement d'appro">À commander</th><th class="n" title="Stock lu dans le tableau de Laurent${dateA ? ' le ' + new Date(dateA).toLocaleDateString('fr-FR') : ''}">Stock</th><th class="n">Prévu ${esc(libT(m3))}</th><th class="n">Flux par mois</th><th class="n" title="Temps que tient le stock actuel, sans compter ce qui est en commande">Couverture</th><th class="n" title="Mois où le stock et les commandes en cours seront épuisés">Rupture prévue</th><th class="n">Mêmes mois N-1</th>${thMois}<th class="n">12 mois</th><th class="n sep" title="Flux mensuel du tableau de Laurent">Flux Laurent</th><th class="n">Écart</th>${ong === 'import' ? '<th class="n" title="Première commande de la préco conteneur de Laurent">Préco Laurent</th>' : ''}</tr></thead>`;
-    const ligneG = g => `<tr class="grp"><td>${esc(g.nom)}</td><td class="n">${g.nb ? `<span class="rouge">${fmtN(g.nb)} référence${g.nb > 1 ? 's' : ''} à commander</span><small>environ ${fmtEur(g.valeur)} HT d'achat</small>` : '<span class="vert">Rien à commander</span>'}</td><td class="n" colspan="2">délai moyen : ${fmtN(g.delai * 4.345, 0)} semaines</td><td colspan="${4 + mois.length + 3 + (ong === 'import' ? 1 : 0)}"></td></tr>`;
-    const ligneP = o => `<tr${o.arrete ? ' class="arrete"' : ''}><td>${esc(o.lib)} <span class="muted">${esc(o.sku)}</span>${badge(o)}</td><td class="n ${o.preco > 0 ? 'preco-a' : o.preco === 0 ? 'preco-ok' : ''}${o.urgent && o.preco > 0 ? ' rouge' : ''}"${o.preco > 0 ? ` title="Pour couvrir ${fmtN(o.cible, 1)} mois de vente · par ${fmtN(o.cond)}"` : ''}>${o.arrete ? '<span class="muted">arrêté</span>' : o.preco == null ? tiret : o.preco > 0 ? fmtN(o.preco) : 'rien'}</td><td class="n">${o.stock == null ? tiret : fmtN(o.stock)}${o.cde ? `<small>+ ${fmtN(o.cde)} en commande</small>` : ''}</td><td class="n">${fmtN(o.t0)}</td><td class="n"><b>${fmtN(o.flux)}</b></td><td class="n">${mo(o.couv)}</td><td class="n${o.urgent ? ' rouge' : ''}"${o.urgent ? ' title="Rupture avant l\'arrivée d\'une commande passée aujourd\'hui"' : ''}>${o.rupture ? libM(o.rupture) : '<span class="muted">au-delà</span>'}</td><td class="n">${fmtN(o.n1)}</td>${tdMois(o)}<td class="n">${fmtN(o.tot)}</td>${finLaurent(o)}${ong === 'import' ? `<td class="n">${o.src.preco_laurent == null ? tiret : fmtN(+o.src.preco_laurent)}</td>` : ''}</tr>`;
+    const tete = `<thead><tr><th>Produit</th><th class="n" title="Quantité à commander, arrondie au conditionnement d'appro">À commander</th><th class="n" title="Stock lu dans le tableau de Laurent${dateA ? ' le ' + new Date(dateA).toLocaleDateString('fr-FR') : ''}">Stock</th><th class="n">Prévu ${esc(libT(m3))}</th><th class="n">Flux par mois</th><th class="n" title="Temps que tient le stock actuel, sans compter ce qui est en commande">Couverture</th><th class="n" title="Mois où le stock et les commandes en cours seront épuisés">Rupture prévue</th><th class="n" title="Durée de vente que la commande doit couvrir : délai du fournisseur + ${ong === 'import' ? 'temps entre deux conteneurs + sécurité' : 'stock visé'}">À couvrir</th><th class="n">Mêmes mois N-1</th>${thMois}<th class="n">12 mois</th><th class="n sep" title="Flux mensuel du tableau de Laurent">Flux Laurent</th><th class="n">Écart</th>${ong === 'import' ? '<th class="n" title="Première commande de la préco conteneur de Laurent">Préco Laurent</th>' : ''}</tr></thead>`;
+    const ligneG = g => `<tr class="grp"><td>${esc(g.nom)}</td><td class="n">${g.nb ? `<span class="rouge">${fmtN(g.nb)} référence${g.nb > 1 ? 's' : ''} à commander</span><small>environ ${fmtEur(g.valeur)} HT d'achat</small>` : '<span class="vert">Rien à commander</span>'}</td><td class="n" colspan="2">délai moyen : ${fmtN(g.delai * 4.345, 0)} semaines</td><td colspan="${5 + mois.length + 3 + (ong === 'import' ? 1 : 0)}"></td></tr>`;
+    const ligneP = o => `<tr${o.arrete ? ' class="arrete"' : ''}><td>${esc(o.lib)} <span class="muted">${esc(o.sku)}</span>${badge(o)}</td><td class="n ${o.preco > 0 ? 'preco-a' : o.preco === 0 ? 'preco-ok' : ''}${o.urgent && o.preco > 0 ? ' rouge' : ''}"${o.preco > 0 ? ` title="Pour couvrir ${fmtN(o.cible, 1)} mois de vente · par ${fmtN(o.cond)}"` : ''}>${o.arrete ? '<span class="muted">arrêté</span>' : o.preco == null ? tiret : o.preco > 0 ? fmtN(o.preco) : 'rien'}</td><td class="n">${o.stock == null ? tiret : fmtN(o.stock)}${o.cde ? `<small>+ ${fmtN(o.cde)} en commande</small>` : ''}</td><td class="n">${fmtN(o.t0)}</td><td class="n"><b>${fmtN(o.flux)}</b></td><td class="n">${mo(o.couv)}</td><td class="n${o.urgent ? ' rouge' : ''}"${o.urgent ? ' title="Rupture avant l\'arrivée d\'une commande passée aujourd\'hui"' : ''}>${o.rupture ? libM(o.rupture) : '<span class="muted">au-delà</span>'}</td><td class="n">${fmtN(o.cible, 1)} mois</td><td class="n">${fmtN(o.n1)}</td>${tdMois(o)}<td class="n">${fmtN(o.tot)}</td>${finLaurent(o)}${ong === 'import' ? `<td class="n">${o.src.preco_laurent == null ? tiret : fmtN(+o.src.preco_laurent)}</td>` : ''}</tr>`;
     html = groupes.length ? `<table>${tete}<tbody>${groupes.map(g => ligneG(g) + g.items.map(ligneP).join('')).join('')}</tbody></table>` : '';
     const sansFiche = [...prod.values()].filter(o => !o.src && o.tot > 0).length;
     pied = `${fmtN(items.length)} références chez ${fmtN(groupes.length)} fournisseurs. ` + (ong === 'import'
-      ? `<b>À commander</b> = ventes prévues pendant le délai du fournisseur + ${CYCLE} mois (un conteneur par trimestre) + ${SECU} mois de sécurité, moins le stock et les commandes en cours, arrondi au conditionnement d'appro. En rouge : la rupture arrive avant qu'une commande passée aujourd'hui ne soit livrée. « Préco Laurent » : sa première commande conteneur (${esc(items.find(o => o.src.preco_laurent_date)?.src.preco_laurent_date || '–')}).`
+      ? `Avec <b>${PRECO.conteneurs} conteneurs par an</b>, chaque commande doit couvrir le délai du fournisseur + ${fmtN(CYCLE, CYCLE % 1 ? 1 : 0)} mois jusqu'au conteneur suivant + ${SECU} mois de sécurité (colonne « À couvrir »). <b>À commander</b> = ventes prévues sur cette durée, moins le stock et les commandes en cours, arrondi au conditionnement d'appro. Le total par fournisseur donne la valeur d'achat de la commande. En rouge : la rupture arrive avant qu'une commande passée aujourd'hui ne soit livrée. « Préco Laurent » : sa première commande conteneur (${esc(items.find(o => o.src.preco_laurent_date)?.src.preco_laurent_date || '–')}).`
       : `<b>À commander</b> = ventes prévues pendant le délai du fournisseur + ${PRECO.jours} jours de stock visé, moins le stock et les commandes en cours, arrondi au conditionnement d'appro.`) +
       ` Stocks, délais et conditionnements : copie du tableau de Laurent du ${dateA ? new Date(dateA).toLocaleDateString('fr-FR') : '–'}.${sansFiche ? ` ${fmtN(sansFiche)} accessoires vendus n'ont pas de ligne dans son onglet Accessoires et ne sont pas affichés.` : ''}`;
-    PRECO.csv = { nom: 'accessoires_' + ong, tete: ['Fournisseur', 'Référence', 'Produit', 'À commander', 'Par', 'Stock', 'En commande', 'Prévu 3 mois', 'Flux par mois', 'Couverture (mois)', 'Rupture prévue', 'Délai (mois)', 'Mêmes mois N-1', ...mois.map(m => m.slice(0, 7)), '12 mois', 'Flux Laurent', 'Préco Laurent'],
-      lignes: groupes.flatMap(g => g.items.map(o => [g.nom, o.sku, o.lib, o.preco, o.cond, o.stock, o.cde, o.t0, o.flux, o.couv, o.rupture ? o.rupture.slice(0, 7) : '', o.delai, o.n1, ...o.v, o.tot, o.fluxL, o.src.preco_laurent])) };
+    PRECO.csv = { nom: 'accessoires_' + ong, tete: ['Fournisseur', 'Référence', 'Produit', 'À commander', 'Par', 'Stock', 'En commande', 'Prévu 3 mois', 'Flux par mois', 'Couverture (mois)', 'Rupture prévue', 'Délai (mois)', 'À couvrir (mois)', 'Mêmes mois N-1', ...mois.map(m => m.slice(0, 7)), '12 mois', 'Flux Laurent', 'Préco Laurent'],
+      lignes: groupes.flatMap(g => g.items.map(o => [g.nom, o.sku, o.lib, o.preco, o.cond, o.stock, o.cde, o.t0, o.flux, o.couv, o.rupture ? o.rupture.slice(0, 7) : '', o.delai, o.cible, o.n1, ...o.v, o.tot, o.fluxL, o.src.preco_laurent])) };
   }
-  $('preco-tbl').innerHTML = html ? html + `<p class="sub" style="margin-top:8px">${pied} « Écart » : flux de Laurent comparé au nôtre (rouge s'il est plus haut d'au moins 15 %, vert s'il est plus bas).</p>` : '<div class="muted">Aucun produit sur cette sélection.</div>';
+  $('preco-tbl').innerHTML = html || '<div class="muted">Aucun produit sur cette sélection.</div>';
+  $('preco-pied').innerHTML = html ? `${pied} « Écart » : flux de Laurent comparé au nôtre (rouge s'il est plus haut d'au moins 15 %, vert s'il est plus bas).` : '';
   // Corrections : opérations retirées et ruptures probables
   const ret = new Map(); for (const r of lignes) if (+r.q_retire) ret.set(r.sku, (ret.get(r.sku) || 0) + +r.q_retire);
   const rup = lignes.filter(r => +r.q_rupture).sort((a, b) => +b.q_rupture - +a.q_rupture);
@@ -1851,6 +1865,11 @@ document.querySelectorAll('#preco-onglets .btn').forEach(b => b.onclick = () => 
 document.querySelectorAll('#preco-jours .btn').forEach(b => b.onclick = () => {
   PRECO.jours = +b.dataset.j;
   document.querySelectorAll('#preco-jours .btn').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  renderPreco();
+});
+document.querySelectorAll('#preco-cont .btn').forEach(b => b.onclick = () => {
+  PRECO.conteneurs = +b.dataset.c;
+  document.querySelectorAll('#preco-cont .btn').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
   renderPreco();
 });
 $('preco-marque').onchange = e => { PRECO.marque = e.target.value; renderPreco(); };
