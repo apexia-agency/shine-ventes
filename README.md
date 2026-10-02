@@ -112,3 +112,16 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
   (import du cabinet : Journal ; Date ; Société ; Pièce ; Tiers ; N° facture ; Compte ; Libellé ; Débit ; Crédit ; Fichier) et `AAAA-MM_SHINE_journal_achats.csv`
   (30 colonnes, une ligne par facture) dans le dossier du mois. Fonction `factures_export_mois(mois)` ; pièces `AC-<exercice>-0001` attribuées au premier export.
   TVA : FR déductible (44566, 44562 pour les immobilisations), non déductible (ajoutée à la charge), autoliquidation (445662 / 4452), sans TVA. Avoir : sens inversé.
+
+## Trieur de mails de Jérémy
+
+- But : trier la boîte `shinegroupfr@gmail.com` (les adresses `jeremy@` et `jeremy.b@shine-group.fr` y arrivent déjà), mettre de côté
+  ce qui ne sert à rien, préparer un brouillon quand une réponse est attendue. **Rien n'est envoyé, rien n'est supprimé** : Jérémy envoie et vide lui-même.
+- **Indépendant de l'agent mail de Robin** (flux n8n « Boîte pro », app FRIDAY, autre base) : aucun flux, table ni fonction en commun. Ne pas les relier sans l'accord des deux.
+- Chaîne : flux n8n « Boîte Jérémy · tri et brouillons » → fonction `trier-mail` → libellé Gmail (`TRI/À supprimer`, `TRI/À répondre`, ou un libellé existant) et brouillon dans le fil.
+- Ordre de décision : mail d'un collègue SHINE → gardé ; règle de `mails_regles` (adresse exacte, puis domaine) ; sinon Claude (Opus 5.5) lit le mail.
+  Garde-fous : jamais « inutile » pour SHINE, pour un client connu ou pour une règle « garder » ; « inutile » seulement si Claude en est sûr à 80 % au moins.
+- Accès à la base : la seule lecture ouverte est `mail_contexte(empreinte)` (fiche client, chiffre par exercice, 5 dernières factures avec suivi). Pas de SQL libre : un mail est écrit par un inconnu.
+- Confidentialité : ni le texte des mails ni les adresses des correspondants ne sont gardés. `mails_traites` garde le domaine, l'empreinte SHA-256 de l'adresse, la décision et son motif.
+- Ajouter une règle : `insert into mails_regles (portee, cle, decision, libelle) values ('domaine', 'exemple.com', 'inutile', null);` (`origine = 'claude'` : règle proposée, à confirmer par Jérémy).
+- Code : `supabase/functions/trier-mail/index.ts` ; `{ essai: true }` décide sans rien écrire. Appel avec la clé service (connexion n8n « Supabase SHINE ventes »).
