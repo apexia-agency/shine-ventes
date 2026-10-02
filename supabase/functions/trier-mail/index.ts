@@ -72,8 +72,10 @@ async function sha256(texte: string): Promise<string> {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "Méthode non autorisée" }, 405);
-  const cleService = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  if (req.headers.get("authorization") !== `Bearer ${cleService}`) return json({ error: "Clé refusée" }, 401);
+  // La fonction travaille avec la clé de l'appelant, pas avec la sienne : seule une clé service peut lire
+  // mail_contexte et les tables du trieur (RLS sans politique). Vérifié avant tout appel à Claude.
+  const cleService = (req.headers.get("authorization") || "").replace(/^Bearer\s+/i, "") || req.headers.get("apikey") || "";
+  if (!cleService) return json({ error: "Clé absente" }, 401);
 
   let corps: { gmail_id?: string; thread_id?: string; de?: string; a?: string; objet?: string; texte?: string; recu_le?: string; liste_diffusion?: boolean; libelles?: string[]; essai?: boolean };
   try { corps = await req.json(); } catch { return json({ error: "Requête illisible" }, 400); }
@@ -82,6 +84,8 @@ Deno.serve(async (req) => {
   const essai = corps.essai === true;
   const domaine = adresse.split("@")[1];
   const sb = createClient(Deno.env.get("SUPABASE_URL")!, cleService, { auth: { persistSession: false } });
+  const { error: eCle } = await sb.rpc("mail_contexte", { p_empreinte: "" });
+  if (eCle) return json({ error: "Clé refusée" }, 401);
 
   if (!essai) {
     const { data: deja } = await sb.from("mails_traites").select("decision, categorie, libelle, reponse_attendue, motif, source").eq("gmail_id", corps.gmail_id).maybeSingle();
