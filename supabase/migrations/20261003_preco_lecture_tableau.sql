@@ -1,3 +1,4 @@
+-- APPLIQUÉ dans Supabase le 02/10/2026 ; flux n8n créé, essayé (216 bidons, 35 cuves, 89 accessoires) et activé.
 -- Préco de vente : lecture de nuit du tableau de Laurent (Google Sheet « COMMANDES FOURNISSEURS - Inventaires V2 »).
 -- Un flux n8n à part (« Préco — lecture du tableau de Laurent ») lit cinq onglets avec la connexion Google Sheets de Jérémy
 -- et envoie la réponse brute de Google à cette fonction, qui range la copie du jour dans preco_laurent, preco_cuves et
