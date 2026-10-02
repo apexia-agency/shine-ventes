@@ -63,7 +63,9 @@ Onglet « Préco de vente » du board Achats (`#preco`), sous-onglets Chimie et 
 - **Objectifs 2026-2027** (Jérémy) : particuliers 3 000 000 € (site, réalisé 2 910 472 €, +3,1 %), revendeurs avec Jokeriders 1 550 000 € (réalisé 1 504 321 €, +3,0 %), pros 350 000 € (réalisé 341 011 €, +2,6 %). Pour changer un objectif : `update preco_objectifs set objectif_ca = … where groupe = '…'; select rafraichir_preco();`.
 - **Opération retirée** : implantation Norauto d'octobre 2025 (colis `COL…-IMPLANT` de Mobivia). L'opération de mai 2026 est gardée.
 - **Rupture probable** : mois où les particuliers achètent moins de 40 % de la moyenne des deux mois voisins (moyenne d'au moins 40 unités) ; ajout plafonné à 30 % de l'année. À remplacer par les jours d'indisponibilité du tableau de Laurent quand il sera lu chaque nuit.
-- **Tableau de Laurent** : `preco_laurent` contient une copie du 02/10/2026 (flux mensuel et stock de bidons, 111 produits). Étape suivante : lecture de nuit du Google Sheet (stock des bidons et des cuves), puis préco de commande et alertes de stock bas.
+- **Tableau de Laurent** : copie du 02/10/2026 dans `preco_laurent` (bidons et aérosols : flux, stock et en commande, en unités — onglets « Bidons Chimie » et « Aérosols et chimie spé. », colonnes D, E, H) et `preco_cuves` (onglet « Vrac Production », colonnes D et E, en **litres**). Étape suivante : lecture de nuit du Google Sheet, puis alertes de stock bas.
+- **Tableau du board** (`supabase/migrations/20261002_preco_ventes_v2.sql`) : les formats d'un même produit sont regroupés sous une ligne produit (litres en cuve, vrac à commander). Pour chaque format : à conditionner, stock, prévu sur les trois prochains mois, flux, couverture, puis les trimestres suivants. La prévision est glissante (12 mois à partir du mois en cours). Stock visé au choix : 60, 75 ou 90 jours.
+- **Objectifs modifiables dans le board** (stylo sur chaque objectif, valideurs et administrateurs) : fonction `preco_definir_objectif`, qui recalcule la préco.
 
 ## Compositions des packs et contenances (27/09/2026, Jérémy)
 
