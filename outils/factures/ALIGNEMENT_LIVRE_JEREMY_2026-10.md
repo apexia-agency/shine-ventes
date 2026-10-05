@@ -26,7 +26,7 @@ Projet repris par Jérémy et Claude le 05/10/2026 ; Robin est prévenu avant to
 
 ## 2. Règles de fournisseurs à revoir (`factures_fournisseurs`)
 
-- **Achats pour Nexus** (confirmé par Jérémy le 05/10/2026) : Univar, Vidara, Quimidroga, Interchimie, Stockmeier et Keyser achètent **toujours** pour Nexus → « 60110000 / MP chimie pour Nexus » ; Spiess et Chemipol → « 60130000 / MP chimie intra pour Nexus ». Règle par fournisseur, pas besoin de signal sur la facture. Seul RS Développement varie (60400000 ou Nexus).
+- **Achats pour Nexus** (confirmé par Jérémy le 05/10/2026) : Univar, Vidara, Quimidroga, Interchimie, Stockmeier et Keyser achètent **toujours** pour Nexus → « 60110000 / MP chimie pour Nexus » ; Spiess et Chemipol → « 60130000 / MP chimie intra pour Nexus ». Règle par fournisseur, pas besoin de signal sur la facture. RS Développement : travail réglementaire pour Nexus → « MP chimie pour Nexus », pour les produits SHINE → 60400000 (confirmé par Jérémy le 05/10/2026).
 - **Plast'Embal** : un seul compte (60263000) ; à éclater ligne par ligne entre calage (BTC) et film (BTB).
 - **Napack** : rangé en 62350000 PLV dans le rangeur, alors que le livre le met en 60112000 MP étiquetage (68 000 € sur l'exercice).
 - **Volkswagen Bank, Capitole Finance** : un compte par véhicule (plaque → compte) ; TVA non déductible des voitures de tourisme. Le cabinet passe les loyers
