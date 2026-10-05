@@ -207,6 +207,12 @@ tbody tr:last-child td { border-bottom: 0; }
 .tbl-wrap { overflow-x: auto; }
 .mc-cout { width: 88px; text-align: right; padding: 4px 8px; border-radius: 10px; border: 1px solid var(--ring); background: var(--surface); font-variant-numeric: tabular-nums; }
 .mc-cout::placeholder { color: var(--muted); }
+.mc-pnl td:first-child, .mc-pnl th:first-child { white-space: nowrap; position: sticky; left: 0; z-index: 1; background: var(--surface); }
+.mc-pnl .mc-sec td { color: var(--muted); font-size: 12px; font-weight: 650; text-transform: uppercase; letter-spacing: .06em; padding-top: 14px; }
+.mc-pnl .mc-tot td { font-weight: 650; border-top: 1px solid var(--axis); }
+.mc-pnl .mc-res td { font-weight: 750; background: var(--surface-2); }
+.mc-pnl .mc-info td { color: var(--muted); }
+.mc-pnl .mc-neg { color: var(--bad); }
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; border: 1px solid var(--ring); }
 .pill.ok { color: var(--good); }
 .note { color: var(--warn-ink); border-radius: 16px; padding: 11px 16px; font-size: 13px; margin-bottom: 12px; background: var(--warn-bg); }
@@ -2140,26 +2146,46 @@ function dessinerMargeMyclear(p) {
     ['Marge avant pub', fmtEur(marge), `${pct(marge, ca)} du CA`],
     ['Marge après pub', fmtEur(apresPub), `${pct(apresPub, ca)} du CA · pub GMV Max ${fmtEur(-pub)}`]
   ].map(([l, v, s]) => `<div class="card tile"><div class="label">${l}</div><div class="value">${v}</div><div class="delta">${s}</div></div>`).join('');
-  const neg = v => (+v ? fmtEur(-Math.abs(+v)) : '–');
-  const ligne = (lib, r, gras) => {
-    const b = x => gras ? `<b>${x}</b>` : x;
-    return `<tr><td>${b(lib)}</td><td class="n">${b(fmtEur(r.ca_ht))}</td><td class="n">${fmtEur(r.port_client_ht)}</td><td class="n">${r.cout_produits == null ? '–' : neg(r.cout_produits)}${+r.ca_sans_cout > 0.5 ? ' <small class="muted">incomplet</small>' : ''}</td>`
-      + `<td class="n" title="${fmtN(r.colis)} colis × ${fmtEur(r.cout_colis_ht, 2)}">${neg(r.transport_ht)}</td><td class="n" title="${esc(r.titre || '')}">${+r.frais_tiktok ? fmtEur(r.frais_tiktok) : '–'}</td>`
-      + `<td class="n">${b(fmtEur(r.marge_ht))}</td><td class="n">${pct(r.marge_ht, r.ca_ht)}</td><td class="n">${+r.pub ? fmtEur(r.pub) : '–'}</td><td class="n">${b(fmtEur(r.marge_apres_pub_ht))}</td></tr>`;
-  };
-  const LIB_FRAIS = { commission_tiktok: 'Commission TikTok', commission_affilies: 'Commissions affiliés', promotions_tiktok: 'Promotions TikTok', frais_epr: 'Éco-participation', port_retours: 'Port des retours', aide_port_tiktok: 'Aide TikTok sur le port', autres_frais_tiktok: 'Autres frais' };
-  let h = `<table><thead><tr><th>Mois</th><th class="n">CA HT</th><th class="n">Port client</th><th class="n">Coût produits</th><th class="n">Transport Colissimo</th><th class="n">Frais TikTok</th><th class="n">Marge</th><th class="n">%</th><th class="n">Pub GMV Max</th><th class="n">Après pub</th></tr></thead><tbody>`;
-  for (const r of mois) {
-    r.titre = Object.entries(r.frais || {}).filter(([k]) => k !== 'pub_gmv_max').map(([k, v]) => `${LIB_FRAIS[k] || k} : ${fmtEur(+v, 2)}`).join('\n');
-    h += ligne(moisLib(r.mois) + (d.frais_tiktok_du && !r.frais_complets ? ' *' : ''), r);
+  // Compte de résultat détaillé : une ligne par poste, une colonne par mois, total, % du CA, par commande
+  const LIB_FRAIS = { commission_tiktok: 'Commission TikTok', commission_affilies: 'Commissions affiliés (créateurs)', promotions_tiktok: 'Promotions TikTok (Smart Promotion)', frais_epr: 'Éco-participation (EPR)', port_retours: 'Port des retours', aide_port_tiktok: 'Aide TikTok sur le port', autres_frais_tiktok: 'Autres frais TikTok' };
+  const fr = k => r => +(r.frais || {})[k] || 0;
+  const encaisse = r => +r.ca_ht + +r.port_client_ht + fr('aide_port_tiktok')(r);
+  const POSTES = [
+    { t: 'sec', lib: 'Ce qui rentre' },
+    { lib: 'CA produits HT', f: r => +r.ca_ht },
+    { lib: 'Port payé par les clients', f: r => +r.port_client_ht },
+    { lib: 'Aide TikTok sur le port', f: fr('aide_port_tiktok') },
+    { t: 'tot', lib: 'Total encaissé', f: encaisse },
+    { t: 'sec', lib: 'Coûts' },
+    { lib: 'Produits (prix de cession)', f: r => -(+r.cout_produits || 0), titre: r => +r.ca_sans_cout > 0.5 ? `${fmtEur(+r.ca_sans_cout)} de CA sans coût saisi` : '' },
+    { lib: 'Transport Colissimo', f: r => -(+r.transport_ht || 0), titre: r => `${fmtN(r.colis)} colis × ${fmtEur(+r.cout_colis_ht, 2)}` },
+    { lib: LIB_FRAIS.port_retours, f: fr('port_retours') },
+    { lib: LIB_FRAIS.commission_tiktok, f: fr('commission_tiktok') },
+    { lib: LIB_FRAIS.commission_affilies, f: fr('commission_affilies') },
+    { lib: LIB_FRAIS.promotions_tiktok, f: fr('promotions_tiktok') },
+    { lib: LIB_FRAIS.frais_epr, f: fr('frais_epr') },
+    { lib: LIB_FRAIS.autres_frais_tiktok, f: fr('autres_frais_tiktok') },
+    { t: 'tot', lib: 'Total des coûts', f: r => +r.marge_ht - encaisse(r) },
+    { t: 'res', lib: 'Marge avant pub', f: r => +r.marge_ht },
+    { lib: 'Pub TikTok (GMV Max)', f: r => +r.pub || 0 },
+    { t: 'res', lib: 'Marge après pub', f: r => +r.marge_apres_pub_ht }
+  ];
+  const nbCmd = somme('colis');
+  const cellule = (v, titre) => `<td class="n"${titre ? ` title="${esc(titre)}"` : ''}>${Math.abs(v) < 0.005 ? '<span class="muted">–</span>' : `<span class="${v < 0 ? 'mc-neg' : ''}">${fmtEur(v)}</span>`}</td>`;
+  let h = `<table class="mc-pnl"><thead><tr><th></th>${mois.map(r => `<th class="n">${moisLib(r.mois)}${d.frais_tiktok_du && !r.frais_complets ? ' *' : ''}</th>`).join('')}<th class="n">Total</th><th class="n">% du CA</th><th class="n">Par commande</th></tr></thead><tbody>`;
+  for (const p of POSTES) {
+    if (p.t === 'sec') { h += `<tr class="mc-sec"><td colspan="${mois.length + 4}">${p.lib}</td></tr>`; continue; }
+    const vals = mois.map(p.f), tot = vals.reduce((a, v) => a + v, 0);
+    if (!p.t && Math.abs(tot) < 0.005) continue; // poste vide sur la période
+    h += `<tr class="${p.t ? 'mc-' + p.t : ''}"><td>${p.lib}</td>${vals.map((v, i) => cellule(v, p.titre ? p.titre(mois[i]) : '')).join('')}`
+      + `${cellule(tot)}<td class="n">${pct(tot, ca)}</td><td class="n">${nbCmd ? fmtEur(tot / nbCmd, 2) : '–'}</td></tr>`;
   }
-  const tot = { ca_ht: ca, port_client_ht: somme('port_client_ht'), cout_produits: mois.some(r => r.cout_produits != null) ? somme('cout_produits') : null, ca_sans_cout: sansCout, colis: somme('colis'), cout_colis_ht: somme('colis') ? somme('transport_ht') / somme('colis') : 0, transport_ht: somme('transport_ht'), frais_tiktok: somme('frais_tiktok'), marge_ht: marge, pub, marge_apres_pub_ht: apresPub };
-  h += ligne('Total', tot, true) + `</tbody></table>`;
-  $('mc-mois').innerHTML = h;
-  // Détail des frais TikTok sur la période
+  h += `<tr class="mc-info"><td>Commandes</td>${mois.map(r => `<td class="n">${fmtN(r.colis)}</td>`).join('')}<td class="n">${fmtN(nbCmd)}</td><td></td><td></td></tr>`;
+  h += `<tr class="mc-info"><td>Panier moyen HT</td>${mois.map(r => `<td class="n">${r.colis ? fmtEur(r.ca_ht / r.colis, 2) : '–'}</td>`).join('')}<td class="n">${nbCmd ? fmtEur(ca / nbCmd, 2) : '–'}</td><td></td><td></td></tr>`;
+  $('mc-mois').innerHTML = h + '</tbody></table>';
   const detail = {};
   for (const r of mois) for (const [k, v] of Object.entries(r.frais || {})) if (k !== 'pub_gmv_max') detail[k] = (detail[k] || 0) + +v;
-  const det = Object.entries(detail).sort((a, b) => a[1] - b[1]).map(([k, v]) => `${LIB_FRAIS[k] || k} ${fmtEur(v)}`).join(' · ');
+  const det = Object.entries(detail).sort((x, y) => x[1] - y[1]).map(([k, v]) => `${LIB_FRAIS[k] || k} ${fmtEur(v)}`).join(' · ');
   $('mc-explic').innerHTML = `Marge = CA HT + port payé par le client + aide TikTok sur le port − coût des produits − transport − frais TikTok. Transport = nombre de commandes × coût moyen d'un colis Colissimo à domicile du mois (factures Colissimo ; dernier mois connu quand le mois n'est pas encore facturé). Les ventes de la boutique en ligne n'ont pas de frais TikTok ; les frais Shopify et de paiement ne sont pas encore déduits.${det ? '<br>Frais TikTok de la période : ' + esc(det) + '.' : ''}`;
   dessinerProduitsMyclear(p);
 }
