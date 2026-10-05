@@ -79,6 +79,10 @@ Onglet « Préco de vente » du board Achats (`#preco`), sous-onglets Chimie et 
 - **Chimie** : toutes les cuves d'un même produit sont additionnées (par exemple jantes hard 20 % et 19 %) ; les produits dont le vrac est à commander sont en haut du tableau ; les 12 mois glissants sont affichés mois par mois.
 - **Objectifs modifiables dans le board** (stylo sur chaque objectif, valideurs et administrateurs) : fonction `preco_definir_objectif`, qui recalcule la préco.
 
+## AutoDoc et YouTube (05/10/2026, Jérémy)
+
+Ventes AutoDoc (canal `autodoc_marketplace`, famille Marketplaces, 33 relevés, 4 502,41 € HT sur 2025-2026, ligne « sans détail produit ») et revenus YouTube (canal `youtube`, hors produits, 11 versements AdSense, 4 561,33 €) chargés avec les montants des exports envoyés au comptable (`supabase/migrations/20261005_autodoc_youtube.sql`). Chargement à la main tant qu'aucune collecte ne les ramène. Camembert des volumes en mode CA : parts sélectionnables « Autres ventes » (PLV, sans détail produit : AutoDoc, EBP…) et « Autres revenus » (YouTube, loyers, indemnités…), en plus du port et de Nexus.
+
 ## Compositions des packs et contenances (27/09/2026, Jérémy)
 
 **Appliqué dans Supabase le 27/09/2026** (migrations `contenances_produits` et `packs_composition_site_et_ebp`, puis `rafraichir_agregats`) : 76 packs,
