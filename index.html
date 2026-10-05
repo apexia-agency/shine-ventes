@@ -2192,6 +2192,7 @@ function dessinerMargeMyclear(p) {
     { t: 'sec', lib: 'Coûts' },
     { lib: 'Produits (prix de cession)', f: r => -(+r.cout_produits || 0), titre: r => +r.ca_sans_cout > 0.5 ? `${fmtEur(+r.ca_sans_cout)} de CA sans coût saisi` : '' },
     { lib: 'Transport Colissimo', f: r => -(+r.transport_ht || 0), titre: r => `${fmtN(r.colis)} colis, ${fmtEur(+r.cout_colis_ht, 2)} en moyenne${+r.colis_lourds ? `, dont ${fmtN(r.colis_lourds)} de plus de 2 kg` : ''}` },
+    { lib: 'Emballage (enveloppe ou carton)', f: r => -(+r.emballage_ht || 0), titre: r => `${fmtN(r.colis)} commandes × 0,20 €` },
     { lib: LIB_FRAIS.port_retours, f: fr('port_retours') },
     { lib: LIB_FRAIS.commission_tiktok, f: fr('commission_tiktok') },
     { lib: LIB_FRAIS.commission_affilies, f: fr('commission_affilies') },
@@ -2219,7 +2220,7 @@ function dessinerMargeMyclear(p) {
   // Même compte de résultat, côte à côte par canal (frais TikTok et pub imputés à TikTok Shop)
   const CANAUX = [['tiktok', 'TikTok Shop'], ['boutique', 'Boutique en ligne'], ['autres', 'Autres canaux']];
   const cumul = c => {
-    const o = { ca_ht: 0, port_client_ht: 0, colis: 0, cout_produits: 0, ca_sans_cout: 0, transport_ht: 0, marge_ht: 0, pub: 0, marge_apres_pub_ht: 0, frais: {} };
+    const o = { ca_ht: 0, port_client_ht: 0, colis: 0, cout_produits: 0, ca_sans_cout: 0, transport_ht: 0, emballage_ht: 0, marge_ht: 0, pub: 0, marge_apres_pub_ht: 0, frais: {} };
     for (const r of mois) {
       const x = c ? (r.canaux || {})[c] || {} : r;
       for (const k of Object.keys(o)) if (k !== 'frais') o[k] += +x[k] || 0;
@@ -2245,7 +2246,7 @@ function dessinerMargeMyclear(p) {
   const detail = {};
   for (const r of mois) for (const [k, v] of Object.entries(r.frais || {})) if (k !== 'pub_gmv_max') detail[k] = (detail[k] || 0) + +v;
   const det = Object.entries(detail).sort((x, y) => x[1] - y[1]).map(([k, v]) => `${LIB_FRAIS[k] || k} ${fmtEur(v)}`).join(' · ');
-  $('mc-explic').innerHTML = `Marge = CA HT + port payé par le client + aide TikTok sur le port − coût des produits − transport − frais TikTok. Transport : chaque commande est pesée (poids des produits du classeur MyClear) et chiffrée avec la grille Colissimo Domicile Sans Signature négociée 2026, plus la surtaxe gasoil et la taxe du mois lues dans les factures Colissimo (dernier mois connu quand le mois n'est pas encore facturé). Les ventes de la boutique en ligne n'ont pas de frais TikTok ; les frais Shopify et de paiement ne sont pas encore déduits.${det ? '<br>Frais TikTok de la période : ' + esc(det) + '.' : ''}`;
+  $('mc-explic').innerHTML = `Marge = CA HT + port payé par le client + aide TikTok sur le port − coût des produits − transport − emballage (0,20 € par commande) − frais TikTok. Transport : chaque commande est pesée (poids des produits du classeur MyClear) et chiffrée avec la grille Colissimo Domicile Sans Signature négociée 2026, plus la surtaxe gasoil et la taxe du mois lues dans les factures Colissimo (dernier mois connu quand le mois n'est pas encore facturé). Les ventes de la boutique en ligne n'ont pas de frais TikTok ; les frais Shopify et de paiement ne sont pas encore déduits.${det ? '<br>Frais TikTok de la période : ' + esc(det) + '.' : ''}`;
   dessinerProduitsMyclear(p);
 }
 function dessinerProduitsMyclear(p) {
