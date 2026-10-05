@@ -44,3 +44,9 @@ Projet repris par Jérémy et Claude le 05/10/2026 ; Robin est prévenu avant to
 - Facture adressée à une autre société du groupe (SPACE UP, NEXUS) ou à une ancienne adresse.
 - Facture en devise sans taux (Tonyin en dollars) : montant en euros à prendre sur le relevé.
 - Loyers payés d'avance (charge constatée d'avance à la clôture).
+
+## 4. Litiges clients (Jérémy, 05/10/2026)
+
+- Une facture de tiers que SHINE prend en charge pour régler un litige client (ex. L.A. Autoclean pour M. Boireau) va dans un compte « Litiges clients »,
+  à créer (proposé 65880000 ; 6588 ou 6718 à faire choisir par le comptable). Le rangeur ne peut pas le deviner : en interne, le mot « litige »
+  sera mis dans le libellé ou le nom du fichier, et la règle le reconnaît.
