@@ -2167,7 +2167,7 @@ function dessinerMargeMyclear(p) {
     { t: 'tot', lib: 'Total encaissé', f: encaisse },
     { t: 'sec', lib: 'Coûts' },
     { lib: 'Produits (prix de cession)', f: r => -(+r.cout_produits || 0), titre: r => +r.ca_sans_cout > 0.5 ? `${fmtEur(+r.ca_sans_cout)} de CA sans coût saisi` : '' },
-    { lib: 'Transport Colissimo', f: r => -(+r.transport_ht || 0), titre: r => `${fmtN(r.colis)} colis × ${fmtEur(+r.cout_colis_ht, 2)}` },
+    { lib: 'Transport Colissimo', f: r => -(+r.transport_ht || 0), titre: r => `${fmtN(r.colis)} colis, ${fmtEur(+r.cout_colis_ht, 2)} en moyenne${+r.colis_lourds ? `, dont ${fmtN(r.colis_lourds)} de plus de 2 kg` : ''}` },
     { lib: LIB_FRAIS.port_retours, f: fr('port_retours') },
     { lib: LIB_FRAIS.commission_tiktok, f: fr('commission_tiktok') },
     { lib: LIB_FRAIS.commission_affilies, f: fr('commission_affilies') },
@@ -2221,7 +2221,7 @@ function dessinerMargeMyclear(p) {
   const detail = {};
   for (const r of mois) for (const [k, v] of Object.entries(r.frais || {})) if (k !== 'pub_gmv_max') detail[k] = (detail[k] || 0) + +v;
   const det = Object.entries(detail).sort((x, y) => x[1] - y[1]).map(([k, v]) => `${LIB_FRAIS[k] || k} ${fmtEur(v)}`).join(' · ');
-  $('mc-explic').innerHTML = `Marge = CA HT + port payé par le client + aide TikTok sur le port − coût des produits − transport − frais TikTok. Transport = nombre de commandes × coût moyen d'un colis Colissimo à domicile du mois (factures Colissimo ; dernier mois connu quand le mois n'est pas encore facturé). Les ventes de la boutique en ligne n'ont pas de frais TikTok ; les frais Shopify et de paiement ne sont pas encore déduits.${det ? '<br>Frais TikTok de la période : ' + esc(det) + '.' : ''}`;
+  $('mc-explic').innerHTML = `Marge = CA HT + port payé par le client + aide TikTok sur le port − coût des produits − transport − frais TikTok. Transport : chaque commande est pesée (poids des produits du classeur MyClear) et chiffrée avec la grille Colissimo Domicile Sans Signature négociée 2026, plus la surtaxe gasoil et la taxe du mois lues dans les factures Colissimo (dernier mois connu quand le mois n'est pas encore facturé). Les ventes de la boutique en ligne n'ont pas de frais TikTok ; les frais Shopify et de paiement ne sont pas encore déduits.${det ? '<br>Frais TikTok de la période : ' + esc(det) + '.' : ''}`;
   dessinerProduitsMyclear(p);
 }
 function dessinerProduitsMyclear(p) {
