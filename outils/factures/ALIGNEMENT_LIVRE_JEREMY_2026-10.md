@@ -26,8 +26,7 @@ Projet repris par Jérémy et Claude le 05/10/2026 ; Robin est prévenu avant to
 
 ## 2. Règles de fournisseurs à revoir (`factures_fournisseurs`)
 
-- **Achats pour Nexus** : le même fournisseur (Univar, Vidara…) peut acheter pour SHINE ou pour Nexus. Il faut un signal « pour Nexus » sur la facture
-  (aujourd'hui : le nom de fichier « HA-FOUR-NEXUS-… » donné par Jérémy). À décider : nom de fichier, mention sur la facture, ou dossier de dépôt à part.
+- **Achats pour Nexus** (confirmé par Jérémy le 05/10/2026) : Univar, Vidara, Quimidroga, Interchimie, Stockmeier et Keyser achètent **toujours** pour Nexus → « 60110000 / MP chimie pour Nexus » ; Spiess et Chemipol → « 60130000 / MP chimie intra pour Nexus ». Règle par fournisseur, pas besoin de signal sur la facture. Seul RS Développement varie (60400000 ou Nexus).
 - **Plast'Embal** : un seul compte (60263000) ; à éclater ligne par ligne entre calage (BTC) et film (BTB).
 - **Napack** : rangé en 62350000 PLV dans le rangeur, alors que le livre le met en 60112000 MP étiquetage (68 000 € sur l'exercice).
 - **Volkswagen Bank, Capitole Finance** : un compte par véhicule (plaque → compte) ; TVA non déductible des voitures de tourisme. Le cabinet passe les loyers
