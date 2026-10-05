@@ -47,6 +47,7 @@ Projet repris par Jérémy et Claude le 05/10/2026 ; Robin est prévenu avant to
 
 ## 4. Litiges clients (Jérémy, 05/10/2026)
 
-- Une facture de tiers que SHINE prend en charge pour régler un litige client (ex. L.A. Autoclean pour M. Boireau) va dans un compte « Litiges clients »,
-  à créer (proposé 65880000 ; 6588 ou 6718 à faire choisir par le comptable). Le rangeur ne peut pas le deviner : en interne, le mot « litige »
-  sera mis dans le libellé ou le nom du fichier, et la règle le reconnaît.
+- Une facture de tiers que SHINE prend en charge pour régler un litige client (ex. L.A. Autoclean pour M. Boireau, garages et carrosseries
+  Porsche, ADS Jantes, Yucel, Auto Vap, Ambo, SCO) va en **61530000 « Entretien litige client »**, compte du livre de Jérémy. Le rangeur ne peut pas
+  le deviner : en interne, le mot « litige » sera mis dans le libellé ou le nom du fichier, et la règle le reconnaît.
+- Attention : dans le livre, 61530000 porte deux comptes (« Entretien litige client » et « Entretien utilitaire ») ; un des deux doit changer de numéro.
