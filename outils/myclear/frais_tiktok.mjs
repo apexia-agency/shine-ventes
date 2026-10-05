@@ -2,7 +2,8 @@
 // Usage : node outils/myclear/frais_tiktok.mjs <dossier du .xlsx dézippé>  → affiche le SQL à exécuter dans Supabase.
 // Le fichier ne contient aucune donnée client ; seuls des totaux par mois sortent d'ici.
 // Mois = date de commande (comme les ventes du board) ; pour les recharges de pub, date du relevé.
-// Un mois de relevé réimporté remplace l'ancien : exporter des mois de relevé complets (du 1er au dernier jour).
+// Un mois de relevé n'est remplacé que si le nouvel export le couvre au moins autant que l'ancien (table myclear_releves_mois) ;
+// s'il en couvre moins il est ignoré, si les deux se chevauchent sans s'inclure le chargement s'arrête.
 import fs from 'fs';
 import path from 'path';
 
