@@ -46,6 +46,15 @@ Les ventes TikTok Shop SHINE sont dans le board : canal `tiktok_b2c`, famille Pa
 - Articles sans référence dans TikTok rattachés par le libellé (`20261002_tiktok_references.sql`). La « Microfibre de séchage ONE PASS XXL » est l'ACS77 (confirmé par Jérémy le 02/10 ; produit désactivé pour rupture), `20261002_tiktok_one_pass_acs77.sql`.
 - Camembert des volumes en mode CA : une part « Frais de port facturés » s'ajoute aux formats (le CA des produits ne contient pas le port).
 
+## Marge MyClear (05/10/2026, Robin)
+
+Onglet MyClear : cartes « Marge MyClear » (par mois) et « Marge par produit MyClear », sur les 12 derniers mois ou la période choisie. Fonction `myclear_marge` (`supabase/migrations/20261005_myclear_marge.sql`).
+- Marge = CA HT + port payé par le client + aide TikTok sur le port − coût des produits − transport − frais TikTok ; la pub GMV Max est déduite à part (« après pub »).
+- **Coût des produits** : saisi par Robin (ou un valideur) directement dans le tableau par produit (table `myclear_couts`, coût HT d'une unité, pack entier pour un pack). Tant qu'un coût manque, la marge est trop haute et le board le signale.
+- **Transport** : nombre de commandes × coût moyen HT d'un colis Colissimo à domicile jusqu'à 2 kg, lu dans `transport_colis` (≈ 7,20 €). Mois pas encore facturé : dernier mois connu. Contrôle du 05/10 : les numéros de suivi TikTok se retrouvent dans les factures Colissimo, au même coût.
+- **Frais TikTok** : export Seller Center Finance → Relevés (xlsx), passé dans `outils/myclear/frais_tiktok.mjs` (totaux par mois, aucune donnée client) puis `myclear_charger_frais_tiktok`. Un mois de relevé réimporté remplace l'ancien : exporter des mois de relevé complets. Chargé le 05/10 : relevés du 08/07 au 05/10/2026 (juin, juillet, septembre, octobre incomplets).
+- Ventes : celles du board (Shopify, canal `myclear`). La remise TikTok n'est pas un coût (TikTok la reverse). Pas encore déduits : frais Shopify et de paiement de la boutique en ligne.
+
 ## Nexus : famille Intragroupe (02/10/2026, Jérémy)
 
 Le client EBP Nexus (`CL00803`) est rangé dans la famille **Intragroupe**, segment validé (`supabase/migrations/20261002_nexus_intragroupe.sql`). Sa facture FA00004605 du 30/09/2026 (190 508,51 € HT de refacturations) est dans la base depuis le 02/10 : hors produits, elle n'entre pas dans le CA des ventes.

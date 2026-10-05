@@ -205,6 +205,8 @@ td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space:
 tbody tr:hover td { background: var(--surface-2); }
 tbody tr:last-child td { border-bottom: 0; }
 .tbl-wrap { overflow-x: auto; }
+.mc-cout { width: 88px; text-align: right; padding: 4px 8px; border-radius: 10px; border: 1px solid var(--ring); background: var(--surface); font-variant-numeric: tabular-nums; }
+.mc-cout::placeholder { color: var(--muted); }
 .pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: var(--surface-2); color: var(--ink-2); white-space: nowrap; border: 1px solid var(--ring); }
 .pill.ok { color: var(--good); }
 .note { color: var(--warn-ink); border-radius: 16px; padding: 11px 16px; font-size: 13px; margin-bottom: 12px; background: var(--warn-bg); }
@@ -1012,6 +1014,20 @@ body.en-chargement #app > :not(.rail):not(header) { opacity: .45; transition: op
     <div class="tbl-wrap" id="tbl-transport"></div>
   </div>
 
+  <div class="card hidden" id="card-mc-marge" style="margin-top:14px">
+    <div class="card-head"><h2>Marge MyClear</h2><span class="hint" id="mc-hint"></span></div>
+    <div id="mc-note"></div>
+    <div class="grid tiles" id="mc-tiles"></div>
+    <div class="tbl-wrap" id="mc-mois"></div>
+    <div class="sub" id="mc-explic" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card hidden" id="card-mc-produits" style="margin-top:14px">
+    <div class="card-head"><h2>Marge par produit MyClear</h2><span class="hint" id="mc-prod-hint"></span></div>
+    <div class="tbl-wrap" id="mc-produits"></div>
+    <div class="sub" style="margin-top:8px">Coût de revient HT d'une unité vendue : produit, flacon, étiquette, emballage, hors transport. Pour un pack, le coût du pack entier. La marge nette répartit le transport et les frais TikTok du mois au prorata du CA de chaque produit.</div>
+  </div>
+
   <details class="tech" id="sec-donnees" data-sec>
   <summary class="section-title">Données et export</summary>
   <p class="sub" style="margin:0 0 12px">Les segments à valider, les fusions de clients et les questions sur les données sont dans l'onglet <button class="link" data-aller="validation">À valider</button> du menu latéral.</p>
@@ -1394,6 +1410,7 @@ function render() {
   renderNotes(cur);
   renderTiles(cur);
   renderTransport();
+  renderMargeMyclear();
   renderMonthly(rows);
   renderCanal();
   renderAutres(all.filter(r => dansPer(r) && !estProduit(r)));
@@ -2077,6 +2094,109 @@ function renderTransport() {
   h += `</tbody></table><div class="sub" style="margin-top:8px">Montants payés en banque (plan de trésorerie), au mois du règlement et non de l'envoi. HT estimé = TTC ÷ 1,2. Pour EBP (revendeurs), le port facturé vient des lignes « transport » des factures, quand il y en a. L'import est un transport d\x27achats, affiché pour info et exclu du calcul.</div>`;
   $('tbl-transport').innerHTML = h;
   $('tr-hint').textContent = `exercice ${S.ex.replace('-', '–')}${hasN1 ? ' · comparé à ' + exN1.replace('-', '–') : ''}`;
+}
+
+// ---------- Marge MyClear (fonction myclear_marge : ventes du board, coûts saisis, Colissimo, frais TikTok) ----------
+const MC = { cle: null, data: null, enCours: null };
+function mcPeriode() {
+  if (S.per) return { du: S.per.du, au: finDeMois(S.per.au), lib: 'période choisie' };
+  const d = new Date(), y = d.getFullYear(), m = d.getMonth(); // 12 derniers mois, mois en cours compris
+  const du = new Date(Date.UTC(y, m - 11, 1)).toISOString().slice(0, 10);
+  return { du, au: finDeMois(new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 10)), lib: '12 derniers mois' };
+}
+async function renderMargeMyclear(forcer) {
+  const c1 = $('card-mc-marge'), c2 = $('card-mc-produits');
+  const ok = S.vue === 'myclear';
+  c1.classList.toggle('hidden', !ok); c2.classList.toggle('hidden', !ok);
+  if (!ok) return;
+  const p = mcPeriode(), cle = p.du + '|' + p.au;
+  if (forcer || MC.cle !== cle || !MC.data) {
+    if (MC.enCours === cle && !forcer) return;
+    MC.enCours = cle;
+    $('mc-hint').textContent = 'calcul…';
+    const { data, error } = await sb.rpc('myclear_marge', { p_du: p.du, p_au: p.au });
+    MC.enCours = null;
+    if (error) { $('mc-hint').textContent = ''; $('mc-note').innerHTML = `<div class="note">Marge indisponible : ${esc(error.message)}</div>`; return; }
+    MC.cle = cle; MC.data = data;
+    if (S.vue !== 'myclear') return;
+  }
+  dessinerMargeMyclear(p);
+}
+function dessinerMargeMyclear(p) {
+  const d = MC.data, mois = d.mois || [];
+  const pct = (a, b) => b ? fmtN(100 * a / b, 1) + ' %' : '–';
+  const somme = k => mois.reduce((a, r) => a + (+r[k] || 0), 0);
+  const ca = somme('ca_ht'), marge = somme('marge_ht'), apresPub = somme('marge_apres_pub_ht'), pub = somme('pub');
+  const sansCout = somme('ca_sans_cout');
+  const moisLib = iso => new Date(iso + 'T00:00:00').toLocaleDateString('fr-FR', { month: 'short', year: '2-digit' });
+  $('mc-hint').textContent = `${p.lib} · montants HT`;
+  const notes = [];
+  if (sansCout > 0.5) notes.push(`${fmtEur(sansCout)} de CA (${pct(sansCout, ca)}) sans coût de revient : la marge est trop haute tant que les coûts ne sont pas saisis dans le tableau par produit, plus bas.`);
+  if (d.frais_tiktok_du) notes.push(`Frais TikTok connus pour les relevés du ${new Date(d.frais_tiktok_du).toLocaleDateString('fr-FR')} au ${new Date(d.frais_tiktok_au).toLocaleDateString('fr-FR')} : les mois marqués * ont des frais incomplets (commandes payées par TikTok avant ou après ces relevés).`);
+  else notes.push('Aucun relevé TikTok chargé : les frais TikTok ne sont pas déduits.');
+  $('mc-note').innerHTML = notes.map(n => `<div class="note">${esc(n)}</div>`).join('');
+  $('mc-tiles').innerHTML = [
+    ['CA HT', fmtEur(ca), `${fmtN(somme('colis'))} commandes · port client ${fmtEur(somme('port_client_ht'))}`],
+    ['Marge avant pub', fmtEur(marge), `${pct(marge, ca)} du CA`],
+    ['Marge après pub', fmtEur(apresPub), `${pct(apresPub, ca)} du CA · pub GMV Max ${fmtEur(-pub)}`]
+  ].map(([l, v, s]) => `<div class="card tile"><div class="label">${l}</div><div class="value">${v}</div><div class="delta">${s}</div></div>`).join('');
+  const neg = v => (+v ? fmtEur(-Math.abs(+v)) : '–');
+  const ligne = (lib, r, gras) => {
+    const b = x => gras ? `<b>${x}</b>` : x;
+    return `<tr><td>${b(lib)}</td><td class="n">${b(fmtEur(r.ca_ht))}</td><td class="n">${fmtEur(r.port_client_ht)}</td><td class="n">${r.cout_produits == null ? '–' : neg(r.cout_produits)}${+r.ca_sans_cout > 0.5 ? ' <small class="muted">incomplet</small>' : ''}</td>`
+      + `<td class="n" title="${fmtN(r.colis)} colis × ${fmtEur(r.cout_colis_ht, 2)}">${neg(r.transport_ht)}</td><td class="n" title="${esc(r.titre || '')}">${+r.frais_tiktok ? fmtEur(r.frais_tiktok) : '–'}</td>`
+      + `<td class="n">${b(fmtEur(r.marge_ht))}</td><td class="n">${pct(r.marge_ht, r.ca_ht)}</td><td class="n">${+r.pub ? fmtEur(r.pub) : '–'}</td><td class="n">${b(fmtEur(r.marge_apres_pub_ht))}</td></tr>`;
+  };
+  const LIB_FRAIS = { commission_tiktok: 'Commission TikTok', commission_affilies: 'Commissions affiliés', promotions_tiktok: 'Promotions TikTok', frais_epr: 'Éco-participation', port_retours: 'Port des retours', aide_port_tiktok: 'Aide TikTok sur le port', autres_frais_tiktok: 'Autres frais' };
+  let h = `<table><thead><tr><th>Mois</th><th class="n">CA HT</th><th class="n">Port client</th><th class="n">Coût produits</th><th class="n">Transport Colissimo</th><th class="n">Frais TikTok</th><th class="n">Marge</th><th class="n">%</th><th class="n">Pub GMV Max</th><th class="n">Après pub</th></tr></thead><tbody>`;
+  for (const r of mois) {
+    r.titre = Object.entries(r.frais || {}).filter(([k]) => k !== 'pub_gmv_max').map(([k, v]) => `${LIB_FRAIS[k] || k} : ${fmtEur(+v, 2)}`).join('\n');
+    h += ligne(moisLib(r.mois) + (d.frais_tiktok_du && !r.frais_complets ? ' *' : ''), r);
+  }
+  const tot = { ca_ht: ca, port_client_ht: somme('port_client_ht'), cout_produits: mois.some(r => r.cout_produits != null) ? somme('cout_produits') : null, ca_sans_cout: sansCout, colis: somme('colis'), cout_colis_ht: somme('colis') ? somme('transport_ht') / somme('colis') : 0, transport_ht: somme('transport_ht'), frais_tiktok: somme('frais_tiktok'), marge_ht: marge, pub, marge_apres_pub_ht: apresPub };
+  h += ligne('Total', tot, true) + `</tbody></table>`;
+  $('mc-mois').innerHTML = h;
+  // Détail des frais TikTok sur la période
+  const detail = {};
+  for (const r of mois) for (const [k, v] of Object.entries(r.frais || {})) if (k !== 'pub_gmv_max') detail[k] = (detail[k] || 0) + +v;
+  const det = Object.entries(detail).sort((a, b) => a[1] - b[1]).map(([k, v]) => `${LIB_FRAIS[k] || k} ${fmtEur(v)}`).join(' · ');
+  $('mc-explic').innerHTML = `Marge = CA HT + port payé par le client + aide TikTok sur le port − coût des produits − transport − frais TikTok. Transport = nombre de commandes × coût moyen d'un colis Colissimo à domicile du mois (factures Colissimo ; dernier mois connu quand le mois n'est pas encore facturé). Les ventes de la boutique en ligne n'ont pas de frais TikTok ; les frais Shopify et de paiement ne sont pas encore déduits.${det ? '<br>Frais TikTok de la période : ' + esc(det) + '.' : ''}`;
+  dessinerProduitsMyclear(p);
+}
+function dessinerProduitsMyclear(p) {
+  const d = MC.data, mois = d.mois || [], prods = (d.produits || []).filter(r => Math.abs(+r.ca) >= 0.5 || +r.qte);
+  const ca = mois.reduce((a, r) => a + +r.ca_ht, 0);
+  // Charges réparties au prorata du CA : transport − port client − frais TikTok (aide port comprise)
+  const charges = mois.reduce((a, r) => a + +r.transport_ht - +r.port_client_ht - +r.frais_tiktok, 0);
+  const taux = ca ? charges / ca : 0;
+  const edit = canEdit();
+  const pct = (a, b) => b ? fmtN(100 * a / b, 1) + ' %' : '–';
+  let h = `<table><thead><tr><th>Référence</th><th>Produit</th><th class="n">Qté</th><th class="n">CA HT</th><th class="n">Prix moyen HT</th><th class="n">Coût unitaire HT</th><th class="n">Marge brute</th><th class="n">%</th><th class="n">Marge nette</th><th class="n">%</th></tr></thead><tbody>`;
+  for (const r of prods) {
+    const q = +r.qte, c = r.cout_ht == null ? null : +r.cout_ht;
+    const brute = c == null ? null : +r.ca - q * c, nette = brute == null ? null : brute - +r.ca * taux;
+    const champ = edit
+      ? `<input class="mc-cout" type="number" min="0" step="0.01" inputmode="decimal" data-sku="${esc(r.sku)}" value="${c == null ? '' : c}" placeholder="à saisir" aria-label="Coût unitaire HT de ${esc(r.sku)}">`
+      : (c == null ? '<span class="muted">à saisir</span>' : fmtEur(c, 2));
+    h += `<tr><td style="white-space:nowrap">${esc(r.sku)}</td><td>${esc(r.libelle || '')}</td><td class="n">${fmtN(q)}</td><td class="n">${fmtEur(+r.ca)}</td><td class="n">${q ? fmtEur(+r.ca / q, 2) : '–'}</td><td class="n">${champ}</td>`
+      + `<td class="n">${brute == null ? '–' : fmtEur(brute)}</td><td class="n">${brute == null ? '–' : pct(brute, +r.ca)}</td><td class="n">${nette == null ? '–' : fmtEur(nette)}</td><td class="n">${nette == null ? '–' : pct(nette, +r.ca)}</td></tr>`;
+  }
+  $('mc-produits').innerHTML = h + '</tbody></table>';
+  const manq = prods.filter(r => r.cout_ht == null).length;
+  $('mc-prod-hint').textContent = `${p.lib} · ${manq ? manq + ' coût' + (manq > 1 ? 's' : '') + ' à saisir' : 'tous les coûts saisis'} · charges réparties ${pct(charges, ca)} du CA`;
+  if (!edit) return;
+  for (const inp of $('mc-produits').querySelectorAll('.mc-cout')) {
+    inp.onchange = async () => {
+      const v = inp.value.trim() === '' ? null : Number(inp.value.replace(',', '.'));
+      if (v != null && (!isFinite(v) || v < 0)) { inp.setCustomValidity('Coût invalide'); inp.reportValidity(); return; }
+      inp.disabled = true;
+      const { error } = await sb.rpc('myclear_definir_cout', { p_sku: inp.dataset.sku, p_cout: v });
+      if (error) { inp.disabled = false; inp.setCustomValidity(error.message); inp.reportValidity(); return; }
+      await renderMargeMyclear(true);
+      const suivant = [...$('mc-produits').querySelectorAll('.mc-cout')].find(x => x.value === '');
+      if (suivant) suivant.focus();
+    };
+  }
 }
 
 function monthIndex(iso) { const m = parseInt(iso.slice(5, 7), 10); return (m + 2) % 12; } // oct=0
