@@ -183,6 +183,14 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
     (`livre.ts` testable hors ligne), déposé chaque nuit dans le dossier du mois avec les CSV par le flux « export comptable mensuel ».
     Essai sur septembre : identique au livre v13 au centime sur tous les comptes, hors les 7 factures restées « à vérifier ».
   - Chaque mois envoyé au cabinet est chargé dans `factures_grand_livre` (septembre 2026 : livre v13, 92 lignes).
+- **V7 (07/10/2026) : rapprochement bancaire** (migration `20261007_rangeur_v7_banque`, fonction `livre-achats` v3) :
+  - relevés CSV (Crédit Agricole, CIC, PayPal) déposés dans le Drive « Factures SHINE / 4 - BANQUE A DEPOSER », lus toutes les heures par le flux n8n
+    « Rangeur de factures · relevés bancaires » (action `releve`), chargés sans doublon dans `banque_operations`, rangés dans « Traités » ;
+  - mouvements classés avec les règles du plan de trésorerie (`banque_regles`, 243 règles de regles.xlsx, chargées hors dépôt) ; noms bancaires reliés
+    aux fournisseurs du livre par `banque_correspondances` (ex. « Lola Poireau » = Meemo, « Scapauto » = Leclerc) ;
+  - onglet « Rapprochement banque » du livre du mois : paiements sans facture (à récupérer), factures payées, paiements de factures des mois
+    précédents (grand livre, jusqu'à 12 mois), factures pas encore payées, mouvements sans facture d'achat (salaires, prêts, impôts, Pleo…) ;
+  - code : `supabase/functions/livre-achats/banque.ts` (testable hors ligne). Exercice 2025-2026 chargé (CA d'octobre à septembre, CIC d'août à septembre).
 
 ## Trieur de mails de Jérémy
 
