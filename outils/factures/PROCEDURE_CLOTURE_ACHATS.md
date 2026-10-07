@@ -22,7 +22,7 @@ Il écarte seul ce qui n'est pas un achat SHINE (véhicules de Space Up, indemni
 
 ## Entre le 1er et le 5 du mois suivant
 
-1. **Relevés bancaires** : exporter le mois en CSV (Crédit Agricole, CIC, PayPal) et l'export Pleo, les déposer dans le dossier prévu du Drive.
+1. **Relevés bancaires** : exporter le mois en CSV (Crédit Agricole, CIC, PayPal) et les déposer dans le Drive « Factures SHINE / 4 - BANQUE A DEPOSER ». Ils sont lus dans l'heure (rangés ensuite dans « Traités ») ; un relevé qui chevauche le précédent ne compte rien deux fois. Pleo : à part.
 2. **Board Factures** (`factures.html`, onglet « à vérifier ») : traiter chaque facture.
    - Bon compte proposé → **Valider**.
    - Autre compte → choisir le compte, cocher **Retenir** si la règle vaut pour la suite (le rangeur ne redemandera plus).
@@ -33,6 +33,7 @@ Il écarte seul ce qui n'est pas un achat SHINE (véhicules de Space Up, indemni
    - Plus aucune facture « à vérifier » (sinon le livre est incomplet).
    - Onglet « À vérifier et écartées » : chaque écart a une raison qui tient.
    - Onglet « Charges constatées d'avance » : les loyers et abonnements à cheval sur le mois suivant.
+   - Onglet « Rapprochement banque » : la partie 1 « Paiements sans facture » doit être vide. Chaque ligne restante = une facture à récupérer (portail Google, La Poste, DPD, OVH…) ou un nom de banque à relier au fournisseur (table des correspondances, ex. « Lola Poireau » = Meemo).
 4. **Contrôles de bon sens** :
    - Factures habituelles présentes : loyers (SCI CMD, Boutique du Store…), leasings (Volkswagen, Capitole, Mutualease, La Banque Postale), Space Up, abonnements (Shopify, Channable, Shippingbo…), assurances, énergie.
    - Chaque gros paiement du relevé a sa facture ; chaque facture du livre a son paiement (ou est encore due).

@@ -41,7 +41,18 @@ export function charges(f: Facture): { compte: string; sous?: string; montant: n
 const jj = (iso: string | null) => iso ? `${iso.slice(8, 10)}/${iso.slice(5, 7)}/${iso.slice(0, 4)}` : "";
 const court = (s: string | null) => String(s || "").replace(/\s*\(.*$/, "").toUpperCase();
 
-export async function construireLivre(ExcelJS: any, mois: string, factures: Facture[], libelles: Record<string, string>): Promise<{ nom: string; octets: Uint8Array; resume: Record<string, number> }> {
+// Résultat du rapprochement bancaire (banque.ts) ; null si aucun relevé du mois n'est chargé
+export type Rapprochement = {
+  operations: { banque: string; date: string; libelle: string; debit: number; credit: number; categorie?: string }[];
+  paiements: { facture: number; operations: { banque: string; date: string; libelle: string; debit: number }[]; mode: string }[];
+  sansFacture: { banque: string; date: string; libelle: string; debit: number; categorie?: string; raison: string }[];
+  nonPayees: { id: number }[];
+  moisPrecedents: { operation: { banque: string; date: string; libelle: string; debit: number }; lignes: { date: string; libelle: string; debit: number }[]; approche: boolean }[];
+};
+type FactureRappro = { id: number; fournisseur: string | null; num_facture: string | null; date_facture: string | null; montant_ttc: number | null };
+
+export async function construireLivre(ExcelJS: any, mois: string, factures: Facture[], libelles: Record<string, string>,
+  banque: Rapprochement | null = null, facturesRappro: FactureRappro[] = []): Promise<{ nom: string; octets: Uint8Array; resume: Record<string, unknown> }> {
   const [a, m] = mois.split("-").map(Number);
   const nomMois = `${MOIS[m - 1]} ${a}`;
   const finMois = new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
@@ -129,10 +140,48 @@ export async function construireLivre(ExcelJS: any, mois: string, factures: Fact
   cca.addRow(["TOTAL", "", "", "", "", "", "", "", r2(totCca)]).eachCell((c: any) => { c.font = B; });
   ["H", "I"].forEach((k) => { cca.getColumn(k).numFmt = "#,##0.00"; });
 
+  // Rapprochement banque : les paiements du mois face aux factures (rangeur) et au grand livre des mois précédents
+  let resumeBanque: Record<string, number> | null = null;
+  if (banque) {
+    const rb = wb.addWorksheet("Rapprochement banque");
+    rb.columns = [{ width: 24 }, { width: 11 }, { width: 7 }, { width: 13 }, { width: 60 }, { width: 80 }];
+    const titre = (t: string) => { rb.addRow([]); const r = rb.addRow([t]); r.font = { ...B, size: 11 }; };
+    const entete = (cols: string[]) => rb.addRow(cols).eachCell((c: any) => { c.font = blanc; c.fill = ENTETE; c.alignment = { wrapText: true }; });
+    const ligne = (v: unknown[]) => rb.addRow(v).eachCell((c: any) => { c.font = F; c.alignment = { wrapText: true, vertical: "top" }; });
+    const parId = new Map(facturesRappro.map((f) => [f.id, f]));
+    const somme = (a: { debit: number }[]) => r2(a.reduce((s, o) => s + o.debit, 0));
+    // Débits qui ne sont dans aucune des quatre premières parties : ceux qui n'ont pas de facture d'achat
+    const cle = (o: { date: string; libelle: string; debit: number }) => `${o.date}|${o.libelle}|${o.debit}`;
+    const vus = new Set([...banque.sansFacture.map(cle), ...banque.paiements.flatMap((p) => p.operations.map(cle)), ...banque.moisPrecedents.map((m) => cle(m.operation))]);
+    const hors = banque.operations.filter((o) => o.debit > 0 && !vus.has(cle(o)));
+    rb.addRow([`Rapprochement bancaire — ${nomMois}`]).font = { ...B, size: 13 };
+    rb.addRow([`${banque.sansFacture.length} paiements sans facture trouvée (${somme(banque.sansFacture).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} € TTC) : factures à récupérer avant d'envoyer le mois au cabinet.`]).font = { ...B, color: { argb: "FFC0392B" } };
+    titre("1. Paiements sans facture (à récupérer)");
+    entete(["Catégorie du plan", "Date", "Banque", "Montant TTC", "Libellé de la banque", "Piste"]);
+    for (const o of banque.sansFacture) ligne([o.categorie || "", jj(o.date), o.banque, o.debit, o.libelle, o.raison]);
+    titre("2. Factures payées ce mois-ci");
+    entete(["Fournisseur", "Facture du", "Banque", "Montant TTC", "Libellé de la banque", "Comment"]);
+    const MODE: Record<string, string> = { exact: "même montant", acomptes: "acomptes", groupe: "paiement groupé", "montant seul": "montant seul (à confirmer)" };
+    for (const p of banque.paiements) { const f = parId.get(p.facture); ligne([f?.fournisseur || "", jj(f?.date_facture || null), p.operations[0].banque, f?.montant_ttc ?? null, p.operations.map((o) => `${jj(o.date)} ${o.libelle}`).join(" | "), MODE[p.mode] || p.mode]); }
+    titre("3. Paiements de factures déjà passées (mois précédents)");
+    entete(["Ligne(s) du livre", "Payé le", "Banque", "Montant TTC", "Libellé de la banque", "Remarque"]);
+    for (const m of banque.moisPrecedents) ligne([m.lignes.map((g) => `${jj(g.date)} ${g.libelle} ${g.debit.toFixed(2)} HT`).join(" + "), jj(m.operation.date), m.operation.banque, m.operation.debit, m.operation.libelle, m.approche ? "montant à 0,5 % près" : ""]);
+    titre("4. Factures du rangeur pas encore payées");
+    entete(["Fournisseur", "Facture du", "", "Montant TTC", "N° de facture", ""]);
+    for (const n of banque.nonPayees) { const f = parId.get(n.id); if (f) ligne([f.fournisseur, jj(f.date_facture), "", f.montant_ttc, f.num_facture, ""]); }
+    titre("5. Mouvements sans facture d'achat (salaires, prêts, impôts, banque, Pleo, virements internes, compte courant Space Up)");
+    entete(["Catégorie du plan", "Date", "Banque", "Montant", "Libellé de la banque", ""]);
+    for (const o of hors) ligne([o.categorie || "", jj(o.date), o.banque, o.debit, o.libelle, ""]);
+    rb.getColumn(4).numFmt = "#,##0.00";
+    resumeBanque = { paiements_sans_facture: banque.sansFacture.length, montant_sans_facture: somme(banque.sansFacture), factures_payees: new Set(banque.paiements.map((p) => p.facture)).size, mois_precedents: banque.moisPrecedents.length };
+  }
+
   const aVerif = autres.filter((f) => f.statut === "a_verifier").length;
   [[`SHINE · Livre des achats de ${nomMois}, comptes 60 à 62`, { ...B, size: 14 }],
    [`Fabriqué par le rangeur de factures le ${new Date().toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}. ${rangees.length} factures, ${lignes.length} lignes, ${r2(totD - totC).toLocaleString("fr-FR", { minimumFractionDigits: 2 })} € net passés en charge.`, F],
    [aVerif ? `ATTENTION : ${aVerif} facture(s) du mois encore « à vérifier » dans le board Factures, pas comprises dans ce livre (onglet « À vérifier et écartées »).` : "Aucune facture du mois en attente de vérification.", aVerif ? { ...B, color: { argb: "FFC0392B" } } : F],
+   [resumeBanque ? (resumeBanque.paiements_sans_facture ? `ATTENTION : ${resumeBanque.paiements_sans_facture} paiement(s) du mois sans facture trouvée (${resumeBanque.montant_sans_facture.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} € TTC) : onglet « Rapprochement banque ».` : "Rapprochement banque : chaque paiement fournisseur du mois a sa facture.")
+     : "Rapprochement banque : aucun relevé du mois chargé (déposer les CSV dans « 4 - BANQUE A DEPOSER »).", resumeBanque?.paiements_sans_facture ? { ...B, color: { argb: "FFC0392B" } } : F],
    ["", F], ["Règles", B],
    ["• Même présentation que l'onglet « ALL LIVRES 600-620 » du cabinet : un bloc par compte, sous-rubriques « Créer nouveau compte » sous leur compte parent.", F],
    ["• Montant passé en charge : HT, plus la TVA non déductible (voitures de tourisme ; 20 % de la TVA du carburant) ; TTC pour les factures sans TVA (assurances) ; HT pour l'autoliquidation (TVA indiquée en remarque).", F],
@@ -143,5 +192,5 @@ export async function construireLivre(ExcelJS: any, mois: string, factures: Fact
 
   const nom = `${mois}_SHINE_livre_achats_600-620.xlsx`;
   const octets = new Uint8Array(await wb.xlsx.writeBuffer());
-  return { nom, octets, resume: { factures: rangees.length, lignes: lignes.length, debit: r2(totD), credit: r2(totC), a_verifier: aVerif, cca: r2(totCca) } };
+  return { nom, octets, resume: { factures: rangees.length, lignes: lignes.length, debit: r2(totD), credit: r2(totC), a_verifier: aVerif, cca: r2(totCca), banque: resumeBanque } };
 }
