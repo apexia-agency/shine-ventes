@@ -75,18 +75,22 @@ async function contexte(sb: ReturnType<typeof createClient>, fichier: string, te
   // Grand livre : seulement les lignes à 15 jours de la date de la facture (la base renvoie 1 000 lignes au plus)
   const d = dateFacture && /^\d{4}-\d{2}-\d{2}$/.test(dateFacture) ? Date.parse(dateFacture) : null;
   const jourIso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
-  const [{ data: fournisseurs, error: e1 }, { data: dictionnaire, error: e2 }, { data: rangees, error: e3 }, { data: grandLivre, error: e4 }] = await Promise.all([
+  const [{ data: fournisseurs, error: e1 }, { data: dictionnaire, error: e2 }, { data: rangees, error: e3 }, { data: grandLivre, error: e4 }, { data: clos }] = await Promise.all([
     sb.from("factures_fournisseurs").select("id, nom, alias, tva_intracom, siren, compte, sous_rubrique, regime_tva, territoire, nature, tva_deductible, mode, eclatement, regles, statut, motifs"),
     sb.from("factures_dictionnaire").select("nature, ordre, mots, compte_fr, compte_intra, compte_import"),
-    sb.from("factures_achats").select("id, fournisseur_id, num_facture, montant_ttc, date_facture").in("statut", ["classee", "validee"]),
+    // V6.1 : les « à vérifier » comptent aussi pour les doublons (une facture déposée deux fois avant d'être vérifiée)
+    sb.from("factures_achats").select("id, fournisseur_id, num_facture, montant_ttc, date_facture, statut").in("statut", ["classee", "validee", "a_verifier"]),
     d == null ? Promise.resolve({ data: [], error: null }) : // V6 : factures déjà passées par le cabinet
       sb.from("factures_grand_livre").select("compte, date, piece, libelle, debit").gte("date", jourIso(d - 15 * 864e5)).lte("date", jourIso(d + 15 * 864e5)),
+    // V6.1 : dernier mois déjà envoyé au cabinet = dernier mois chargé dans le grand livre
+    sb.from("factures_grand_livre").select("date").order("date", { ascending: false }).limit(1),
   ]);
   if (e1 || e2 || e3 || e4) throw new Error((e1 || e2 || e3 || e4)!.message);
   return {
     fichier, texte, fournisseurs: fournisseurs as Contexte["fournisseurs"], dictionnaire: dictionnaire as Contexte["dictionnaire"],
     historique: (f) => (rangees || []).filter((r) => r.fournisseur_id === f.id && r.id !== ignorerId),
     grandLivre: (grandLivre || []) as Contexte["grandLivre"],
+    dernierMoisClos: clos?.[0]?.date ? String(clos[0].date).slice(0, 7) : null,
   };
 }
 
@@ -94,6 +98,7 @@ function ligneDeBase(r: ReturnType<typeof classer>) {
   return {
     statut: r.statut, fournisseur_id: r.fournisseur?.id ?? null, compte: r.compte, territoire: r.territoire, regime_tva: r.regime_tva, tva_deductible: r.tva_deductible,
     ventilation: r.ventilation, controles: r.controles, a_verifier: r.statut === "a_verifier", motif: r.motif,
+    mois_comptable: r.mois_comptable ? r.mois_comptable + "-01" : null,
   };
 }
 

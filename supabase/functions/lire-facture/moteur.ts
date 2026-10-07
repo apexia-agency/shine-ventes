@@ -32,9 +32,11 @@ export type Contexte = {
   fournisseurs: Fournisseur[];
   dictionnaire: Nature[];
   // factures déjà rangées du même fournisseur (pour les doublons et la règle des scans)
-  historique: (f: Fournisseur) => { num_facture: string | null; montant_ttc: number | null; date_facture: string | null }[];
+  historique: (f: Fournisseur) => { num_facture: string | null; montant_ttc: number | null; date_facture: string | null; statut?: string }[];
   // lignes du grand livre déjà passé par le cabinet (V6) : une facture en retard déjà saisie est écartée
   grandLivre?: { compte: string; date: string; piece: string | null; libelle: string; debit: number }[];
+  // dernier mois déjà envoyé au cabinet (AAAA-MM) : une facture plus ancienne est rattachée au mois suivant (V6.1)
+  dernierMoisClos?: string | null;
   aujourdhui?: Date;
 };
 export type Controle = { n: number; controle: string; effet: "bloquant" | "signal"; detail: string };
@@ -48,7 +50,8 @@ export type Resultat = {
   ventilation: Imputation[];
   controles: Controle[];
   motif: string | null;
-  nom_range: string;               // AAAA-MM-JJ_FOURNISSEUR_NUMERO_TTC.pdf
+  mois_comptable: string | null;   // AAAA-MM du livre où la facture est passée (mois de la facture, ou premier mois ouvert) (V6.1)
+  nom_range: string;               // AAAA-MM-JJ_COMPTE_FOURNISSEUR_NUMERO_HT_TTC.pdf (V6.1)
   dossier: string;                 // « 2 - CLASSEES/2025-2026/2026-09 » ou « 3 - A VERIFIER »
 };
 
@@ -153,7 +156,11 @@ export function classer(l: Lecture, ctx: Contexte): Resultat {
   if (l.type_doc === "autre") bloque(5, "Document qui n'est pas une facture", "ni facture ni avoir");
   // V6 : ticket de caisse (carburant, péage, petites fournitures) et échéancier (assurance, prêt) sont des pièces acceptées
   if (l.type_doc === "ticket") signale(5, "Ticket de caisse", "ticket, pas une facture");
-  if (l.type_doc === "echeancier") signale(5, "Échéancier", "échéancier : la mensualité du mois sert de pièce");
+  // 14. Document annuel ou pluriannuel (V6.1, Jérémy 07/10/2026) : à répartir sur les mois, toujours vérifié par un humain
+  const jours = l.periode_debut && l.periode_fin ? (Date.parse(l.periode_fin) - Date.parse(l.periode_debut)) / 864e5 : 0;
+  const motsAnnuels = / ANNUEL| ANNUAL | ECHEANCIER | 12 MOIS | EXERCICE DU | COTISATION ANNUELLE /.test(norm(`${l.suggestion ?? ""} ${ctx.fichier} ${l.lignes.map((x) => x.designation).join(" ")}`));
+  if (jours > 62 || l.type_doc === "echeancier" || motsAnnuels)
+    bloque(14, "Document annuel", jours > 62 ? `période du ${l.periode_debut} au ${l.periode_fin} (${Math.round(jours / 30.4)} mois) : à répartir sur les mois concernés` : "échéancier ou document annuel : à répartir sur les mois concernés");
   // 6. Acompte
   // Le mot seul ne suffit pas : les conditions générales de vente parlent souvent d'acompte (Plast'Embal, 29/09)
   if (l.type_doc === "acompte" || / FACTURE D ACOMPTE | DEMANDE D ACOMPTE | DEPOSIT INVOICE | PREPAYMENT INVOICE | ADVANCE PAYMENT | BALANCE 70 | 30 DEPOSIT /.test(texte))
@@ -170,6 +177,7 @@ export function classer(l: Lecture, ctx: Contexte): Resultat {
   const ventilation: Imputation[] = [];
   let compte: string | null = null;
   let ecarte: string | null = null;           // V6 : motif d'écart automatique (hors achats SHINE, déjà saisie…)
+  let doublon = false;                        // V6.1 : nom du fichier préfixé DOUBLON_
   let tvaDed: string | null = f?.tva_deductible ?? null;
   // Texte de toute la facture pour les règles de contenu : nom du fichier, plaque, suggestion, désignations, période
   const tout = norm([ctx.fichier.split("/").pop(), l.immatriculation, l.suggestion, l.remarque, l.fournisseur_nom, ...l.lignes.map((x) => x.designation)].join(" ") + " " + (ctx.texte ?? "").slice(0, 4000));
@@ -231,16 +239,19 @@ export function classer(l: Lecture, ctx: Contexte): Resultat {
       ventilation.splice(0, ventilation.length, { compte: "61530000", libelle: "Entretien litige client", montant_ht: r2(ht), lignes: [] }); compte = "61530000";
       signale(0, "Litige client", "facture d'un tiers prise en charge pour un litige client");
     }
-    // 11. Doublon
-    const hist = ctx.historique(f);
-    if (l.num_facture && hist.some((h) => ident(h.num_facture) === ident(l.num_facture)))
-      bloque(11, "Doublon", `${f.nom} n° ${l.num_facture} est déjà rangée`);
+    // 11. Doublon (V6.1) : même n° chez le même fournisseur, quel que soit le mois ; ou même TTC à 5 jours près (n° absent ou différent)
+    const hist = ctx.historique(f).filter((h) => h.statut !== "ecartee");
+    const memeNum = l.num_facture ? hist.find((h) => ident(h.num_facture) === ident(l.num_facture)) : null;
+    const memeMontant = !memeNum && ttc != null && l.date_facture ? hist.find((h) => h.montant_ttc != null && Math.abs(h.montant_ttc - ttc) < 0.01 && h.date_facture &&
+      Math.abs(Date.parse(h.date_facture) - Date.parse(l.date_facture!)) <= 5 * 864e5) : null;
+    if (memeNum) { doublon = true; bloque(11, "Doublon", `${f.nom} n° ${l.num_facture} est déjà dans le rangeur (facture du ${memeNum.date_facture ?? "?"})`); }
+    else if (memeMontant) { doublon = true; bloque(11, "Doublon possible", `${f.nom} : même montant TTC (${ttc} €) que la facture du ${memeMontant.date_facture}${memeMontant.num_facture ? " n° " + memeMontant.num_facture : ""}`); }
     // V6 : déjà passée par le cabinet (facture arrivée en retard) : même n° de pièce, ou même fournisseur, même HT, à 10 jours près
     const gl = dejaAuGrandLivre(l, f, ctx);
     if (gl) ecarte = `déjà dans le grand livre (compte ${gl.compte}, pièce ${gl.piece || "–"}, ${gl.date})`;
     // 12. Scan : lu par Claude seulement si le montant est celui de la facture précédente (règle de Robin, 29/09)
     if (!aTexte) {
-      const prec = hist.filter((h) => h.date_facture && h.date_facture < (l.date_facture || "9999")).sort((a, b) => (b.date_facture! < a.date_facture! ? -1 : 1))[0];
+      const prec = hist.filter((h) => (h.statut === "classee" || h.statut === "validee") && h.date_facture && h.date_facture < (l.date_facture || "9999")).sort((a, b) => (b.date_facture! < a.date_facture! ? -1 : 1))[0];
       if (prec && prec.montant_ttc != null && ttc != null && Math.abs(prec.montant_ttc - ttc) < 0.01)
         signale(12, "PDF sans couche texte (scan)", `scan lu par Claude, même montant que la facture précédente (${prec.date_facture})`);
       else bloque(12, "PDF sans couche texte (scan)", prec ? `montant différent de la facture précédente (${prec.montant_ttc} €)` : "pas de facture précédente à comparer");
@@ -265,10 +276,22 @@ export function classer(l: Lecture, ctx: Contexte): Resultat {
   if (ecarte) C.push({ n: 13, controle: "Écartée par une règle", effet: "signal", detail: ecarte });
   const statut = ecarte ? "ecartee" : bloquants.length ? "a_verifier" : "classee";
   const date = l.date_facture && /^\d{4}-\d{2}-\d{2}$/.test(l.date_facture) ? l.date_facture : null;
-  const nom_range = `${date || "SANS-DATE"}_${slug(f?.nom.replace(/\(.*?\)/g, "") || l.fournisseur_nom || "INCONNU", 25)}_${slug(l.num_facture || "SANS-NUM", 25)}_${ttc != null ? ttc.toFixed(2) : "0.00"}${l.type_doc === "avoir" ? "_AVOIR" : ""}.pdf`.replace(/^/, statut === "ecartee" ? "ECARTEE_" : "");
-  const dossier = statut === "classee" && date ? `2 - CLASSEES/${exerciceDe(date)}/${date.slice(0, 7)}` : "3 - A VERIFIER"; // écartée : à côté des « à vérifier », nom préfixé
+  // V6.1 : une facture d'un mois déjà envoyé au cabinet (et absente de son grand livre) passe dans le premier mois ouvert
+  let mois_comptable = date ? date.slice(0, 7) : null;
+  if (mois_comptable && ctx.dernierMoisClos && mois_comptable <= ctx.dernierMoisClos && statut !== "ecartee") {
+    const [a, m] = ctx.dernierMoisClos.split("-").map(Number);
+    mois_comptable = m === 12 ? `${a + 1}-01` : `${a}-${String(m + 1).padStart(2, "0")}`;
+    C.push({ n: 15, controle: "Mois déjà envoyé au cabinet", effet: "signal", detail: `facture du ${date}, absente du grand livre : rattachée à ${mois_comptable}` });
+  }
+  // Nom du fichier rangé : date, compte (et sous-rubrique), fournisseur, n°, HT et TTC — l'essentiel lisible sans ouvrir le PDF
+  const v0 = [...ventilation].sort((a, b) => Math.abs(b.montant_ht) - Math.abs(a.montant_ht))[0];
+  const cpt = statut === "classee" && v0 ? v0.compte + (v0.sous_rubrique ? "-" + slug(v0.sous_rubrique, 24) : "") + (ventilation.length > 1 ? "-ETC" : "") : statut === "ecartee" ? "HORS" : "A-VERIFIER";
+  const prefixe = statut === "ecartee" ? "ECARTEE_" : doublon ? "DOUBLON_" : "";
+  const euros = (x: number | null) => x == null ? "0.00" : x.toFixed(2);
+  const nom_range = `${prefixe}${date || "SANS-DATE"}_${cpt}_${slug(f?.nom.replace(/\(.*?\)/g, "") || l.fournisseur_nom || "INCONNU", 25)}_${slug(l.num_facture || "SANS-NUM", 25)}_${euros(ht)}HT_${euros(ttc)}TTC${l.type_doc === "avoir" ? "_AVOIR" : ""}.pdf`;
+  const dossier = statut === "classee" && mois_comptable ? `2 - CLASSEES/${exerciceDe(mois_comptable + "-01")}/${mois_comptable}` : "3 - A VERIFIER"; // écartée : à côté des « à vérifier », nom préfixé
   return {
     statut, fournisseur: f, territoire: f?.territoire ?? null, regime_tva: f?.regime_tva ?? null, tva_deductible: tvaDed, compte,
-    ventilation: ecarte ? [] : ventilation, controles: C, motif: ecarte || bloquants.map((c) => c.detail).join(" ; ") || null, nom_range, dossier,
+    ventilation: ecarte ? [] : ventilation, controles: C, motif: ecarte || bloquants.map((c) => c.detail).join(" ; ") || null, mois_comptable, nom_range, dossier,
   };
 }

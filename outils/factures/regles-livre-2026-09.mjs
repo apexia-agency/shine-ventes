@@ -42,8 +42,8 @@ export const CHANGEMENTS = [
   // Assurance
   { nom: 'Gan Assurances', alias: ['GAN ASSURANCES', 'GAN'], statut: 'ok', motifs: [], compte: '61611000', regime_tva: 'SANS_TVA',
     regles: [{ si: ['indemnite', 'indemnisation', 'sinistre'], ecarter: 'indemnité d\'assurance : un produit (export des ventes, onglet « Hors ventes »), pas un achat' },
-      { si: ['responsabilite civile', 'RC PRO', 'RC professionnelle'], ecarter: 'échéancier RC Pro 2026-2027 : 680,83 € par mois d\'octobre 2026 à septembre 2027, passés chaque mois avec la même pièce' }],
-    note: 'Multirisque en 61611000 ; indemnités et échéancier RC Pro écartés (Jérémy, 07/10/2026).' },
+      { si: ['responsabilite civile', 'RC PRO', 'RC professionnelle'], verifier: 'échéancier RC Pro 2026-2027 : 680,83 € par mois d\'octobre 2026 à septembre 2027, à passer chaque mois avec la même pièce (document annuel)' }],
+    note: 'Multirisque en 61611000 ; indemnités écartées ; échéancier RC Pro à vérifier, comme tout document annuel (Jérémy, 07/10/2026).' },
   // Personnel
   { nom: 'Edenred', nouveau: true, alias: ['EDENRED', 'EDENRED FRANCE'], compte: '62700000', famille: 14,
     regles: [{ si: ['commission'], ligne: true, compte: '62700000' },

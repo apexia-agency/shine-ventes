@@ -20,7 +20,8 @@ const lecture = o => ({
   montant_ht: o.ht_total, montant_tva: o.tva_total, montant_ttc: o.ttc_total,
   lignes: (o.lignes_tva || []).map(l => ({ designation: l.nature || o.nature || '', montant_ht: l.ht })),
   confiance: o.lisible === false ? 0.5 : 0.95, suggestion: o.nature, remarque: null,
-  immatriculation: o.immatriculation || null, periode: o.periode || null, nature: o.nature || null,
+  immatriculation: o.immatriculation || null, nature: o.nature || null,
+  ...(() => { const m = /(\d{2})\/(\d{2})\/(\d{4}) au (\d{2})\/(\d{2})\/(\d{4})/.exec(o.periode || ''); return m ? { periode_debut: `${m[3]}-${m[2]}-${m[1]}`, periode_fin: `${m[6]}-${m[5]}-${m[4]}` } : {}; })(),
 });
 // Attendu par fichier
 const att = new Map();
@@ -33,7 +34,7 @@ for (const o of docs) {
   if (vus.has(o.fichier + o.numero)) continue; vus.add(o.fichier + o.numero);
   const a = att.get(o.fichier); if (!a) { lignes.push(['?? sans attendu', o.fichier]); continue; }
   const l = lecture(o);
-  const r = classer(l, { fichier: o.fichier, texte: `${o.fournisseur} ${o.nature} ${o.remarques || ''} `.repeat(3), fournisseurs: R.fournisseurs, dictionnaire: R.dictionnaire, historique: () => [], grandLivre: GL, aujourdhui: new Date('2026-10-07') });
+  const r = classer(l, { fichier: o.fichier, texte: `${o.fournisseur} ${o.nature} ${o.remarques || ''} `.repeat(3), fournisseurs: R.fournisseurs, dictionnaire: R.dictionnaire, historique: () => [], grandLivre: GL, dernierMoisClos: '2026-08', aujourdhui: new Date('2026-10-07') });
   const sig = v => { const m = new Map(); for (const x of v) m.set(x.compte, (m.get(x.compte) || 0) + x.ht); return [...m].map(([c, h]) => `${c}:${Math.round(h * 100) / 100}`).sort().join(' + '); };
   const sigA = sig(a.comptes.filter(x => !(o.type === 'avoir') || true)), sigR = sig((r.ventilation || []).map(v => ({ compte: v.sous_rubrique ? v.compte + ' / ' + v.sous_rubrique : v.compte, ht: (o.type === 'avoir' || v.avoir ? -1 : 1) * v.montant_ht })));
   const ecarteR = r.statut === 'ecartee';

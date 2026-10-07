@@ -171,6 +171,17 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
     raison (dollars, fin de bail, mention proforma, ticket aux montants faux), 1 à 1 centime. Il a trouvé 2 factures d'août comptées deux fois dans le livre v12.
   - En ligne le 07/10/2026 : migration appliquée, grand livre chargé (4 328 lignes, octobre 2025 - août 2026), fonction lire-facture v10 déployée,
     flux n8n « Rangeur de factures SHINE » : une facture écartée suit le chemin « à vérifier ». Les factures déjà lues ne sont pas reclassées d'elles-mêmes ({ reclasser: id }).
+- **V6.1 (07/10/2026, demandes de Jérémy)** (migration ) :
+  - document annuel (période de plus de 2 mois, échéancier, « annuel », « exercice du ») : toujours « à vérifier », à répartir sur les mois ;
+  - doublons : même n° chez le même fournisseur quel que soit le mois, ou même TTC à 5 jours près → « à vérifier », fichier préfixé DOUBLON_ ;
+    même PDF déposé deux fois → « DOUBLON - » ; facture déjà passée par le cabinet → écartée avec le compte et la pièce du grand livre ;
+  - mois comptable : mois de la facture ; si ce mois est déjà envoyé au cabinet (dernier mois de ) et la facture absente
+    de son livre, elle passe dans le premier mois ouvert (export, livre et dossier Drive suivent) ;
+  - nom du fichier rangé :  (ECARTEE_ / DOUBLON_ devant) ;
+  - **livre des achats du mois en Excel** (, même présentation que le livre envoyé au cabinet :
+    ALL LIVRES par compte et sous-rubrique, détail par facture, à vérifier et écartées, charges constatées d'avance), fonction Edge     ( testable hors ligne), déposé chaque nuit dans le dossier du mois avec les CSV par le flux « export comptable mensuel ».
+    Essai sur septembre : identique au livre v13 au centime sur tous les comptes, hors les 7 factures restées « à vérifier ».
+  - Chaque mois envoyé au cabinet est chargé dans  (septembre 2026 : livre v13, 92 lignes).
 
 ## Trieur de mails de Jérémy
 
