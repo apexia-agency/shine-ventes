@@ -169,6 +169,8 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
   - taux de TVA déductible propre à la facture (voiture de tourisme NON, carburant 80 %) ; tickets de caisse et échéanciers acceptés ; mot « litige » → 61530000.
   - Banc d'essai `outils/factures/banc-livre-2026-09.mts` : les 83 factures de septembre comparées au livre v13 → 77 identiques, 5 « à vérifier » pour une vraie
     raison (dollars, fin de bail, mention proforma, ticket aux montants faux), 1 à 1 centime. Il a trouvé 2 factures d'août comptées deux fois dans le livre v12.
+  - En ligne le 07/10/2026 : migration appliquée, grand livre chargé (4 328 lignes, octobre 2025 - août 2026), fonction lire-facture v10 déployée,
+    flux n8n « Rangeur de factures SHINE » : une facture écartée suit le chemin « à vérifier ». Les factures déjà lues ne sont pas reclassées d'elles-mêmes ({ reclasser: id }).
 
 ## Trieur de mails de Jérémy
 
