@@ -104,7 +104,8 @@ export type SansFacture = Operation & { raison: string };
 export type MoisPrecedent = { operation: Operation; lignes: LigneLivre[]; approche: boolean };
 
 // ---------- Rapprochement ----------
-export function rapprocher(factures: FactureBanque[], operations: Operation[], livre: LigneLivre[] = [], correspondances: Correspondance[] = []):
+// anterieures : virements des 12 mois précédents (pour savoir quelles lignes du livre sont déjà payées)
+export function rapprocher(factures: FactureBanque[], operations: Operation[], livre: LigneLivre[] = [], correspondances: Correspondance[] = [], anterieures: Operation[] = []):
   { paiements: Paiement[]; sansFacture: SansFacture[]; nonPayees: FactureBanque[]; moisPrecedents: MoisPrecedent[] } {
   const debits = operations.filter((o) => o.debit > 0 && (o.categorie === undefined || AVEC_FACTURE.includes(o.categorie) || o.categorie === "À CLASSER") && !sansFacture(o));
   const libres = new Set(debits);
@@ -164,9 +165,24 @@ export function rapprocher(factures: FactureBanque[], operations: Operation[], l
   //    une ligne (jusqu'à 12 mois avant : factures payées très en retard), ou la somme d'un même jour ou d'un même mois
   //    (paiement d'un lot, prélèvement mensuel ; à 0,5 % près pour un mois entier, marqué « approché »)
   const moisPrecedents: MoisPrecedent[] = [];
+  // Une ligne du livre déjà payée par un virement des mois précédents ne peut plus servir (ex. trois commandes 4B Distrib du même montant)
+  const dejaPayees = new Set<LigneLivre>();
+  if (anterieures.length) {
+    const debut = Math.min(...[...libres].map((o) => prep(o).j));
+    const avant = anterieures.filter((o) => o.debit > 0 && jour(o.date) < debut).sort((a, b) => a.date.localeCompare(b.date));
+    // Lignes du livre rangées par montant TTC possible (en euros entiers), pour ne comparer que les montants proches
+    const parMontant = new Map<number, typeof livreP>();
+    for (const x of livreP) for (const k of [1, 1.2, 1.1, 1.055]) { const e = Math.round(x.g.debit * k); for (const c of [e - 1, e, e + 1]) parMontant.set(c, [...(parMontant.get(c) || []), x]); }
+    for (const o of avant) {
+      const cands = parMontant.get(Math.round(o.debit)); if (!cands) continue;
+      const { l, m, j } = prep(o);
+      const x = cands.find((x) => !dejaPayees.has(x.g) && j - x.j >= -5 && j - x.j <= 370 && [1, 1.2, 1.1, 1.055].some((k) => Math.abs(x.g.debit * k - o.debit) <= Math.max(0.05, o.debit * 0.0005)) && x.m.some((w) => trouveMot(l, m, w)));
+      if (x) dejaPayees.add(x.g);
+    }
+  }
   for (const o of [...libres]) {
     const { l, m, j } = prep(o);
-    const c = livreP.filter((x) => j - x.j >= -5 && j - x.j <= 370 && x.m.some((w) => trouveMot(l, m, w))).map((x) => x.g);
+    const c = livreP.filter((x) => !dejaPayees.has(x.g) && j - x.j >= -5 && j - x.j <= 370 && x.m.some((w) => trouveMot(l, m, w))).map((x) => x.g);
     const egal = (ht: number, tol = 0.0005) => [1, 1.2, 1.1, 1.055].some((k) => Math.abs(ht * k - o.debit) <= Math.max(0.05, o.debit * tol));
     const recents = c.filter((g) => jour(o.date) - jour(g.date) <= 100);
     let lignes: LigneLivre[] | null = null, approche = false;

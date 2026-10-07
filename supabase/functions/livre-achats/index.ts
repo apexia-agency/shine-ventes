@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
     let banque = null;
     if (b?.operations?.length) {
       const ops = (b.operations as Operation[]).map((o) => classer({ ...o, debit: +o.debit, credit: +o.credit }, b.regles || []));
-      banque = { operations: ops, ...rapprocher(b.factures || [], ops, (b.livre || []).map((g: { date: string; libelle: string; debit: number }) => ({ ...g, debit: +g.debit })), b.correspondances || []) };
+      banque = { operations: ops, ...rapprocher(b.factures || [], ops, (b.livre || []).map((g: { date: string; libelle: string; debit: number }) => ({ ...g, debit: +g.debit })), b.correspondances || [],
+        (b.anterieures || []).map((o: Operation) => ({ ...o, debit: +o.debit, credit: 0 }))) };
     }
     const { nom, octets, resume } = await construireLivre(ExcelJS, mois, (data?.factures || []) as Facture[], data?.libelles || {}, banque, b?.factures || []);
     let bin = ""; for (let i = 0; i < octets.length; i += 0x8000) bin += String.fromCharCode(...octets.subarray(i, i + 0x8000));
