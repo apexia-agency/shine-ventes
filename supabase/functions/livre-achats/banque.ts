@@ -12,9 +12,9 @@ export type FactureBanque = { id: number; fournisseur: string | null; alias?: st
 export type Paiement = { facture: number; operations: Operation[]; mode: "exact" | "acomptes" | "groupe" | "montant seul" };
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
-const compact = (s: string | null | undefined) => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+const compact = (s: string | null | undefined) => String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 const jour = (iso: string) => Date.parse(iso + "T00:00:00Z") / 864e5;
-const num = (s: string | undefined) => (s && s.trim() ? Math.abs(+s.replace(/[\s ]/g, "").replace(",", ".")) : 0);
+const num = (s: string | undefined) => (s && s.trim() ? Math.abs(+s.replace(/[\s\u00a0]/g, "").replace(",", ".")) : 0);
 const isoFr = (s: string) => s.split("/").reverse().join("-");
 
 // ---------- Lecture des relevés ----------
@@ -31,12 +31,12 @@ export function lireCIC(texte: string): Operation[] {
 }
 // PayPal : seules les sorties (Net négatif) qui ne sont pas des virements vers la banque ni des remboursements clients
 export function lirePayPal(texte: string): Operation[] {
-  const lignes = texte.replace(/^﻿/, "").split(/\r?\n/).filter(Boolean);
+  const lignes = texte.replace(/^\ufeff/, "").split(/\r?\n/).filter(Boolean);
   const champs = (l: string) => (l.match(/("([^"]|"")*"|[^,]*)(,|$)/g) || []).map((x) => x.replace(/,$/, "").replace(/^"|"$/g, "").replace(/""/g, '"'));
   const t = champs(lignes[0]); const i = (n: string) => t.indexOf(n);
   const out: Operation[] = [];
   for (const l of lignes.slice(1)) {
-    const c = champs(l); const net = +String(c[i("Net")] || "0").replace(/[\s ]/g, "").replace(",", ".");
+    const c = champs(l); const net = +String(c[i("Net")] || "0").replace(/[\s\u00a0]/g, "").replace(",", ".");
     const type = c[i("Type")] || "";
     if (!(net < 0) || /virement|remboursement|retrait|conversion|blocage|r[ée]serve/i.test(type)) continue;
     out.push({ banque: "PayPal", date: isoFr(c[i("Date")]), libelle: `${c[i("Nom")]} — ${type}`.trim(), debit: Math.abs(net), credit: 0 });
@@ -44,7 +44,7 @@ export function lirePayPal(texte: string): Operation[] {
   return out;
 }
 export function lireReleve(nom: string, texte: string): Operation[] {
-  if (/paypal/i.test(nom) || /^﻿?"Date","Heure"/.test(texte)) return lirePayPal(texte);
+  if (/paypal/i.test(nom) || /^\ufeff?"Date","Heure"/.test(texte)) return lirePayPal(texte);
   if (/Date;Date de valeur;D[ée]bit;Cr[ée]dit;Libell[ée]/i.test(texte)) return lireCIC(texte);
   return lireCA(texte);
 }
