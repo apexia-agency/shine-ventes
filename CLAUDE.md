@@ -39,6 +39,12 @@ Ce fichier est lu au début de chaque conversation Claude ouverte dans ce dépô
 - **Canaux** : `prestashop_b2c` (shine-group.fr), `prestashop_pro` (site pro, depuis mai 2026), `ebp_revendeur` / `ebp_pro` (EBP, agrégé par client et par mois), `tiktok_b2c`, `jokeriders_marketplace`, `myclear` (hors CA SHINE).
 - **Packs** éclatés en produits sur un niveau, au prorata du prix de référence (prix moyen particuliers sur 12 mois) : le CA éclaté est égal au CA facturé.
 
+## Comptabilité des achats
+
+- Rangeur de factures (board Factures, fonctions `lire-facture` et `livre-achats`) : voir la section du `README.md`.
+- Clôture mensuelle des achats : procédure écrite pour un humain `outils/factures/PROCEDURE_CLOTURE_ACHATS.md` ; dans Claude, commande `/cloture-achats AAAA-MM`.
+- Toute décision comptable devient une règle (`outils/factures/regles-livre-*.mjs` + migration), jamais seulement une réponse dans la conversation.
+
 ## Données et confidentialité
 
 - **Les données vivantes restent ici.** Les autres conversations Claude (compta, etc.) ne reçoivent que des fichiers figés à une date, jamais un accès à la base.
