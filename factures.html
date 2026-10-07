@@ -667,7 +667,7 @@ function renderVerifier(ouvertes) {
   if (!vis.length) { $('fa-liste').innerHTML = `<div class="vide">${ouvertes.length ? 'Aucune facture ne correspond à la recherche.' : 'Rien à vérifier : tout ce qui a été déposé est classé.'}</div>`; return; }
   $('fa-liste').innerHTML = vis.map(r => {
     const bloq = (r.controles || []).filter(c => c.effet === 'bloquant'), signaux = (r.controles || []).filter(c => c.effet !== 'bloquant');
-    const vent = (r.ventilation || []).map(v => `${esc(v.compte)} ${fmtE(+v.montant_ht || 0, 2)}`).join(' + ');
+    const vent = (r.ventilation || []).map(v => `${esc(v.compte)}${v.sous_rubrique ? ' / ' + esc(v.sous_rubrique) : ''} ${fmtE(+v.montant_ht || 0, 2)}`).join(' + ');
     const pdf = r.drive_url ? ` · <a href="${esc(r.drive_url)}" target="_blank" rel="noopener">Voir le PDF</a>` : r.source === 'serveur' ? ' · PDF sur le serveur P:' : '';
     const titre = `${esc(r.fournisseur || r.fournisseur_lu || 'Fournisseur inconnu')} · ${montant(r)} · ${fmtD(r.date_facture)}${r.num_facture ? ' · n° ' + esc(r.num_facture) : ''}`;
     const detail = bloq.map(c => `<b>${esc(c.controle)}</b> : ${esc(c.detail)}`).join('<br>')
@@ -690,7 +690,7 @@ function renderTraitees() {
   const LIB = { classee: ['ok', 'Classée seule'], validee: ['ok', 'Validée'], ecartee: ['', 'Écartée'] };
   $('tbl-traitees').innerHTML = `<table><thead><tr><th>Date</th><th>Fournisseur</th><th class="n">TTC</th><th>Comptes</th><th>Statut</th><th></th></tr></thead><tbody>` + vis.map(r => {
     const [c, l] = LIB[r.statut] || ['', r.statut];
-    const comptes = (r.ventilation || []).map(v => `${esc(v.compte)} <span class="muted">${fmtE(+v.montant_ht || 0, 2)}</span>`).join('<br>') || '–';
+    const comptes = (r.ventilation || []).map(v => `${esc(v.compte)}${v.sous_rubrique ? ' / ' + esc(v.sous_rubrique) : ''} <span class="muted">${fmtE(+v.montant_ht || 0, 2)}</span>`).join('<br>') || (r.statut === 'ecartee' && r.motif ? `<span class="muted">${esc(r.motif)}</span>` : '–');
     const qui = r.valide_par ? `<br><span class="muted">${esc(r.valide_par)}${r.regle_apprise ? ' · ' + esc(r.regle_apprise) : ''}</span>` : '';
     const pdf = r.drive_url ? `<a href="${esc(r.drive_url)}" target="_blank" rel="noopener">PDF</a>` : '';
     const annuler = peutValider() && r.statut !== 'classee' ? ` <button class="link" data-fa="${r.id}" data-a="annuler">Remettre à vérifier</button>` : '';

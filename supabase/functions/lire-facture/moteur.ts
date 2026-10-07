@@ -1,22 +1,29 @@
-// Moteur de classement du rangeur de factures V5 (spécification de Jérémy du 28/09/2026).
+// Moteur de classement du rangeur de factures V6 (V5 : spécification de Jérémy du 28/09/2026 ; V6 : calé le 07/10/2026 sur le
+// livre des achats de septembre 2026 validé par Jérémy — règles par contenu, sous-rubriques, écarts automatiques, grand livre).
 // Claude a LU la facture (Lecture) ; ici, seules les règles DÉCIDENT : fournisseur → territoire → nature → compte,
 // puis les 12 contrôles d'anomalie. Règle d'or : on ne devine jamais, tout ce qui n'est pas sûr part « à vérifier ».
 // Aucune dépendance ni accès réseau : testable tel quel (node --experimental-strip-types, ou Deno).
 
 export type Ligne = { designation: string; montant_ht: number | null };
 export type Lecture = {
-  type_doc: "facture" | "avoir" | "proforma" | "devis" | "acompte" | "autre";
+  type_doc: "facture" | "avoir" | "proforma" | "devis" | "acompte" | "ticket" | "echeancier" | "autre";
   fournisseur_nom: string; fournisseur_tva: string | null; fournisseur_siren: string | null;
   destinataire_nom: string | null; destinataire_tva: string | null;
   num_facture: string | null; date_facture: string | null; devise: string;
   montant_ht: number | null; montant_tva: number | null; montant_ttc: number | null;
   lignes: Ligne[]; confiance: number; suggestion: string | null; remarque: string | null;
+  immatriculation?: string | null;  // plaque du véhicule si la facture en porte une (V6)
+  periode_debut?: string | null; periode_fin?: string | null; // période facturée (loyer, abonnement), AAAA-MM-JJ (V6)
 };
+// Règle de contenu d'un fournisseur (V6) : la première qui s'applique décide. « ligne » : ligne par ligne (désignation), sinon
+// toute la facture (nom du fichier, plaque, suggestion, désignations). Effet : un compte (et sa sous-rubrique), écarter, ou à vérifier.
+export type Regle = { si: string[]; ligne?: boolean; compte?: string; sous_rubrique?: string; tva_deductible?: string; ecarter?: string; verifier?: string; note?: string };
 export type Fournisseur = {
   id: number; nom: string; alias: string[]; tva_intracom: string[]; siren: string[];
   compte: string | null; regime_tva: string | null; territoire: "FR" | "INTRA" | "IMPORT" | null; nature: string | null;
   mode: "mono" | "eclater"; eclatement: { mots: string[]; compte: string; libelle: string }[] | null;
   statut: "ok" | "a_valider" | "hors"; motifs: string[];
+  sous_rubrique?: string | null; tva_deductible?: string | null; regles?: Regle[] | null; // V6
 };
 export type Nature = { nature: string; ordre: number; mots: string[]; compte_fr: string | null; compte_intra: string | null; compte_import: string | null };
 export type Contexte = {
@@ -26,14 +33,17 @@ export type Contexte = {
   dictionnaire: Nature[];
   // factures déjà rangées du même fournisseur (pour les doublons et la règle des scans)
   historique: (f: Fournisseur) => { num_facture: string | null; montant_ttc: number | null; date_facture: string | null }[];
+  // lignes du grand livre déjà passé par le cabinet (V6) : une facture en retard déjà saisie est écartée
+  grandLivre?: { compte: string; date: string; piece: string | null; libelle: string; debit: number }[];
   aujourdhui?: Date;
 };
 export type Controle = { n: number; controle: string; effet: "bloquant" | "signal"; detail: string };
-export type Imputation = { compte: string; libelle: string; montant_ht: number; lignes: string[] };
+export type Imputation = { compte: string; sous_rubrique?: string; libelle: string; montant_ht: number; lignes: string[] };
 export type Resultat = {
-  statut: "classee" | "a_verifier";
+  statut: "classee" | "a_verifier" | "ecartee";
   fournisseur: Fournisseur | null;
   territoire: string | null; regime_tva: string | null;
+  tva_deductible: string | null;   // taux propre à la facture (règle de contenu) sinon celui du fournisseur
   compte: string | null;           // compte unique (mono-nature), sinon null
   ventilation: Imputation[];
   controles: Controle[];
@@ -51,7 +61,10 @@ const contientMot = (texte: string, mot: string) => {
   const m = norm(mot);
   if (!m.trim()) return false;
   if (texte.includes(m) || texte.includes(m.trimEnd() + "S ")) return true; // pluriel : « étiquettes », « flacons »
-  return /\d/.test(m) && texte.replace(/(\d) (?=[A-Z])/g, "$1").includes(m.replace(/(\d) (?=[A-Z])/g, "$1"));
+  if (!/\d/.test(m)) return false;
+  if (texte.replace(/(\d) (?=[A-Z])/g, "$1").includes(m.replace(/(\d) (?=[A-Z])/g, "$1"))) return true;
+  // Plaque ou référence écrite sans séparateurs (« GR171EW » pour « GR-171-EW ») : comparaison sans espaces (V6)
+  return m.trim().length >= 5 && texte.replace(/ /g, "").includes(m.replace(/ /g, ""));
 };
 const r2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -106,6 +119,18 @@ const ttcDuNom = (fichier: string) => {
 const exerciceDe = (iso: string) => { const [a, m] = iso.split("-").map(Number); return m >= 10 ? `${a}-${a + 1}` : `${a - 1}-${a}`; };
 const slug = (s: string, max = 30) => norm(s).trim().replace(/ /g, "-").slice(0, max).replace(/-+$/, "") || "SANS";
 
+// V6 : facture déjà passée par le cabinet (grand livre), arrivée en retard dans le dossier
+export function dejaAuGrandLivre(l: Lecture, f: Fournisseur, ctx: Contexte) {
+  if (!ctx.grandLivre?.length) return null;
+  const chiffres = (s: string | null | undefined) => ident(s).replace(/\D/g, "");
+  const num = chiffres(l.num_facture);
+  const jour = (d: string) => Date.parse(d) / 864e5;
+  const montants = [l.montant_ht, ...l.lignes.map((x) => x.montant_ht)].filter((x): x is number => x != null && x > 0);
+  const noms = [...f.alias, f.nom.replace(/\(.*?\)|\?/g, "")].map((a) => norm(a)).filter((a) => a.trim().length >= 3);
+  return ctx.grandLivre.find((g) => (num.length >= 4 && chiffres(g.piece) === num && noms.some((a) => norm(g.libelle).includes(a))) ||
+    (l.date_facture && montants.some((m) => Math.abs(g.debit - m) < 0.011) && Math.abs(jour(g.date) - jour(l.date_facture)) <= 10 && noms.some((a) => norm(g.libelle).includes(a)))) || null;
+}
+
 export function classer(l: Lecture, ctx: Contexte): Resultat {
   const C: Controle[] = [];
   const bloque = (n: number, controle: string, detail: string) => C.push({ n, controle, effet: "bloquant", detail });
@@ -126,6 +151,9 @@ export function classer(l: Lecture, ctx: Contexte): Resultat {
   if (l.type_doc === "proforma" || l.type_doc === "devis" || /ORDER CONFIRMATION|QUOTATION| PRO ?FORMA /.test(texte))
     bloque(5, "Document qui n'est pas une facture", l.type_doc === "facture" || l.type_doc === "avoir" ? "mention proforma / devis / confirmation de commande dans le texte" : `document lu comme « ${l.type_doc} »`);
   if (l.type_doc === "autre") bloque(5, "Document qui n'est pas une facture", "ni facture ni avoir");
+  // V6 : ticket de caisse (carburant, péage, petites fournitures) et échéancier (assurance, prêt) sont des pièces acceptées
+  if (l.type_doc === "ticket") signale(5, "Ticket de caisse", "ticket, pas une facture");
+  if (l.type_doc === "echeancier") signale(5, "Échéancier", "échéancier : la mensualité du mois sert de pièce");
   // 6. Acompte
   // Le mot seul ne suffit pas : les conditions générales de vente parlent souvent d'acompte (Plast'Embal, 29/09)
   if (l.type_doc === "acompte" || / FACTURE D ACOMPTE | DEMANDE D ACOMPTE | DEPOSIT INVOICE | PREPAYMENT INVOICE | ADVANCE PAYMENT | BALANCE 70 | 30 DEPOSIT /.test(texte))
@@ -141,36 +169,75 @@ export function classer(l: Lecture, ctx: Contexte): Resultat {
   const { f, comment } = trouverFournisseur(l, ctx);
   const ventilation: Imputation[] = [];
   let compte: string | null = null;
+  let ecarte: string | null = null;           // V6 : motif d'écart automatique (hors achats SHINE, déjà saisie…)
+  let tvaDed: string | null = f?.tva_deductible ?? null;
+  // Texte de toute la facture pour les règles de contenu : nom du fichier, plaque, suggestion, désignations, période
+  const tout = norm([ctx.fichier.split("/").pop(), l.immatriculation, l.suggestion, l.remarque, l.fournisseur_nom, ...l.lignes.map((x) => x.designation)].join(" ") + " " + (ctx.texte ?? "").slice(0, 4000));
+  const regleDe = (t: string, ligne: boolean) => (f?.regles || []).find((g) => !!g.ligne === ligne && g.si.some((m) => contientMot(t, m)));
+  const ajoute = (cpt: string, sous: string | undefined, libelle: string, montant: number, designation?: string) => {
+    const i = ventilation.find((v) => v.compte === cpt && (v.sous_rubrique || "") === (sous || ""));
+    if (i) { i.montant_ht = r2(i.montant_ht + montant); if (designation) i.lignes.push(designation); }
+    else ventilation.push({ compte: cpt, ...(sous ? { sous_rubrique: sous } : {}), libelle, montant_ht: r2(montant), lignes: designation ? [designation] : [] });
+  };
   if (!f) bloque(7, "Fournisseur inconnu", `« ${l.fournisseur_nom} » : ${comment}`);
   else if (f.statut === "hors") bloque(7, "Fournisseur hors périmètre", `${f.nom} : ${f.motifs.join(" ; ")}`);
   else if (f.statut === "a_valider") bloque(7, "Règle du fournisseur pas encore validée", `${f.nom} : ${f.motifs.join(" ; ")}`);
   else {
     // 2. TVA facturée sur de l'import ou de l'intracommunautaire
     if (f.territoire && f.territoire !== "FR" && (tva ?? 0) > 0.01) bloque(2, "TVA présente sur une facture IMPORT ou INTRA", `${tva} € de TVA alors que ${f.nom} est en ${f.territoire}`);
-    if (f.mode === "mono") {
-      if (!f.compte) bloque(7, "Compte manquant", `${f.nom} n'a pas de compte (compte à créer ?)`);
-      else { compte = f.compte; if (ht != null) ventilation.push({ compte, libelle: f.nature || f.nom, montant_ht: r2(ht), lignes: [] }); }
+    // V6 : règle de contenu sur toute la facture (plaque, mot du fichier…), puis règles ligne par ligne
+    const gf = regleDe(tout, false);
+    const reglesLigne = (f.regles || []).some((g) => g.ligne);
+    if (gf?.ecarter) ecarte = gf.ecarter;
+    else if (gf?.verifier) bloque(7, "Cas à trancher", `${f.nom} : ${gf.verifier}`);
+    else if (gf?.compte || (f.mode === "mono" && !reglesLigne)) {
+      const cpt = gf?.compte || f.compte, sous = gf ? gf.sous_rubrique : f.sous_rubrique || undefined;
+      if (gf?.tva_deductible) tvaDed = gf.tva_deductible;
+      if (gf?.note) signale(0, "Règle", gf.note);
+      if (!cpt) bloque(7, "Compte manquant", (f.regles || []).length ? `${f.nom} : aucune règle ne reconnaît cette facture (véhicule, nature ?)` : `${f.nom} n'a pas de compte (compte à créer ?)`);
+      else { compte = cpt; if (ht != null) ajoute(cpt, sous || undefined, f.nature || f.nom, ht); }
     } else {
       // 3-4. Éclatement ligne par ligne (8 : ligne non reconnue)
       let lignes = l.lignes.filter((x) => x.montant_ht != null && Math.abs(x.montant_ht) > 0.004);
       // Avoir : les totaux sont lus en positif, les lignes souvent en négatif → même sens que le total (Prodhynet, 29/09)
       if (l.type_doc === "avoir" && lignes.reduce((s, x) => s + x.montant_ht!, 0) < 0) lignes = lignes.map((x) => ({ ...x, montant_ht: -x.montant_ht! }));
+      // Une facture sans détail de lignes : une seule ligne au total HT, avec le texte de la facture
+      if (!lignes.length && reglesLigne && ht != null) lignes = [{ designation: [l.suggestion, ...l.lignes.map((x) => x.designation)].filter(Boolean).join(" ") || f.nom, montant_ht: ht }];
       if (!lignes.length) bloque(4, "Somme des lignes ≠ total facture", "facture à éclater mais aucune ligne lue");
+      let ecartees = 0;
       for (const x of lignes) {
+        if (reglesLigne) {
+          const g = regleDe(norm(x.designation), true);
+          if (g?.ecarter) { ecartees += x.montant_ht!; signale(0, "Ligne écartée", `« ${x.designation.slice(0, 50)} » (${x.montant_ht} €) : ${g.ecarter}`); continue; }
+          if (g?.verifier) { bloque(8, "Ligne à trancher", `« ${x.designation.slice(0, 50)} » : ${g.verifier}`); continue; }
+          const cpt = g?.compte || f.compte;
+          if (!cpt) { bloque(8, "Ligne non reconnue", `« ${x.designation.slice(0, 70)} » (${x.montant_ht} €)`); continue; }
+          if (g?.tva_deductible) tvaDed = g.tva_deductible;
+          ajoute(cpt, g ? g.sous_rubrique : f.sous_rubrique || undefined, f.nature || f.nom, x.montant_ht!, x.designation);
+          continue;
+        }
         const n = naturerLigne(x.designation, f, ctx);
         if (!n) { bloque(8, "Ligne non reconnue par le dictionnaire", `« ${x.designation.slice(0, 70)} » (${x.montant_ht} €)`); continue; }
         if (!n.compte) { bloque(8, "Ligne sans compte", `« ${x.designation.slice(0, 50)} » : ${n.motif}`); continue; }
-        const i = ventilation.find((v) => v.compte === n.compte);
-        if (i) { i.montant_ht = r2(i.montant_ht + x.montant_ht!); i.lignes.push(x.designation); }
-        else ventilation.push({ compte: n.compte, libelle: n.libelle, montant_ht: r2(x.montant_ht!), lignes: [x.designation] });
+        ajoute(n.compte, undefined, n.libelle, x.montant_ht!, x.designation);
       }
       const somme = r2(lignes.reduce((s, x) => s + (x.montant_ht || 0), 0));
       if (lignes.length && ht != null && Math.abs(somme - ht) > 0.01) bloque(4, "Somme des lignes ≠ total facture", `lignes ${somme} € / total HT ${ht} €`);
+      if (lignes.length && Math.abs(ecartees - somme) < 0.01) ecarte = "toutes les lignes sont hors achats";
+      if (ventilation.length === 1) compte = ventilation[0].compte;
+    }
+    // V6 : litige client (mot « litige » mis par SHINE dans le libellé ou le nom du fichier) → 61530000 « Entretien litige client »
+    if (!ecarte && / LITIGE /.test(norm(`${ctx.fichier} ${l.suggestion ?? ""}`)) && ht != null) {
+      ventilation.splice(0, ventilation.length, { compte: "61530000", libelle: "Entretien litige client", montant_ht: r2(ht), lignes: [] }); compte = "61530000";
+      signale(0, "Litige client", "facture d'un tiers prise en charge pour un litige client");
     }
     // 11. Doublon
     const hist = ctx.historique(f);
     if (l.num_facture && hist.some((h) => ident(h.num_facture) === ident(l.num_facture)))
       bloque(11, "Doublon", `${f.nom} n° ${l.num_facture} est déjà rangée`);
+    // V6 : déjà passée par le cabinet (facture arrivée en retard) : même n° de pièce, ou même fournisseur, même HT, à 10 jours près
+    const gl = dejaAuGrandLivre(l, f, ctx);
+    if (gl) ecarte = `déjà dans le grand livre (compte ${gl.compte}, pièce ${gl.piece || "–"}, ${gl.date})`;
     // 12. Scan : lu par Claude seulement si le montant est celui de la facture précédente (règle de Robin, 29/09)
     if (!aTexte) {
       const prec = hist.filter((h) => h.date_facture && h.date_facture < (l.date_facture || "9999")).sort((a, b) => (b.date_facture! < a.date_facture! ? -1 : 1))[0];
@@ -194,12 +261,14 @@ export function classer(l: Lecture, ctx: Contexte): Resultat {
   if (l.remarque) signale(0, "Remarque de la lecture", l.remarque);
 
   const bloquants = C.filter((c) => c.effet === "bloquant");
-  const statut = bloquants.length ? "a_verifier" : "classee";
+  // V6 : un écart décidé par une règle (hors achats SHINE, déjà saisie) l'emporte : rien à comptabiliser, le motif dit pourquoi
+  if (ecarte) C.push({ n: 13, controle: "Écartée par une règle", effet: "signal", detail: ecarte });
+  const statut = ecarte ? "ecartee" : bloquants.length ? "a_verifier" : "classee";
   const date = l.date_facture && /^\d{4}-\d{2}-\d{2}$/.test(l.date_facture) ? l.date_facture : null;
-  const nom_range = `${date || "SANS-DATE"}_${slug(f?.nom.replace(/\(.*?\)/g, "") || l.fournisseur_nom || "INCONNU", 25)}_${slug(l.num_facture || "SANS-NUM", 25)}_${ttc != null ? ttc.toFixed(2) : "0.00"}${l.type_doc === "avoir" ? "_AVOIR" : ""}.pdf`;
-  const dossier = statut === "classee" && date ? `2 - CLASSEES/${exerciceDe(date)}/${date.slice(0, 7)}` : "3 - A VERIFIER";
+  const nom_range = `${date || "SANS-DATE"}_${slug(f?.nom.replace(/\(.*?\)/g, "") || l.fournisseur_nom || "INCONNU", 25)}_${slug(l.num_facture || "SANS-NUM", 25)}_${ttc != null ? ttc.toFixed(2) : "0.00"}${l.type_doc === "avoir" ? "_AVOIR" : ""}.pdf`.replace(/^/, statut === "ecartee" ? "ECARTEE_" : "");
+  const dossier = statut === "classee" && date ? `2 - CLASSEES/${exerciceDe(date)}/${date.slice(0, 7)}` : "3 - A VERIFIER"; // écartée : à côté des « à vérifier », nom préfixé
   return {
-    statut, fournisseur: f, territoire: f?.territoire ?? null, regime_tva: f?.regime_tva ?? null, compte,
-    ventilation, controles: C, motif: bloquants.map((c) => c.detail).join(" ; ") || null, nom_range, dossier,
+    statut, fournisseur: f, territoire: f?.territoire ?? null, regime_tva: f?.regime_tva ?? null, tva_deductible: tvaDed, compte,
+    ventilation: ecarte ? [] : ventilation, controles: C, motif: ecarte || bloquants.map((c) => c.detail).join(" ; ") || null, nom_range, dossier,
   };
 }

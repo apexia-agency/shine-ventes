@@ -2,7 +2,7 @@
 
 Référence : le livre ventilé par Jérémy et envoyé au comptable (`Grand compte COMPTA (3).xlsx`, onglet ALL LIVRES, octobre 2025 à août 2026),
 et le livre des achats de septembre 2026 fait à partir des 85 PDF (`SHINE_livre_achats_600-620_2026-09_v12.xlsx`, **validé par Jérémy le 07/10/2026**).
-Rien n'est encore modifié dans le rangeur : cette liste est la base des changements à faire, après accord de Robin.
+Appliqué dans le rangeur V6 le 07/10/2026 à la demande de Jérémy (migration 20261007_rangeur_v6, outils/factures/regles-livre-2026-09.mjs).
 Projet repris par Jérémy et Claude le 05/10/2026 ; Robin est prévenu avant toute modification des règles.
 
 ## 1. Sous-rubriques « Créer nouveau compte » absentes du plan de comptes du rangeur (`factures_comptes`)

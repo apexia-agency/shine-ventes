@@ -1,4 +1,4 @@
-// Rangeur de factures V5 : lecture d'une facture d'achat PDF par Claude, classement par les RÈGLES (moteur.ts).
+// Rangeur de factures V6 (07/10/2026, calé sur le livre de septembre de Jérémy) : lecture d'une facture d'achat PDF par Claude, classement par les RÈGLES (moteur.ts).
 // Claude ne fait que lire (fournisseur, montants, lignes) ; le compte vient de factures_fournisseurs et du
 // dictionnaire produit ; les 12 contrôles de Jérémy décident si la facture est « classée » ou « à vérifier ».
 //
@@ -30,7 +30,7 @@ const json = (body: unknown, status = 200) =>
 const SYSTEME = `Tu lis des factures d'achat reçues par SHINE (SAS SHINE, SIREN 888920071, TVA FR44888920071), marque française de produits de detailing automobile.
 Ton seul rôle est de RECOPIER fidèlement ce qui est écrit : tu ne classes pas la dépense, tu ne choisis aucun compte comptable.
 
-- type_doc : « facture », « avoir » (note de crédit, remboursement), « proforma », « devis » (devis, quotation, confirmation de commande), « acompte » (facture d'acompte, deposit, prepayment, demande de 30 %…) ou « autre » (bon de livraison, relevé, échéancier, document illisible).
+- type_doc : « facture », « avoir » (note de crédit, remboursement), « proforma », « devis » (devis, quotation, confirmation de commande), « acompte » (facture d'acompte, deposit, prepayment, demande de 30 %…), « ticket » (ticket de caisse : carburant, péage, petites fournitures), « echeancier » (échéancier d'assurance, de prêt ou de loyer) ou « autre » (bon de livraison, relevé, avis d'impôt, avis d'indemnisation, document illisible).
 - fournisseur_nom : la raison sociale de l'ÉMETTEUR telle qu'écrite (jamais SHINE). fournisseur_tva et fournisseur_siren : ceux de l'émetteur s'ils sont écrits, sinon null.
 - destinataire_nom : à qui la facture est adressée, recopié tel quel, fautes comprises (« Facturé à », « Client », « Bill to »). destinataire_tva : son n° de TVA s'il est écrit.
 - num_facture et date_facture (AAAA-MM-JJ) : ceux de la facture, pas de la commande ni de l'échéance.
@@ -40,6 +40,8 @@ Ton seul rôle est de RECOPIER fidèlement ce qui est écrit : tu ne classes pas
 - lignes : chaque ligne d'article ou de frais (port, transport, remise…) avec sa désignation complète et son montant HT (négatif pour une remise), 80 au plus ; [] s'il n'y a pas de détail.
 - confiance : de 0 à 1, ta certitude sur les montants et les identités lus. Moins de 0,8 si un chiffre est douteux (scan flou, manuscrit, tableau coupé).
 - suggestion : en quelques mots, la nature de la dépense pour aider la personne qui vérifiera (ex. « abonnement logiciel », « fret maritime », « bidons plastique ») ; ce n'est qu'une aide, jamais utilisée pour classer.
+- immatriculation : la plaque du véhicule si la facture en porte une (loyer, carburant, réparation), telle qu'écrite (ex. GR-171-EW), sinon null.
+- periode_debut et periode_fin (AAAA-MM-JJ) : la période facturée si elle est écrite (loyer, abonnement, assurance : « du 16/09 au 15/10 »), sinon null.
 - remarque : une phrase si quelque chose mérite l'attention d'un humain (acompte, facture partielle, devise étrangère, montant manuscrit, TVA surprenante…), sinon null.`;
 
 const nombre = { type: ["number", "null"] };
@@ -47,15 +49,16 @@ const texteOuNull = { type: ["string", "null"] };
 const SCHEMA = {
   type: "object", additionalProperties: false,
   required: ["type_doc", "fournisseur_nom", "fournisseur_tva", "fournisseur_siren", "destinataire_nom", "destinataire_tva", "num_facture",
-    "date_facture", "devise", "montant_ht", "montant_tva", "montant_ttc", "lignes", "confiance", "suggestion", "remarque"],
+    "date_facture", "devise", "montant_ht", "montant_tva", "montant_ttc", "lignes", "confiance", "suggestion", "remarque", "immatriculation", "periode_debut", "periode_fin"],
   properties: {
-    type_doc: { type: "string", enum: ["facture", "avoir", "proforma", "devis", "acompte", "autre"] },
+    type_doc: { type: "string", enum: ["facture", "avoir", "proforma", "devis", "acompte", "ticket", "echeancier", "autre"] },
     fournisseur_nom: { type: "string" }, fournisseur_tva: texteOuNull, fournisseur_siren: texteOuNull,
     destinataire_nom: texteOuNull, destinataire_tva: texteOuNull,
     num_facture: texteOuNull, date_facture: { ...texteOuNull, description: "AAAA-MM-JJ" }, devise: { type: "string" },
     montant_ht: nombre, montant_tva: nombre, montant_ttc: nombre,
     lignes: { type: "array", items: { type: "object", additionalProperties: false, required: ["designation", "montant_ht"], properties: { designation: { type: "string" }, montant_ht: nombre } } },
     confiance: { type: "number" }, suggestion: texteOuNull, remarque: texteOuNull,
+    immatriculation: texteOuNull, periode_debut: { ...texteOuNull, description: "AAAA-MM-JJ" }, periode_fin: { ...texteOuNull, description: "AAAA-MM-JJ" },
   },
 };
 
@@ -68,22 +71,28 @@ async function texteDuPdf(octets: Uint8Array): Promise<string | null> {
 }
 
 // Règles et historique, chargés à chaque appel (petites tables) : une règle modifiée s'applique tout de suite
-async function contexte(sb: ReturnType<typeof createClient>, fichier: string, texte: string | null, ignorerId?: number): Promise<Contexte> {
-  const [{ data: fournisseurs, error: e1 }, { data: dictionnaire, error: e2 }, { data: rangees, error: e3 }] = await Promise.all([
-    sb.from("factures_fournisseurs").select("id, nom, alias, tva_intracom, siren, compte, regime_tva, territoire, nature, mode, eclatement, statut, motifs"),
+async function contexte(sb: ReturnType<typeof createClient>, fichier: string, texte: string | null, dateFacture: string | null, ignorerId?: number): Promise<Contexte> {
+  // Grand livre : seulement les lignes à 15 jours de la date de la facture (la base renvoie 1 000 lignes au plus)
+  const d = dateFacture && /^\d{4}-\d{2}-\d{2}$/.test(dateFacture) ? Date.parse(dateFacture) : null;
+  const jourIso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+  const [{ data: fournisseurs, error: e1 }, { data: dictionnaire, error: e2 }, { data: rangees, error: e3 }, { data: grandLivre, error: e4 }] = await Promise.all([
+    sb.from("factures_fournisseurs").select("id, nom, alias, tva_intracom, siren, compte, sous_rubrique, regime_tva, territoire, nature, tva_deductible, mode, eclatement, regles, statut, motifs"),
     sb.from("factures_dictionnaire").select("nature, ordre, mots, compte_fr, compte_intra, compte_import"),
     sb.from("factures_achats").select("id, fournisseur_id, num_facture, montant_ttc, date_facture").in("statut", ["classee", "validee"]),
+    d == null ? Promise.resolve({ data: [], error: null }) : // V6 : factures déjà passées par le cabinet
+      sb.from("factures_grand_livre").select("compte, date, piece, libelle, debit").gte("date", jourIso(d - 15 * 864e5)).lte("date", jourIso(d + 15 * 864e5)),
   ]);
-  if (e1 || e2 || e3) throw new Error((e1 || e2 || e3)!.message);
+  if (e1 || e2 || e3 || e4) throw new Error((e1 || e2 || e3 || e4)!.message);
   return {
     fichier, texte, fournisseurs: fournisseurs as Contexte["fournisseurs"], dictionnaire: dictionnaire as Contexte["dictionnaire"],
     historique: (f) => (rangees || []).filter((r) => r.fournisseur_id === f.id && r.id !== ignorerId),
+    grandLivre: (grandLivre || []) as Contexte["grandLivre"],
   };
 }
 
 function ligneDeBase(r: ReturnType<typeof classer>) {
   return {
-    statut: r.statut, fournisseur_id: r.fournisseur?.id ?? null, compte: r.compte, territoire: r.territoire, regime_tva: r.regime_tva,
+    statut: r.statut, fournisseur_id: r.fournisseur?.id ?? null, compte: r.compte, territoire: r.territoire, regime_tva: r.regime_tva, tva_deductible: r.tva_deductible,
     ventilation: r.ventilation, controles: r.controles, a_verifier: r.statut === "a_verifier", motif: r.motif,
   };
 }
@@ -102,7 +111,7 @@ Deno.serve(async (req) => {
   const reclasser = async (id: number) => {
     const { data: fa, error } = await sb.from("factures_achats").select("id, fichier, lecture, texte").eq("id", id).single();
     if (error || !fa?.lecture) return json({ error: "Facture inconnue ou lue avant le rangeur V5 (pas de lecture gardée)" }, 404);
-    const r = classer(fa.lecture as Lecture, await contexte(sb, fa.fichier, fa.texte, fa.id));
+    const r = classer(fa.lecture as Lecture, await contexte(sb, fa.fichier, fa.texte, (fa.lecture as Lecture).date_facture, fa.id));
     const { error: e } = await sb.from("factures_achats").update(ligneDeBase(r)).eq("id", fa.id);
     if (e) return json({ error: "Écriture impossible : " + e.message }, 500);
     return json({ id: fa.id, ...r, fournisseur: r.fournisseur?.nom ?? null, montant_ttc: (fa.lecture as Lecture).montant_ttc });
@@ -161,7 +170,7 @@ Deno.serve(async (req) => {
   lu.confiance = Math.max(0, Math.min(1, lu.confiance));
 
   let r: ReturnType<typeof classer>;
-  try { r = classer(lu, await contexte(sb, fichier, texte)); } catch (e) { return json({ error: "Règles illisibles : " + (e as Error).message }, 500); }
+  try { r = classer(lu, await contexte(sb, fichier, texte, lu.date_facture)); } catch (e) { return json({ error: "Règles illisibles : " + (e as Error).message }, 500); }
 
   const u = rep.usage;
   const p = PRIX[rep.model] || PRIX[modele];

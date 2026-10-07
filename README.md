@@ -139,7 +139,7 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
   Doublons écartés : « 2025-08 DPD RELAI.xlsx » (copie de juillet 2025), « 2026-01 DPD RELAI BIS », et 4 factures Colissimo en double.
   Fichiers manquants : DPD Relais août 2025 et mars 2026, DPD Predict mars 2026, tout DPD depuis juin 2026.
 
-## Board Factures (rangeur de factures d'achat V5)
+## Board Factures (rangeur de factures d'achat V6)
 
 - `factures.html` : board **réservé** (pas ouvert à tous les associés). Accès : rôle admin, ou `acces_board.boards.factures` = `lecture` / `valideur` / `admin`.
   Ajouter quelqu'un : `update acces_board set boards = coalesce(boards, '{}') || '{"factures": "valideur"}' where email = '…';`
@@ -159,6 +159,16 @@ Ouverts par le bouton « Changer de board » (même page : `./#achats`, `./#char
   (import du cabinet : Journal ; Date ; Société ; Pièce ; Tiers ; N° facture ; Compte ; Libellé ; Débit ; Crédit ; Fichier) et `AAAA-MM_SHINE_journal_achats.csv`
   (30 colonnes, une ligne par facture) dans le dossier du mois. Fonction `factures_export_mois(mois)` ; pièces `AC-<exercice>-0001` attribuées au premier export.
   TVA : FR déductible (44566, 44562 pour les immobilisations), non déductible (ajoutée à la charge), autoliquidation (445662 / 4452), sans TVA. Avoir : sens inversé.
+- **V6 (07/10/2026), calée sur le livre des achats de septembre 2026 validé par Jérémy** (`outils/factures/regles-livre-2026-09.mjs`, migration `20261007_rangeur_v6`) :
+  - règles de contenu par fournisseur (`factures_fournisseurs.regles`) : plaque (un compte par véhicule, véhicules de Space Up écartés), mots de la facture
+    (RS Développement « Nexus » ou « point éclair » → MP chimie pour Nexus), ligne par ligne (Plast'Embal film / calage, Boutique du Store loyer / électricité /
+    taxe foncière, Edenred commission / valeur des titres écartée) ;
+  - sous-rubriques « Créer nouveau compte » du livre (`sous_rubrique` : MP chimie pour Nexus, Film + BTB…) dans la ventilation, l'export et le dossier Drive ;
+  - écart automatique (statut « écartée », motif écrit, fichier préfixé ECARTEE_ dans « 3 - A VERIFIER ») : hors achats SHINE, et facture en retard déjà passée
+    par le cabinet (table `factures_grand_livre`, même n° de pièce ou même fournisseur et même HT à 10 jours près) ;
+  - taux de TVA déductible propre à la facture (voiture de tourisme NON, carburant 80 %) ; tickets de caisse et échéanciers acceptés ; mot « litige » → 61530000.
+  - Banc d'essai `outils/factures/banc-livre-2026-09.mts` : les 83 factures de septembre comparées au livre v13 → 77 identiques, 5 « à vérifier » pour une vraie
+    raison (dollars, fin de bail, mention proforma, ticket aux montants faux), 1 à 1 centime. Il a trouvé 2 factures d'août comptées deux fois dans le livre v12.
 
 ## Trieur de mails de Jérémy
 
