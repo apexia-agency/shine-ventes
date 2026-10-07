@@ -22,7 +22,7 @@ Il écarte seul ce qui n'est pas un achat SHINE (véhicules de Space Up, indemni
 
 ## Entre le 1er et le 5 du mois suivant
 
-1. **Relevés bancaires** : exporter le mois en CSV (Crédit Agricole, CIC, PayPal) et les déposer dans le Drive « Factures SHINE / 4 - BANQUE A DEPOSER ». Ils sont lus dans l'heure (rangés ensuite dans « Traités ») ; un relevé qui chevauche le précédent ne compte rien deux fois. Pleo : à part.
+1. **Relevés bancaires** : exporter le mois en CSV (Crédit Agricole, CIC, PayPal) et les déposer dans le Drive « Factures SHINE / 4 - BANQUE A DEPOSER ». Ils sont lus la nuit suivante à 5 h, juste avant le livre de 5 h 30 (rangés ensuite dans « Traités ») ; pour ne pas attendre, lancer le flux « relevés bancaires » à la main dans n8n ; un relevé qui chevauche le précédent ne compte rien deux fois. Pleo : à part.
 2. **Board Factures** (`factures.html`, onglet « à vérifier ») : traiter chaque facture.
    - Bon compte proposé → **Valider**.
    - Autre compte → choisir le compte, cocher **Retenir** si la règle vaut pour la suite (le rangeur ne redemandera plus).
