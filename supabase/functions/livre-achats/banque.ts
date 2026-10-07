@@ -93,6 +93,10 @@ const mots = (s: string | null | undefined) => {
     .concat(colle.length >= 7 && colle.length <= 24 && /[a-z]/.test(colle) ? [colle] : []);
 };
 
+// Les mots d'un même libellé ne sont calculés qu'une fois (le grand livre compte des milliers de lignes)
+const cacheMots = new Map<string, string[]>();
+const motsDe = (s: string | null | undefined) => { const k = String(s || ""); let v = cacheMots.get(k); if (!v) { v = mots(k); cacheMots.set(k, v); } return v; };
+
 // Un mot du fournisseur se retrouve dans le libellé : mot entier, ou morceau d'au moins 6 lettres (« chimierecherche » dans un libellé collé)
 const trouveMot = (texteCompact: string, motsLibelle: Set<string>, w: string) => motsLibelle.has(w) || (w.length >= 7 && texteCompact.includes(w));
 
@@ -104,13 +108,16 @@ export function rapprocher(factures: FactureBanque[], operations: Operation[], l
   { paiements: Paiement[]; sansFacture: SansFacture[]; nonPayees: FactureBanque[]; moisPrecedents: MoisPrecedent[] } {
   const debits = operations.filter((o) => o.debit > 0 && (o.categorie === undefined || AVEC_FACTURE.includes(o.categorie) || o.categorie === "À CLASSER") && !sansFacture(o));
   const libres = new Set(debits);
+  const livreP = livre.filter((g) => g.debit > 0).map((g) => ({ g, j: jour(g.date), m: motsDe(g.libelle) }));
+  const cacheOp = new Map<Operation, { l: string; m: Set<string>; j: number }>();
   // Texte du libellé bancaire, complété des noms du livre qui lui correspondent
   const corresp = (o: Operation) => { const l = compact(o.libelle); return correspondances.filter((c) => compact(c.banque) && l.includes(compact(c.banque))).map((c) => c.livre); };
   const texte = (o: Operation) => compact(o.libelle) + " " + corresp(o).map(compact).join(" ");
-  const motsOp = (o: Operation) => new Set([...mots(o.libelle), ...corresp(o).flatMap(mots), ...corresp(o).map(compact)]);
-  const motsFournisseur = (f: FactureBanque) => [f.fournisseur, ...(f.alias || [])].flatMap(mots).concat((f.alias || []).map(compact).filter((a) => a.length >= 4));
-  const nomOk = (f: FactureBanque, o: Operation) => { const l = texte(o); const num = compact(f.num_facture).replace(/^0+/, "");
-    const m = motsOp(o);
+  const motsOp = (o: Operation) => new Set([...motsDe(o.libelle), ...corresp(o).flatMap(motsDe), ...corresp(o).map(compact)]);
+  const prep = (o: Operation) => { let v = cacheOp.get(o); if (!v) { v = { l: texte(o), m: motsOp(o), j: jour(o.date) }; cacheOp.set(o, v); } return v; };
+  const cacheF = new Map<FactureBanque, string[]>();
+  const motsFournisseur = (f: FactureBanque) => { let v = cacheF.get(f); if (!v) { v = [f.fournisseur, ...(f.alias || [])].flatMap(motsDe).concat((f.alias || []).map(compact).filter((a) => a.length >= 4)); cacheF.set(f, v); } return v; };
+  const nomOk = (f: FactureBanque, o: Operation) => { const { l, m } = prep(o); const num = compact(f.num_facture).replace(/^0+/, "");
     return motsFournisseur(f).some((w) => trouveMot(l, m, w)) || (num.length >= 4 && l.includes(num)); };
   const dans = (f: FactureBanque, o: Operation, avant = 20, apres = 120) => { if (!f.date_facture) return true; const d = jour(o.date) - jour(f.date_facture); return d >= -avant && d <= apres; };
   const paiements: Paiement[] = [];
@@ -158,8 +165,8 @@ export function rapprocher(factures: FactureBanque[], operations: Operation[], l
   //    (paiement d'un lot, prélèvement mensuel ; à 0,5 % près pour un mois entier, marqué « approché »)
   const moisPrecedents: MoisPrecedent[] = [];
   for (const o of [...libres]) {
-    const l = texte(o), m = motsOp(o);
-    const c = livre.filter((g) => g.debit > 0 && jour(o.date) - jour(g.date) >= -5 && jour(o.date) - jour(g.date) <= 370 && mots(g.libelle).some((w) => trouveMot(l, m, w)));
+    const { l, m, j } = prep(o);
+    const c = livreP.filter((x) => j - x.j >= -5 && j - x.j <= 370 && x.m.some((w) => trouveMot(l, m, w))).map((x) => x.g);
     const egal = (ht: number, tol = 0.0005) => [1, 1.2, 1.1, 1.055].some((k) => Math.abs(ht * k - o.debit) <= Math.max(0.05, o.debit * tol));
     const recents = c.filter((g) => jour(o.date) - jour(g.date) <= 100);
     let lignes: LigneLivre[] | null = null, approche = false;
@@ -173,9 +180,9 @@ export function rapprocher(factures: FactureBanque[], operations: Operation[], l
   }
   // 6. Ce qui reste : fournisseur habituel (dans le livre des 4 derniers mois) → facture du mois à récupérer ; sinon fournisseur inconnu
   const sans: SansFacture[] = [...libres].sort((a, b) => a.date.localeCompare(b.date)).map((o) => {
-    const l = texte(o), m = motsOp(o);
+    const { l, m, j } = prep(o);
     if (/^chequeemis/.test(compact(o.libelle))) return { ...o, raison: "chèque : retrouver le bénéficiaire et la facture" };
-    const connus = livre.filter((g) => jour(o.date) - jour(g.date) <= 125 && jour(o.date) - jour(g.date) >= -5 && mots(g.libelle).some((w) => trouveMot(l, m, w)));
+    const connus = livreP.filter((x) => j - x.j <= 125 && j - x.j >= -5 && x.m.some((w) => trouveMot(l, m, w))).map((x) => x.g);
     if (!connus.length) return { ...o, raison: "fournisseur absent du livre des 4 derniers mois : facture à récupérer (ou pas un achat)" };
     const ms = [...new Set(connus.map((g) => g.date.slice(0, 7)))].sort().map((m) => m.slice(5) + "/" + m.slice(2, 4));
     return { ...o, raison: `fournisseur habituel (« ${connus[0].libelle.slice(0, 30)} » dans le livre : ${ms.join(", ")}) : facture du mois à récupérer` };
