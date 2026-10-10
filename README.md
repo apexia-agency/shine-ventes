@@ -109,7 +109,7 @@ quasi vides (2 k€ et 0,5 k€ restants sur 2025-2026) ; seulement 90 unités d
 - Données : schéma Supabase `marketing` (non exposé à l'API), lu uniquement par `dc_donnees(du, au)` ; le comparateur (N-1, période précédente, dates choisies) appelle la fonction deux fois.
 - Chargement : Edge Function `supabase/functions/dc-ingestion` (Windsor → Supabase), chaque nuit à 04:30 (heure de Paris) sur les 30 derniers jours, puis contrôles automatiques (`dc_controler`). Secret `CLE_API_WINDSOR` dans Supabase, jamais dans le code.
 - Règle GA4 : uniquement des dimensions `session_*` (jamais `campaign` ni `source_medium` sans préfixe, qui sont des champs d'attribution des conversions et faussent les sessions).
-- Migrations appliquées dans Supabase : `data_center_01` à `data_center_08` (à exporter dans `supabase/migrations/` avec `supabase db pull`).
+- Migrations : `supabase/migrations/20260925_data_center_01` à `_10` (appliquées le 25/09, exportées dans le dépôt le 10/10, identiques à la base).
 
 ## Boards Achats et Charges
 
